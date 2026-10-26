@@ -122,6 +122,8 @@ check "PySide6 + Kirigami QML available" python3 -c 'import PySide6.QtQml'
 check "Tamarack Center QML loads (offscreen)" env QT_QPA_PLATFORM=offscreen tamarack-center --self-test
 
 # --- Boot ---------------------------------------------------------------------
+check "bootc install defaults to a Btrfs root" \
+    bash -c 'bootc install print-configuration | grep -q btrfs'
 check "exactly one kernel with an initramfs" \
     bash -c 'test "$(find /usr/lib/modules -mindepth 2 -maxdepth 2 -name initramfs.img | wc -l)" -eq 1'
 

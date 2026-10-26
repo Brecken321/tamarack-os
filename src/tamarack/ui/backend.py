@@ -371,12 +371,19 @@ class Backend(QObject):
 
     @Property(bool, notify=gpuChanged)
     def steamOnDiscreteGpu(self) -> bool:
-        return gaming.is_enabled(self._paths.data)
+        return gaming.is_enabled(self._paths.data, "discrete_gpu")
 
-    @Slot(bool)
-    def setSteamOnDiscreteGpu(self, enabled: bool) -> None:
+    @Property(bool, notify=gpuChanged)
+    def steamOverlay(self) -> bool:
+        return gaming.is_enabled(self._paths.data, "overlay")
+
+    @Property(bool, notify=gpuChanged)
+    def gameMode(self) -> bool:
+        return gaming.game_mode_active(self._paths.state)
+
+    def _set_launcher_feature(self, feature: str, enabled: bool) -> None:
         try:
-            gaming.set_enabled(self._paths.data, enabled, gaming.offload_env(self._hardware.get("gpus", [])))
+            gaming.set_feature(self._paths.data, feature, enabled, gaming.offload_env(self._hardware.get("gpus", [])))
             if (self._paths.autostart / "steam.desktop").exists():
                 appearance.set_steam_autostart(self._paths, True)
         except (OSError, ValueError) as exc:
@@ -384,6 +391,31 @@ class Backend(QObject):
         else:
             self.notify.emit("Done. Quit and reopen Steam for this to take effect.", "positive")
         self.gpuChanged.emit()
+
+    @Slot(bool)
+    def setSteamOnDiscreteGpu(self, enabled: bool) -> None:
+        self._set_launcher_feature("discrete_gpu", enabled)
+
+    @Slot(bool)
+    def setSteamOverlay(self, enabled: bool) -> None:
+        self._set_launcher_feature("overlay", enabled)
+
+    @Slot(bool)
+    def setGameMode(self, enabled: bool) -> None:
+        def run() -> list[CommandResult]:
+            return gaming.set_game_mode(self._runner, self._paths.state, enabled)
+
+        def done(results: list[CommandResult]) -> None:
+            failed = [r for r in results if not r.ok]
+            if failed:
+                self.notify.emit("Game Mode: " + "; ".join(r.error_summary() for r in failed), "warning")
+            elif enabled:
+                self.notify.emit("Game Mode on: performance power profile and Do Not Disturb.", "positive")
+            else:
+                self.notify.emit("Game Mode off: previous power profile and notifications restored.", "positive")
+            self.gpuChanged.emit()
+
+        self._run("Switching Game Mode", run, done)
 
     # -- privacy -------------------------------------------------------------
     @Property("QVariant", notify=privacyChanged)

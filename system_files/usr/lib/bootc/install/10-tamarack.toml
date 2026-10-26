@@ -1,0 +1,4 @@
+# Default root filesystem for `bootc install` and bootc-image-builder
+# (Bazzite and Fedora Atomic desktops use Btrfs).
+[install.filesystem.root]
+type = "btrfs"

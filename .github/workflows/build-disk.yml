@@ -100,7 +100,7 @@ jobs:
           config-file: ./disk_config/ci-vm.toml
           image: ${{ steps.meta.outputs.ref }}
           types: qcow2
-          additional-args: --use-librepo=True
+          additional-args: --use-librepo=True --rootfs=btrfs
 
       - name: Boot and test
         run: |
@@ -158,7 +158,7 @@ jobs:
           config-file: ./disk_config/iso-${{ matrix.flavor }}.toml
           image: ${{ steps.meta.outputs.ref }}
           types: anaconda-iso
-          additional-args: --use-librepo=True
+          additional-args: --use-librepo=True --rootfs=btrfs
 
       - name: Name and checksum
         id: files
@@ -180,4 +180,116 @@ jobs:
             ${{ steps.files.outputs.dir }}/*.sha256
           if-no-files-found: error
           compression-level: 0
+          retention-days: 30
+
+  install-test:
+    name: Unattended install test (${{ matrix.flavor }})
+    needs: vm-test
+    if: (github.event_name == 'workflow_dispatch' && inputs.iso) || github.event_name == 'schedule'
+    runs-on: ubuntu-26.04
+    timeout-minutes: 180
+    permissions:
+      contents: read
+      packages: read
+    strategy:
+      fail-fast: false
+      matrix:
+        flavor: [main, nvidia]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Maximize build space
+        uses: ublue-os/remove-unwanted-software@695eb75bc387dbcd9685a8e72d23439d8686cba6
+        with:
+          remove-codeql: true
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Install QEMU
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q --no-install-recommends qemu-system-x86 qemu-utils ovmf openssh-client
+
+      - name: Resolve image
+        id: meta
+        run: |
+          set -a; source image.env; set +a
+          if [[ "${{ matrix.flavor }}" == "nvidia" ]]; then image="${IMAGE_NVIDIA}"; else image="${IMAGE_MAIN}"; fi
+          echo "ref=${IMAGE_REGISTRY}/${image}:${DEFAULT_TAG}" >> "$GITHUB_OUTPUT"
+
+      - name: Write an unattended test kickstart
+        id: user
+        run: |
+          password="$(openssl rand -hex 10)"
+          echo "::add-mask::${password}"
+          echo "password=${password}" >> "$GITHUB_OUTPUT"
+          ssh-keygen -q -t ed25519 -N "" -f "${RUNNER_TEMP}/vmkey"
+          cat > disk_config/ci-install.toml <<EOF
+          [customizations.installer.kickstart]
+          contents = """
+          text --non-interactive
+          lang en_US.UTF-8
+          keyboard us
+          timezone UTC --utc
+          zerombr
+          clearpart --all --initlabel --disklabel=gpt
+          autopart --noswap --type=btrfs
+          network --bootproto=dhcp --device=link --activate --onboot=on
+          rootpw --lock
+          user --name=tamarack --password=${password} --plaintext --groups=wheel
+          sshkey --username=tamarack "$(cat "${RUNNER_TEMP}/vmkey.pub")"
+          services --enabled=sshd
+          reboot
+          %post --erroronfail
+          bootc switch --mutate-in-place --transport registry ${{ steps.meta.outputs.ref }}
+          %end
+          """
+
+          [customizations.installer.modules]
+          enable = [
+            "org.fedoraproject.Anaconda.Modules.Storage",
+            "org.fedoraproject.Anaconda.Modules.Runtime",
+            "org.fedoraproject.Anaconda.Modules.Network",
+            "org.fedoraproject.Anaconda.Modules.Security",
+            "org.fedoraproject.Anaconda.Modules.Services",
+            "org.fedoraproject.Anaconda.Modules.Users",
+            "org.fedoraproject.Anaconda.Modules.Timezone",
+            "org.fedoraproject.Anaconda.Modules.Localization",
+          ]
+          disable = ["org.fedoraproject.Anaconda.Modules.Subscription"]
+          EOF
+
+      - name: Build test installer ISO
+        id: build
+        uses: osbuild/bootc-image-builder-action@8661cd3832544ad68c12dcde8681b13ab0f56a8d # main
+        with:
+          builder-image: ${{ env.BIB_IMAGE }}
+          config-file: ./disk_config/ci-install.toml
+          image: ${{ steps.meta.outputs.ref }}
+          types: anaconda-iso
+          additional-args: --use-librepo=True --rootfs=btrfs
+
+      - name: Install, boot and test
+        run: |
+          iso="$(find "${{ steps.build.outputs.output-directory }}" -name '*.iso' | head -n 1)"
+          sudo chmod a+r "${iso}"
+          bash tests/vm/install-test.sh "${iso}" "${RUNNER_TEMP}/vmkey" "${{ steps.user.outputs.password }}" install-results
+
+      - name: Upload screenshots and logs
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: install-results-${{ matrix.flavor }}
+          path: |
+            install-results/screens
+            install-results/*.txt
+            install-results/installed-boot/screens
+            install-results/installed-boot/*.txt
+            install-results/installed-boot/*.json
+          if-no-files-found: warn
           retention-days: 30

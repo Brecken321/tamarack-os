@@ -34,6 +34,54 @@ Kirigami.ScrollablePage {
         spacing: Kirigami.Units.largeSpacing
 
         SectionCard {
+            title: qsTr("Play mode")
+            iconName: "input-gamepad"
+
+            RowLayout {
+                Layout.fillWidth: true
+                ColumnLayout {
+                    spacing: 0
+                    Layout.fillWidth: true
+                    Controls.Label { text: qsTr("Game Mode"); font.bold: true }
+                    Controls.Label {
+                        text: qsTr("Performance power profile and Do Not Disturb until you turn it off. Opens Steam Big Picture, which works with a controller; close it to return to the desktop.")
+                        wrapMode: Text.WordWrap
+                        opacity: 0.8
+                        Layout.fillWidth: true
+                    }
+                }
+                Controls.Switch {
+                    checked: backend.gameMode
+                    enabled: !backend.busy
+                    Accessible.name: qsTr("Game Mode")
+                    onToggled: {
+                        backend.setGameMode(checked);
+                        if (checked) Qt.openUrlExternally("steam://open/bigpicture");
+                    }
+                }
+            }
+            RowLayout {
+                Layout.fillWidth: true
+                ColumnLayout {
+                    spacing: 0
+                    Layout.fillWidth: true
+                    Controls.Label { text: qsTr("Performance overlay in all Steam games"); font.bold: true }
+                    Controls.Label {
+                        text: qsTr("MangoHud shows FPS, frame times, CPU/GPU load and temperatures. Right Shift + F12 hides it in a game.")
+                        wrapMode: Text.WordWrap
+                        opacity: 0.8
+                        Layout.fillWidth: true
+                    }
+                }
+                Controls.Switch {
+                    checked: backend.steamOverlay
+                    Accessible.name: qsTr("Performance overlay in all Steam games")
+                    onToggled: backend.setSteamOverlay(checked)
+                }
+            }
+        }
+
+        SectionCard {
             title: qsTr("Will this game work?")
             iconName: "search"
             subtitle: qsTr("Search by name or Steam app ID. Answers come from the %1 anti-cheat database (%2 games, updated %3). Single-player games without anti-cheat usually work through Proton.")

@@ -1,8 +1,10 @@
+import json
 from pathlib import Path
 
 import pytest
 
 from tamarack import appearance, gaming
+from tamarack.system import FakeRunner
 
 STEAM_ENTRY = """[Desktop Entry]
 Name=Steam
@@ -19,6 +21,13 @@ INTEL = {"vendor": "Intel", "driver": "i915"}
 NVIDIA = {"vendor": "NVIDIA", "driver": "nvidia"}
 NOUVEAU = {"vendor": "NVIDIA", "driver": "nouveau"}
 AMD = {"vendor": "AMD", "driver": "amdgpu"}
+
+
+@pytest.fixture
+def system_entry(tmp_path: Path) -> Path:
+    path = tmp_path / "system-steam.desktop"
+    path.write_text(STEAM_ENTRY, encoding="utf-8")
+    return path
 
 
 @pytest.mark.parametrize(
@@ -38,46 +47,91 @@ def test_offload_env(gpus: list[dict[str, str]], expected: dict[str, str] | None
 
 
 def test_override_prefixes_every_exec_line() -> None:
-    text = gaming.build_override(STEAM_ENTRY, gaming.NVIDIA_OFFLOAD)
+    text = gaming.build_override(
+        STEAM_ENTRY, {**gaming.NVIDIA_OFFLOAD, **gaming.OVERLAY_ENV}, {"discrete_gpu", "overlay"}
+    )
     execs = [line for line in text.splitlines() if line.startswith("Exec=")]
     assert len(execs) == 2
-    assert all(
-        line.startswith("Exec=env __NV_PRIME_RENDER_OFFLOAD=1 __VK_LAYER_NV_optimus=NVIDIA_only") for line in execs
-    )
+    assert all(line.startswith("Exec=env __NV_PRIME_RENDER_OFFLOAD=1 ") and "MANGOHUD=1" in line for line in execs)
     assert execs[1].endswith("/usr/bin/bazzite-steam steam://store")
-    assert text.startswith(f"[Desktop Entry]\n{gaming.MARKER_KEY}=true\n")
-    # Applying twice does not double the prefix.
-    assert gaming.build_override(text, gaming.NVIDIA_OFFLOAD).count("__NV_PRIME_RENDER_OFFLOAD") == 2
+    assert text.startswith("[Desktop Entry]\nX-Tamarack-Launcher=true\nX-Tamarack-Discrete-GPU=true\n")
 
 
-def test_enable_disable_and_autostart(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_features_combine_and_are_removed_cleanly(tmp_path: Path, system_entry: Path) -> None:
+    data = tmp_path / "data"
+    gaming.set_feature(data, "discrete_gpu", True, gaming.NVIDIA_OFFLOAD, system_entry)
+    # Hardware info is not needed again: the existing offload variables are kept.
+    gaming.set_feature(data, "overlay", True, None, system_entry)
+    assert gaming.enabled_features(data) == {"discrete_gpu", "overlay"}
+    text = gaming.override_path(data).read_text(encoding="utf-8")
+    assert "__NV_PRIME_RENDER_OFFLOAD=1" in text and "MANGOHUD=1" in text
+    gaming.set_feature(data, "discrete_gpu", False, None, system_entry)
+    text = gaming.override_path(data).read_text(encoding="utf-8")
+    assert "__NV_PRIME_RENDER_OFFLOAD" not in text and "MANGOHUD=1" in text
+    gaming.set_feature(data, "overlay", False, None, system_entry)
+    assert not gaming.override_path(data).exists()
+
+
+def test_autostart_uses_the_users_launcher(tmp_path: Path, system_entry: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     for var in ("XDG_CONFIG_HOME", "XDG_DATA_HOME", "XDG_STATE_HOME"):
         monkeypatch.delenv(var, raising=False)
-    system = tmp_path / "steam.desktop"
-    system.write_text(STEAM_ENTRY, encoding="utf-8")
-    monkeypatch.setattr(appearance, "STEAM_DESKTOP", system)
+    monkeypatch.setattr(appearance, "STEAM_DESKTOP", system_entry)
     paths = appearance.Paths(tmp_path)
-    gaming.set_enabled(paths.data, True, gaming.NVIDIA_OFFLOAD, system)
-    assert gaming.is_enabled(paths.data)
+    gaming.set_feature(paths.data, "discrete_gpu", True, gaming.NVIDIA_OFFLOAD, system_entry)
     appearance.set_steam_autostart(paths, True)
     autostart = (paths.autostart / "steam.desktop").read_text(encoding="utf-8")
     assert "Exec=env __NV_PRIME_RENDER_OFFLOAD=1" in autostart and "-silent" in autostart
-    gaming.set_enabled(paths.data, False, None, system)
-    assert not gaming.override_path(paths.data).exists()
 
 
-def test_never_overwrites_a_user_file(tmp_path: Path) -> None:
-    system = tmp_path / "steam.desktop"
-    system.write_text(STEAM_ENTRY, encoding="utf-8")
+def test_never_overwrites_a_user_file(tmp_path: Path, system_entry: Path) -> None:
     user_file = gaming.override_path(tmp_path)
     user_file.parent.mkdir(parents=True)
     user_file.write_text("[Desktop Entry]\nName=My Steam\nExec=steam -bigpicture\n", encoding="utf-8")
     with pytest.raises(FileExistsError):
-        gaming.set_enabled(tmp_path, True, gaming.NVIDIA_OFFLOAD, system)
-    gaming.set_enabled(tmp_path, False, None, system)  # disabling leaves someone else's file alone
-    assert user_file.exists()
+        gaming.set_feature(tmp_path, "overlay", True, None, system_entry)
+    with pytest.raises(FileExistsError):
+        gaming.set_feature(tmp_path, "overlay", False, None, system_entry)
+    assert user_file.read_text(encoding="utf-8").startswith("[Desktop Entry]\nName=My Steam")
 
 
-def test_enable_without_hybrid_setup_is_an_error(tmp_path: Path) -> None:
+def test_discrete_gpu_without_hybrid_setup_is_an_error(tmp_path: Path, system_entry: Path) -> None:
     with pytest.raises(ValueError, match="no hybrid"):
-        gaming.set_enabled(tmp_path, True, None)
+        gaming.set_feature(tmp_path, "discrete_gpu", True, None, system_entry)
+    with pytest.raises(ValueError, match="unknown"):
+        gaming.apply_features(tmp_path, {"turbo"}, None, system_entry)
+
+
+def _ppd_runner(active: str = "balanced") -> FakeRunner:
+    runner = FakeRunner()
+    runner.add(["busctl", "get-property", *gaming.PPD, "ActiveProfile"], f's "{active}"\n')
+    profiles = {
+        "type": "aa{sv}",
+        "data": [{"Profile": {"type": "s", "data": p}} for p in ("power-saver", "balanced", "performance")],
+    }
+    runner.add(["busctl", "--json=short", "get-property"], json.dumps(profiles))
+    runner.add(["busctl", "set-property"])
+    runner.add(["kwriteconfig6"])
+    return runner
+
+
+def test_game_mode_on_and_off_restores_previous_state(tmp_path: Path) -> None:
+    runner = _ppd_runner("power-saver")
+    assert all(r.ok for r in gaming.set_game_mode(runner, tmp_path, True))
+    assert gaming.game_mode_active(tmp_path)
+    calls = [list(c) for c in runner.calls]
+    assert ["busctl", "set-property", *gaming.PPD, "ActiveProfile", "s", "performance"] in calls
+    assert any(c[0] == "kwriteconfig6" and gaming.DND_FOREVER in c for c in calls)
+    runner.calls.clear()
+    gaming.set_game_mode(runner, tmp_path, False)
+    calls = [list(c) for c in runner.calls]
+    assert ["busctl", "set-property", *gaming.PPD, "ActiveProfile", "s", "power-saver"] in calls
+    assert any(c[0] == "kwriteconfig6" and "--delete" in c for c in calls)
+    assert not gaming.game_mode_active(tmp_path)
+
+
+def test_game_mode_without_power_profiles_still_silences_notifications(tmp_path: Path) -> None:
+    runner = FakeRunner()
+    runner.add(["kwriteconfig6"])
+    results = gaming.set_game_mode(runner, tmp_path, True)
+    assert [r.argv[0] for r in results] == ["kwriteconfig6"]
+    assert gaming.set_game_mode(runner, tmp_path, True) == []  # already on: no-op
