@@ -1,0 +1,39 @@
+id = "classic-desktop"
+name = "Classic Desktop"
+summary = "Full-width taskbar with window titles and a cascading app menu. Familiar if you're coming from older Windows."
+
+[appearance]
+mode = "light"
+wallpaper = "Tamarack-Ridge"
+font_size = 10
+cursor_size = 24
+animation_duration = 1.0
+blur = true
+titlebar_buttons_left = "M"
+titlebar_buttons_right = "IAX"
+
+[panel]
+location = "bottom"
+thickness = 40
+floating = false
+length_mode = "fill"
+alignment = "left"
+hiding = "none"
+opacity = "opaque"
+launcher = "kicker"
+task_manager = "tasks"
+widgets = ["launcher", "tasks", "tray", "clock", "showdesktop"]
+pins = [
+  "preferred://browser",
+  "preferred://filemanager",
+  "applications:steam.desktop",
+]
+
+[desktop]
+virtual_desktops = 1
+virtual_desktop_rows = 1
+
+[behavior]
+quick_tiling = true
+dnd_when_fullscreen = true
+steam_autostart = false

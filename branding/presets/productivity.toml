@@ -1,0 +1,42 @@
+id = "productivity"
+name = "Productivity"
+summary = "Four virtual desktops with a pager, taskbar labels, and fast animations. Built for juggling many windows."
+
+[appearance]
+mode = "light"
+wallpaper = "Tamarack-Ridge"
+font_size = 10
+cursor_size = 24
+animation_duration = 0.5
+blur = true
+titlebar_buttons_left = ""
+titlebar_buttons_right = "IAX"
+
+[panel]
+location = "bottom"
+thickness = 40
+floating = false
+length_mode = "fill"
+alignment = "left"
+hiding = "none"
+opacity = "adaptive"
+launcher = "kickoff"
+task_manager = "tasks"
+widgets = ["launcher", "pager", "tasks", "tray", "clock", "showdesktop"]
+pins = [
+  "preferred://browser",
+  "preferred://filemanager",
+  "applications:org.kde.konsole.desktop",
+  "applications:org.kde.kate.desktop",
+  "applications:org.libreoffice.LibreOffice.desktop",
+  "applications:org.mozilla.Thunderbird.desktop",
+]
+
+[desktop]
+virtual_desktops = 4
+virtual_desktop_rows = 2
+
+[behavior]
+quick_tiling = true
+dnd_when_fullscreen = true
+steam_autostart = false

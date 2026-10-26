@@ -1,0 +1,31 @@
+#!/usr/bin/python3 -I
+"""Restore Plasma's "Default Panel" template after Bazzite appended its pins.
+
+Bazzite appends bazzite-pins.js (which pins its welcome app) to the end of
+the default panel layout template. Tamarack has its own pins, so this
+removes everything from the appended block onward. Usage: strip-bazzite-pins FILE
+"""
+
+import sys
+from pathlib import Path
+
+MARKER = "const allPanels = panels();"
+
+
+def main() -> int:
+    if len(sys.argv) != 2:
+        print(__doc__, file=sys.stderr)
+        return 2
+    path = Path(sys.argv[1])
+    text = path.read_text(encoding="utf-8")
+    index = text.find(MARKER)
+    if index == -1:
+        print(f"{path}: no Bazzite pins block found, leaving unchanged")
+        return 0
+    path.write_text(text[:index].rstrip() + "\n", encoding="utf-8")
+    print(f"{path}: removed appended Bazzite pins block")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

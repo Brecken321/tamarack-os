@@ -1,0 +1,38 @@
+id = "high-contrast"
+name = "High Contrast"
+summary = "Black and white with yellow highlights, larger text and cursor, no animations or transparency."
+
+[appearance]
+mode = "high-contrast"
+wallpaper = "Tamarack-Dusk"
+font_size = 12
+cursor_size = 36
+animation_duration = 0.0
+blur = false
+titlebar_buttons_left = ""
+titlebar_buttons_right = "IAX"
+
+[panel]
+location = "bottom"
+thickness = 52
+floating = false
+length_mode = "fill"
+alignment = "left"
+hiding = "none"
+opacity = "opaque"
+launcher = "kickoff"
+task_manager = "tasks"
+widgets = ["launcher", "tasks", "tray", "clock", "showdesktop"]
+pins = [
+  "preferred://browser",
+  "preferred://filemanager",
+]
+
+[desktop]
+virtual_desktops = 1
+virtual_desktop_rows = 1
+
+[behavior]
+quick_tiling = true
+dnd_when_fullscreen = true
+steam_autostart = false

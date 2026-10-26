@@ -1,0 +1,73 @@
+# Optional app bundles offered in Tamarack Welcome and Tamarack Center.
+# Every id must exist on Flathub; CI checks this (tests/test_bundles.py
+# offline schema checks, tests/network/check_flathub_ids.py online).
+# Nothing here is installed unless the user picks it.
+
+[[bundle]]
+id = "gaming"
+name = "Gaming extras"
+description = "Manage Proton versions, run Epic/GOG games and Windows apps, tune the performance overlay."
+apps = [
+  "com.vysp3r.ProtonPlus",
+  "com.github.Matoking.protontricks",
+  "com.heroicgameslauncher.hgl",
+  "com.usebottles.bottles",
+  "io.github.radiolamp.mangojuice",
+  "org.prismlauncher.PrismLauncher",
+]
+
+[[bundle]]
+id = "communication"
+name = "Communication"
+description = "Chat, voice and email."
+apps = ["com.discordapp.Discord", "org.signal.Signal", "org.mozilla.Thunderbird"]
+
+[[bundle]]
+id = "office"
+name = "Office and productivity"
+description = "Documents, spreadsheets, presentations and a password manager."
+apps = ["org.libreoffice.LibreOffice", "org.keepassxc.KeePassXC"]
+
+[[bundle]]
+id = "creator"
+name = "Creator and streaming"
+description = "Streaming and recording, video editing, painting, photo editing, audio and 3D."
+apps = [
+  "com.obsproject.Studio",
+  "org.kde.kdenlive",
+  "org.kde.krita",
+  "org.gimp.GIMP",
+  "org.audacityteam.Audacity",
+  "org.blender.Blender",
+]
+
+[[bundle]]
+id = "media"
+name = "Music and video"
+description = "A music library player, a do-everything video player and audio effects for headsets."
+apps = ["org.kde.elisa", "org.videolan.VLC", "com.github.wwmm.easyeffects"]
+
+[[bundle]]
+id = "browsers"
+name = "Other web browsers"
+description = "Firefox is installed by default. Add another browser if you need one."
+apps = ["org.chromium.Chromium", "com.brave.Browser", "com.google.Chrome"]
+
+[[bundle]]
+id = "development"
+name = "Development"
+description = "Code editors, container tools and a GUI for distrobox Linux containers."
+apps = ["com.visualstudio.code", "org.kde.kate", "io.podman_desktop.PodmanDesktop", "com.ranfdev.DistroShelf"]
+
+[[bundle]]
+id = "utilities"
+name = "Backup and utilities"
+description = "Scheduled encrypted backups, disk usage, cloud sync, app permissions and USB image writing."
+apps = [
+  "org.gnome.DejaDup",
+  "org.kde.filelight",
+  "com.nextcloud.desktopclient.nextcloud",
+  "com.github.tchx84.Flatseal",
+  "io.github.flattool.Warehouse",
+  "org.fedoraproject.MediaWriter",
+]

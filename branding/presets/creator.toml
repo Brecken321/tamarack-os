@@ -1,0 +1,43 @@
+id = "creator"
+name = "Creator"
+summary = "Vertical side panel to keep screen height for timelines and canvases, an app-grid launcher, and a neutral dark theme."
+
+[appearance]
+mode = "dark"
+wallpaper = "Tamarack-Mist"
+font_size = 10
+cursor_size = 24
+animation_duration = 1.0
+blur = true
+titlebar_buttons_left = ""
+titlebar_buttons_right = "IAX"
+
+[panel]
+location = "left"
+thickness = 56
+floating = true
+length_mode = "fill"
+alignment = "center"
+hiding = "none"
+opacity = "adaptive"
+launcher = "kickerdash"
+task_manager = "icontasks"
+widgets = ["launcher", "tasks", "spacer", "tray", "clock"]
+pins = [
+  "preferred://filemanager",
+  "preferred://browser",
+  "applications:org.kde.krita.desktop",
+  "applications:org.gimp.GIMP.desktop",
+  "applications:org.kde.kdenlive.desktop",
+  "applications:com.obsproject.Studio.desktop",
+  "applications:org.blender.Blender.desktop",
+]
+
+[desktop]
+virtual_desktops = 2
+virtual_desktop_rows = 1
+
+[behavior]
+quick_tiling = true
+dnd_when_fullscreen = true
+steam_autostart = false

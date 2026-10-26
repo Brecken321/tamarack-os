@@ -1,0 +1,38 @@
+id = "minimalist"
+name = "Minimalist"
+summary = "A compact dock that moves out of the way of windows, quicker animations, fewer distractions."
+
+[appearance]
+mode = "auto"
+wallpaper = "Tamarack-Mist"
+font_size = 10
+cursor_size = 24
+animation_duration = 0.5
+blur = true
+titlebar_buttons_left = ""
+titlebar_buttons_right = "X"
+
+[panel]
+location = "bottom"
+thickness = 40
+floating = true
+length_mode = "fit"
+alignment = "center"
+hiding = "dodgewindows"
+opacity = "translucent"
+launcher = "kickerdash"
+task_manager = "icontasks"
+widgets = ["launcher", "tasks", "tray", "clock"]
+pins = [
+  "preferred://browser",
+  "preferred://filemanager",
+]
+
+[desktop]
+virtual_desktops = 1
+virtual_desktop_rows = 1
+
+[behavior]
+quick_tiling = true
+dnd_when_fullscreen = true
+steam_autostart = false

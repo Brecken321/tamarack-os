@@ -1,0 +1,30 @@
+# Signing material must never be committed (only cosign.pub belongs in git)
+cosign.key
+*.key
+
+# Build outputs
+_build_*
+_build-*/**
+output/
+out/
+*_chunkah_*
+*_rpm-ostree_*
+previous.manifest.json
+changelog.md
+output.env
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+*.egg-info/
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+.claude/

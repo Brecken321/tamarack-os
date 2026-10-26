@@ -1,0 +1,44 @@
+# Preset schema: see docs/PRESETS.md. Every key here maps to a real KDE
+# setting; tamarack_branding/presets.py validates the file at build time.
+id = "clean-modern"
+name = "Clean Modern"
+summary = "Floating taskbar with centered apps. Switches between light and dark with the time of day."
+default = true
+
+[appearance]
+mode = "auto"
+wallpaper = "Tamarack-Ridge"
+font_size = 10
+cursor_size = 24
+animation_duration = 1.0
+blur = true
+titlebar_buttons_left = ""
+titlebar_buttons_right = "IAX"
+
+[panel]
+location = "bottom"
+thickness = 44
+floating = true
+length_mode = "fill"
+alignment = "center"
+hiding = "none"
+opacity = "adaptive"
+launcher = "kickoff"
+task_manager = "icontasks"
+widgets = ["launcher", "spacer", "tasks", "spacer", "tray", "clock", "showdesktop"]
+pins = [
+  "preferred://browser",
+  "preferred://filemanager",
+  "applications:steam.desktop",
+  "applications:io.github.kolunmi.Bazaar.desktop",
+  "applications:io.github.brecken321.tamarack.Center.desktop",
+]
+
+[desktop]
+virtual_desktops = 1
+virtual_desktop_rows = 1
+
+[behavior]
+quick_tiling = true
+dnd_when_fullscreen = true
+steam_autostart = false

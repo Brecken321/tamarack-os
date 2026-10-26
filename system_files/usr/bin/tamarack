@@ -1,0 +1,10 @@
+#!/usr/bin/python3 -I
+"""Tamarack OS command-line tool. Run `tamarack --help`."""
+
+import sys
+
+sys.path.insert(0, "/usr/lib/tamarack/python")
+
+from tamarack.cli import main  # noqa: E402
+
+sys.exit(main())

@@ -1,0 +1,10 @@
+#!/usr/bin/python3 -I
+"""Tamarack Center: presets, privacy, hardware, games and updates."""
+
+import sys
+
+sys.path.insert(0, "/usr/lib/tamarack/python")
+
+from tamarack.ui.app import main  # noqa: E402
+
+sys.exit(main(sys.argv))

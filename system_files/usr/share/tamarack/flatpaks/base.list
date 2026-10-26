@@ -1,0 +1,12 @@
+# Flatpak apps installed once on first boot by tamarack-flatpak-setup.service.
+# Kept deliberately small: a browser and basic viewers. Everything else is
+# optional (bundles.toml, Tamarack Welcome, or the Bazaar app store).
+#
+# An app is installed at most once: if you remove it, it is never
+# reinstalled (see /var/lib/tamarack/flatpak-setup.record).
+org.mozilla.firefox
+org.kde.gwenview
+org.kde.okular
+org.kde.haruna
+org.kde.kcalc
+org.kde.ark

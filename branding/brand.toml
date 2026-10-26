@@ -1,0 +1,66 @@
+# Tamarack OS central branding and identity configuration.
+#
+# Every user-visible name, URL, color and artwork choice is derived from this
+# file at build time (see branding/tamarack_branding/). To rebrand the OS,
+# change values here and rebuild; nothing else should hardcode the product
+# name, palette or URLs.
+
+[product]
+name = "Tamarack OS"
+short_name = "Tamarack"
+# os-release ID: lowercase letters, digits and "._-" only.
+id = "tamarack"
+# Reverse-DNS prefix used for desktop files, look-and-feel packages, etc.
+reverse_dns = "io.github.brecken321.tamarack"
+tagline = "Your PC, your rules. No ads, ready to play."
+vendor = "Tamarack OS contributors"
+home_url = "https://github.com/brecken321/tamarack-os"
+documentation_url = "https://github.com/brecken321/tamarack-os/tree/main/docs"
+support_url = "https://github.com/brecken321/tamarack-os/blob/main/docs/TROUBLESHOOTING.md"
+bug_report_url = "https://github.com/brecken321/tamarack-os/issues"
+# Shown in "About" screens. Required attribution; Tamarack OS is not an
+# official Bazzite, Universal Blue, Fedora, Valve or Microsoft product.
+based_on = "Built on Bazzite and Universal Blue, which are based on Fedora Linux"
+default_hostname = "tamarack"
+
+[image]
+registry = "ghcr.io/brecken321"
+# Image names per hardware variant. Keep in sync with .github/workflows/build.yml
+main = "tamarack-os"
+nvidia = "tamarack-os-nvidia"
+default_tag = "stable"
+
+[palette]
+# Tamarack (larch) green: primary accent.
+accent = "#2E8B62"
+# Larch needles turn gold in autumn: secondary accent / highlights.
+amber = "#E3A33B"
+# Dark theme neutrals (slightly cool, green-tinted charcoal).
+dark_window = "#1C2123"
+dark_view = "#15191B"
+dark_alt = "#232A2D"
+dark_header = "#20272A"
+dark_text = "#E7ECEA"
+dark_text_muted = "#9CA8A4"
+# Light theme neutrals (warm paper tones).
+light_window = "#EFEEE9"
+light_view = "#FBFBF8"
+light_alt = "#E5E4DE"
+light_header = "#E7E6E0"
+light_text = "#1B2220"
+light_text_muted = "#5D6865"
+# Semantic colors.
+positive = "#3FA36B"
+neutral = "#E39A2C"
+negative = "#D9534F"
+link = "#3E9BD6"
+visited = "#9B6CC2"
+
+[art]
+# Wallpaper packages generated into /usr/share/wallpapers/<Name>/.
+# The first entry is the default desktop and lock-screen wallpaper.
+wallpapers = ["Tamarack-Ridge", "Tamarack-Dusk", "Tamarack-Mist"]
+# Rendered sizes for every wallpaper (width x height).
+sizes = ["1920x1080", "2560x1440", "3840x2160", "1920x1200", "2560x1600", "3440x1440"]
+# Deterministic seed so that rebuilding produces identical artwork.
+seed = 1749

@@ -1,0 +1,42 @@
+id = "gaming"
+name = "Gaming"
+summary = "Dark theme and snappy animations. Blur is off to save GPU time, notifications stay quiet during fullscreen games, and Steam starts at login."
+
+[appearance]
+mode = "dark"
+wallpaper = "Tamarack-Dusk"
+font_size = 10
+cursor_size = 24
+animation_duration = 0.5
+blur = false
+titlebar_buttons_left = ""
+titlebar_buttons_right = "IAX"
+
+[panel]
+location = "bottom"
+thickness = 46
+floating = true
+length_mode = "fill"
+alignment = "center"
+hiding = "none"
+opacity = "adaptive"
+launcher = "kickoff"
+task_manager = "icontasks"
+widgets = ["launcher", "spacer", "tasks", "spacer", "tray", "clock", "showdesktop"]
+pins = [
+  "applications:steam.desktop",
+  "applications:net.lutris.Lutris.desktop",
+  "applications:com.heroicgameslauncher.hgl.desktop",
+  "preferred://browser",
+  "preferred://filemanager",
+  "applications:io.github.brecken321.tamarack.Center.desktop",
+]
+
+[desktop]
+virtual_desktops = 1
+virtual_desktop_rows = 1
+
+[behavior]
+quick_tiling = true
+dnd_when_fullscreen = true
+steam_autostart = true

@@ -1,0 +1,70 @@
+#!/usr/bin/bash
+# First-boot installer for Tamarack's base Flatpak apps.
+#
+# - Installs each app in /usr/share/tamarack/flatpaks/base.list once.
+# - Never reinstalls an app the user removed: every app this script has
+#   handled is recorded in /var/lib/tamarack/flatpak-setup.record.
+# - Writes progress to /var/lib/tamarack/flatpak-setup.status (JSON) so
+#   Tamarack Welcome can show what is happening.
+# - Exits non-zero on network/remote errors; systemd retries later.
+set -euo pipefail
+
+LIST=/usr/share/tamarack/flatpaks/base.list
+STATE_DIR=/var/lib/tamarack
+RECORD="${STATE_DIR}/flatpak-setup.record"
+STATUS="${STATE_DIR}/flatpak-setup.status"
+REMOTE=flathub
+
+install -d -m 0755 "${STATE_DIR}"
+touch "${RECORD}"
+
+status() {
+    # status STATE MESSAGE [CURRENT_APP]
+    jq -n --arg state "$1" --arg message "$2" --arg app "${3:-}" \
+        --arg time "$(date --iso-8601=seconds)" \
+        '{state: $state, message: $message, app: $app, updated: $time}' >"${STATUS}.tmp"
+    mv "${STATUS}.tmp" "${STATUS}"
+    echo "[flatpak-setup] $1: $2${3:+ ($3)}"
+}
+
+mapfile -t wanted < <(grep -vE '^[[:space:]]*(#|$)' "${LIST}")
+pending=()
+for app in "${wanted[@]}"; do
+    if grep -qxF "${app}" "${RECORD}"; then
+        continue
+    fi
+    if flatpak info --system "${app}" >/dev/null 2>&1; then
+        echo "${app}" >>"${RECORD}"
+        continue
+    fi
+    pending+=("${app}")
+done
+
+if [[ ${#pending[@]} -eq 0 ]]; then
+    status done "All default apps are set up."
+    exit 0
+fi
+
+if ! flatpak remotes --system --columns=name | grep -qx "${REMOTE}"; then
+    flatpak remote-add --system --if-not-exists "${REMOTE}" /etc/flatpak/remotes.d/flathub.flatpakrepo
+fi
+
+failed=0
+total=${#pending[@]}
+index=0
+for app in "${pending[@]}"; do
+    index=$((index + 1))
+    status installing "Installing default app ${index} of ${total}" "${app}"
+    if flatpak install --system --noninteractive --or-update "${REMOTE}" "${app}"; then
+        echo "${app}" >>"${RECORD}"
+    else
+        failed=$((failed + 1))
+        echo "[flatpak-setup] failed to install ${app}; will retry later" >&2
+    fi
+done
+
+if [[ ${failed} -gt 0 ]]; then
+    status retrying "${failed} app(s) could not be installed yet (no internet?). Retrying in a few minutes."
+    exit 1
+fi
+status done "All default apps are set up."

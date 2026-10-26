@@ -1,0 +1,179 @@
+# What Tamarack OS (and the software it is built on) talks to over the
+# network, and why. Shown in Tamarack Center > Privacy and docs/PRIVACY.md.
+# Keep entries factual; "optional = true" means it can be turned off
+# without breaking the system.
+
+[[network]]
+id = "os-updates"
+name = "System updates"
+who = "GitHub Container Registry (ghcr.io)"
+what = "Downloads new versions of the OS image. GitHub sees your IP address and which image you download."
+why = "Security fixes and new features."
+optional = true
+control = "Tamarack Center > Updates (automatic updates on/off)"
+
+[[network]]
+id = "flatpak"
+name = "App downloads and updates"
+who = "Flathub (flathub.org, dl.flathub.org)"
+what = "Downloads apps you install and their updates. Flathub counts downloads per app; no account is involved."
+why = "Installing and updating apps."
+optional = true
+control = "Only happens when apps are installed or updated"
+
+[[network]]
+id = "countme"
+name = "Fedora install counting (countme)"
+who = "Fedora Project mirror network"
+what = "A weekly request that includes your OS version and a rough 'age' bucket. There is no unique ID. It helps Fedora estimate how many systems exist."
+why = "Optional statistics for the Fedora Project."
+optional = true
+default = "off"
+control = "Tamarack Center > Privacy (off by default)"
+
+[[network]]
+id = "connectivity"
+name = "Internet connectivity check"
+who = "fedoraproject.org"
+what = "NetworkManager periodically fetches a small static file to detect captive portals (hotel/airport Wi-Fi login pages)."
+why = "Shows a sign-in prompt on captive Wi-Fi networks."
+optional = true
+default = "on"
+control = "Tamarack Center > Privacy"
+
+[[network]]
+id = "time"
+name = "Time synchronization"
+who = "Public NTP servers (pool.ntp.org / Fedora pool)"
+what = "Asks time servers for the current time."
+why = "Correct clocks are required for secure connections (HTTPS certificates)."
+optional = false
+
+[[network]]
+id = "firmware"
+name = "Firmware update metadata"
+who = "Linux Vendor Firmware Service (fwupd.org)"
+what = "Downloads the list of available device firmware updates when you check for them."
+why = "Firmware security and bug fixes for supported devices."
+optional = true
+control = "System Settings > Firmware or `fwupdmgr`"
+
+[[network]]
+id = "store"
+name = "App store browsing"
+who = "Flathub API"
+what = "The Bazaar app store and its launcher search integration download the Flathub app catalog. Searches run against that local catalog."
+why = "Find and install apps."
+optional = true
+control = "Tamarack Center > Privacy (store results in launcher search)"
+
+[[network]]
+id = "steam"
+name = "Steam"
+who = "Valve"
+what = "Only when you open Steam: sign-in, game downloads, cloud saves and Steam's own optional hardware survey (it asks first)."
+why = "Your Steam library."
+optional = true
+control = "Steam > Settings"
+
+[[network]]
+id = "firefox"
+name = "Firefox"
+who = "Mozilla"
+what = "Safe Browsing lists, add-on and certificate updates. Tamarack turns off sponsored content, telemetry and studies by default."
+why = "Browser security."
+optional = true
+control = "Firefox > Settings > Privacy & Security"
+
+# Services whose purpose users commonly ask about. Unknown enabled services
+# are still listed in Tamarack Center, with their systemd description.
+[[service]]
+unit = "uupd.timer"
+name = "Automatic updates"
+purpose = "Checks for and stages OS, Flatpak and container updates in the background. Updates apply at your next restart; the system never restarts on its own."
+network = true
+safe_to_disable = true
+
+[[service]]
+unit = "tamarack-flatpak-setup.service"
+name = "Default app setup"
+purpose = "Installs the small set of default apps once, after the first boot. Never reinstalls apps you remove."
+network = true
+safe_to_disable = true
+
+[[service]]
+unit = "bazzite-flatpak-manager.service"
+name = "Flatpak configuration"
+purpose = "Configures Flathub and app theming/permission tweaks after updates."
+network = false
+safe_to_disable = false
+
+[[service]]
+unit = "firewalld.service"
+name = "Firewall"
+purpose = "Blocks unsolicited incoming connections."
+network = false
+safe_to_disable = false
+
+[[service]]
+unit = "NetworkManager.service"
+name = "Networking"
+purpose = "Wired, Wi-Fi and VPN connections."
+network = true
+safe_to_disable = false
+
+[[service]]
+unit = "bluetooth.service"
+name = "Bluetooth"
+purpose = "Bluetooth devices such as headsets and controllers."
+network = false
+safe_to_disable = true
+
+[[service]]
+unit = "cups.socket"
+name = "Printing"
+purpose = "Print queues. Starts only when something prints."
+network = true
+safe_to_disable = true
+
+[[service]]
+unit = "sshd.service"
+name = "Remote login (SSH)"
+purpose = "Lets other computers log in over the network. Off by default; only enable it if you need it."
+network = true
+safe_to_disable = true
+
+[[service]]
+unit = "rpm-ostree-countme.timer"
+name = "Fedora install counting"
+purpose = "Optional weekly anonymous ping (see countme above). Off by default."
+network = true
+safe_to_disable = true
+
+[[service]]
+unit = "fwupd-refresh.timer"
+name = "Firmware update check"
+purpose = "Refreshes the firmware update list from fwupd.org."
+network = true
+safe_to_disable = true
+
+[[service]]
+unit = "chronyd.service"
+name = "Time synchronization"
+purpose = "Keeps the clock correct (needed for secure connections)."
+network = true
+safe_to_disable = false
+
+[[service]]
+unit = "input-remapper.service"
+name = "Input Remapper"
+purpose = "Remaps keys and mouse/controller buttons when configured."
+network = false
+safe_to_disable = true
+
+[[service]]
+unit = "tailscaled.service"
+name = "Tailscale VPN"
+purpose = "Mesh VPN; only runs if you enable and sign in to Tailscale."
+network = true
+safe_to_disable = true

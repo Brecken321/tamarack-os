@@ -1,0 +1,20 @@
+[Unit]
+Description=Install Tamarack OS default apps (Flatpak, first boot)
+Documentation=https://github.com/brecken321/tamarack-os/blob/main/docs/PRIVACY.md
+Wants=network-online.target
+After=network-online.target bazzite-flatpak-manager.service
+# Nothing to do on later boots once every listed app was handled.
+ConditionPathExists=/usr/share/tamarack/flatpaks/base.list
+StartLimitIntervalSec=0
+
+[Service]
+Type=oneshot
+ExecStart=/usr/libexec/tamarack/flatpak-setup
+# Retry until it succeeds (e.g. first boot without internet).
+Restart=on-failure
+RestartSec=5min
+Nice=10
+IOSchedulingClass=idle
+
+[Install]
+WantedBy=multi-user.target

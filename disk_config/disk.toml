@@ -1,0 +1,4 @@
+# bootc-image-builder config for qcow2/raw VM disk images.
+[[customizations.filesystem]]
+mountpoint = "/"
+minsize = "40 GiB"
