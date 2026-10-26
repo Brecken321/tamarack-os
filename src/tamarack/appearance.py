@@ -45,6 +45,7 @@ APPEARANCE_FILES = (
     "ksplashrc",
 )
 MAX_BACKUPS = 10
+STEAM_DESKTOP = Path("/usr/share/applications/steam.desktop")
 EXPORT_FORMAT = "tamarack-desktop-preset"
 
 
@@ -231,10 +232,9 @@ def _set_steam_autostart(paths: Paths, enabled: bool) -> None:
     if not enabled:
         target.unlink(missing_ok=True)
         return
-    source = Path("/usr/share/applications/steam.desktop")
-    if not source.exists():
+    if not STEAM_DESKTOP.exists():
         return
-    text = source.read_text(encoding="utf-8")
+    text = STEAM_DESKTOP.read_text(encoding="utf-8")
     # Start minimized to the tray, like Steam's own "run at startup" option.
     text = re.sub(
         r"^Exec=(\S+)(.*)$", lambda m: f"Exec={m.group(1)} -silent{m.group(2)}", text, count=1, flags=re.MULTILINE

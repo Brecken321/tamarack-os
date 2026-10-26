@@ -24,8 +24,8 @@ test:
 # Lint Python, shell scripts and the Justfile
 [group('Check')]
 lint:
-    python3 -m ruff check src branding tests
-    python3 -m ruff format --check src branding tests
+    ruff check src branding tests
+    ruff format --check src branding tests
     PYTHONPATH=src:branding python3 -m mypy src/tamarack branding/tamarack_branding
     find build_files system_files tests -type f \( -name '*.sh' -o -path '*/libexec/tamarack/*' \) \
         -exec grep -lE '^#!.*(bash|sh)' {} + | xargs shellcheck --external-sources

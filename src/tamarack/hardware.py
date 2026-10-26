@@ -234,7 +234,6 @@ def gpu_items(
     gpus = [d for d in devices if d.class_code in GPU_CLASSES]
     if not gpus:
         report.add("Graphics", "No graphics card detected", MISSING, "lspci reported no display controller.")
-        return
     vendors = {g.vendor for g in gpus}
     for gpu in gpus:
         driver = gpu.driver or ""

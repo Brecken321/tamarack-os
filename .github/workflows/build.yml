@@ -61,7 +61,7 @@ jobs:
 
   build:
     name: Build ${{ matrix.flavor }} image
-    # TEMPORARY: runs in parallel with checks until the UI and test suite land.
+    needs: checks
     runs-on: ubuntu-26.04
     permissions:
       contents: read

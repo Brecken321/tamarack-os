@@ -7,6 +7,7 @@ results are checked against WCAG contrast targets in the test suite.
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
 
 from tamarack.brand import Brand
@@ -137,13 +138,14 @@ class Scheme:
         return "\n".join(sections) + "\n"
 
 
-def ensure_contrast(color: RGB, against: RGB, minimum: float, towards: RGB) -> RGB:
-    """Blend ``color`` towards ``towards`` until it reaches ``minimum`` contrast."""
+def ensure_contrast(color: RGB, against: RGB | Sequence[RGB], minimum: float, towards: RGB) -> RGB:
+    """Blend ``color`` towards ``towards`` until it reaches ``minimum`` contrast on every background."""
+    backgrounds = [against] if isinstance(against, RGB) else list(against)
     for step in range(0, 101):
         candidate = color.mix(towards, step / 100)
-        if contrast_ratio(candidate, against) >= minimum:
+        if all(contrast_ratio(candidate, bg) >= minimum for bg in backgrounds):
             return candidate
-    raise ValueError(f"cannot reach contrast {minimum} for {color.hex} on {against.hex}")
+    raise ValueError(f"cannot reach contrast {minimum} for {color.hex} on {[b.hex for b in backgrounds]}")
 
 
 def selection_background(accent: RGB) -> RGB:
@@ -155,7 +157,7 @@ def selection_background(accent: RGB) -> RGB:
     return ensure_contrast(accent, text, 4.5, towards)
 
 
-def _semantic(brand: Brand, against: RGB, towards: RGB) -> dict[str, RGB]:
+def _semantic(brand: Brand, against: RGB | Sequence[RGB], towards: RGB) -> dict[str, RGB]:
     return {
         name: ensure_contrast(brand.color(name), against, 4.5, towards)
         for name in ("link", "visited", "negative", "neutral", "positive")
@@ -189,13 +191,15 @@ def _scheme(brand: Brand, dark: bool) -> Scheme:
     muted = brand.color(f"{prefix}_text_muted")
     accent = brand.color("accent")
     towards = WHITE if dark else BLACK
-    sem = _semantic(brand, view, towards)
-    active = ensure_contrast(accent, view, 4.5, towards)
-    focus = ensure_contrast(accent, window, 3.0, towards)
+    button_bg = window.mix(towards, 0.06)
+    # Text colors appear on every one of these backgrounds.
+    backgrounds = [window, view, alt, header, button_bg, view.mix(alt, 0.5)]
+    sem = _semantic(brand, backgrounds, towards)
+    active = ensure_contrast(accent, backgrounds, 4.5, towards)
+    focus = ensure_contrast(accent, [window, view, button_bg], 3.0, towards)
     sel_bg = selection_background(accent)
     sel_fg = best_text_on(sel_bg)
     sel_sem = {k: best_text_on(sel_bg) for k in sem}
-    button_bg = window.mix(towards, 0.06)
 
     def std(bg: RGB, bg_alt: RGB) -> ColorSet:
         return _set(bg, bg_alt, text, muted, active, sem, focus)

@@ -18,4 +18,4 @@ rm -rf /tmp/* /var/tmp/* || true
 find /var/* -maxdepth 0 -type d \! -name cache -exec rm -rf {} \;
 mkdir -p /var/tmp
 chmod 1777 /var/tmp
-rm -rf /boot/* /boot/.* 2>/dev/null || true
+find /boot -mindepth 1 -maxdepth 1 -exec rm -rf {} +

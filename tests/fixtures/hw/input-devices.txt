@@ -1,0 +1,26 @@
+I: Bus=0011 Vendor=0001 Product=0001 Version=ab83
+N: Name="AT Translated Set 2 keyboard"
+P: Phys=isa0060/serio0/input0
+H: Handlers=sysrq kbd leds event3
+B: EV=120013
+
+I: Bus=0018 Vendor=04f3 Product=3101 Version=0100
+N: Name="ELAN1201:00 04F3:3101 Touchpad"
+H: Handlers=mouse0 event7
+B: EV=1b
+
+I: Bus=0003 Vendor=045e Product=0b12 Version=0511
+N: Name="Microsoft Xbox Series S|X Controller"
+P: Phys=usb-0000:00:14.0-1/input0
+H: Handlers=event20 js0
+B: EV=20000b
+
+I: Bus=0005 Vendor=054c Product=0ce6 Version=8100
+N: Name="DualSense Wireless Controller Motion Sensors"
+H: Handlers=event22
+B: EV=19
+
+I: Bus=0003 Vendor=046d Product=c24f Version=0111
+N: Name="Logitech G29 Driving Force Racing Wheel"
+H: Handlers=event23 js1
+B: EV=1b

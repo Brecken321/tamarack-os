@@ -1,4 +1,6 @@
 #!/usr/bin/bash
+# Single-quoted jq programs and bash -c snippets are intentional here.
+# shellcheck disable=SC2016
 # Content checks for a built Tamarack OS image. Runs *inside* the image:
 #   podman run --rm --network=none -v ./tests/image:/tests:ro IMAGE bash /tests/check-image.sh FLAVOR
 # Every check prints PASS/FAIL; the script exits non-zero if any check failed.

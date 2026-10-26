@@ -41,7 +41,7 @@ for app in "${wanted[@]}"; do
 done
 
 if [[ ${#pending[@]} -eq 0 ]]; then
-    status done "All default apps are set up."
+    status "done" "All default apps are set up."
     exit 0
 fi
 
@@ -67,4 +67,4 @@ if [[ ${failed} -gt 0 ]]; then
     status retrying "${failed} app(s) could not be installed yet (no internet?). Retrying in a few minutes."
     exit 1
 fi
-status done "All default apps are set up."
+status "done" "All default apps are set up."

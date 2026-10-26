@@ -1,0 +1,63 @@
+from pathlib import Path
+
+import pytest
+
+from tamarack import apps
+from tamarack.system import FakeRunner
+
+ROOT = Path(__file__).resolve().parents[1]
+BUNDLES = ROOT / "system_files/usr/share/tamarack/flatpaks/bundles.toml"
+BASE_LIST = ROOT / "system_files/usr/share/tamarack/flatpaks/base.list"
+
+
+def test_shipped_bundles_are_valid() -> None:
+    bundles = apps.load_bundles(BUNDLES)
+    ids = [b.id for b in bundles]
+    assert {"gaming", "communication", "office", "creator", "media", "browsers", "development", "utilities"} <= set(ids)
+    all_apps = [a for b in bundles for a in b.apps]
+    assert len(all_apps) == len(set(all_apps)), "an app appears in two bundles"
+    # Steam and Lutris are system packages; Bazzite blocks their Flatpaks.
+    assert "com.valvesoftware.Steam" not in all_apps and "net.lutris.Lutris" not in all_apps
+
+
+def test_base_list_is_small_and_valid() -> None:
+    entries = [
+        line.strip()
+        for line in BASE_LIST.read_text(encoding="utf-8").splitlines()
+        if line.strip() and not line.startswith("#")
+    ]
+    assert entries[0] == "org.mozilla.firefox"
+    assert len(entries) <= 8, "the default install must stay minimal"
+    for entry in entries:
+        assert apps._APP_ID.match(entry), entry
+
+
+@pytest.mark.parametrize("bad", ["firefox", "org.mozilla", "org.mozilla.firefox; rm -rf /", "-org.x.y"])
+def test_install_rejects_invalid_ids(bad: str) -> None:
+    with pytest.raises(ValueError):
+        apps.install(FakeRunner(), [bad])
+
+
+def test_bundle_state_and_install_command() -> None:
+    runner = FakeRunner()
+    runner.add(["flatpak", "list"], "org.libreoffice.LibreOffice\n")
+    runner.add(["flatpak", "install"])
+    state = {b["id"]: b for b in apps.bundles_with_state(runner, BUNDLES)}
+    assert state["office"]["installed_count"] == 1
+    apps.install(runner, ["org.keepassxc.KeePassXC"])
+    assert list(runner.calls[-1]) == [
+        "flatpak",
+        "install",
+        "--system",
+        "--noninteractive",
+        "--or-update",
+        "flathub",
+        "org.keepassxc.KeePassXC",
+    ]
+
+
+def test_parse_rejects_bad_bundles() -> None:
+    with pytest.raises(ValueError, match="duplicate"):
+        apps.parse_bundles({"bundle": [{"id": "a", "apps": ["org.a.b"]}, {"id": "a", "apps": ["org.c.d"]}]})
+    with pytest.raises(ValueError, match="non-empty"):
+        apps.parse_bundles({"bundle": [{"id": "a", "apps": []}]})

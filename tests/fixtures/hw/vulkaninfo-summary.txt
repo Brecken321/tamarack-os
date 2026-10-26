@@ -1,0 +1,35 @@
+==========
+VULKANINFO
+==========
+
+Vulkan Instance Version: 1.4.309
+
+
+Instance Extensions: count = 24
+-------------------------------
+VK_EXT_debug_report                    : extension revision 10
+
+Devices:
+========
+GPU0:
+	apiVersion         = 1.4.305
+	driverVersion      = 25.1.4
+	vendorID           = 0x8086
+	deviceID           = 0x9bc4
+	deviceType         = PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU
+	deviceName         = Intel(R) UHD Graphics (CML GT2)
+	driverID           = DRIVER_ID_INTEL_OPEN_SOURCE_MESA
+	driverName         = Intel open-source Mesa driver
+	driverInfo         = Mesa 25.1.4
+	conformanceVersion = 1.4.0.0
+GPU1:
+	apiVersion         = 1.4.303
+	driverVersion      = 580.95.5.0
+	vendorID           = 0x10de
+	deviceID           = 0x1f95
+	deviceType         = PHYSICAL_DEVICE_TYPE_DISCRETE_GPU
+	deviceName         = NVIDIA GeForce GTX 1650 Ti
+	driverID           = DRIVER_ID_NVIDIA_PROPRIETARY
+	driverName         = NVIDIA
+	driverInfo         = 580.95.05
+	conformanceVersion = 1.4.1.0

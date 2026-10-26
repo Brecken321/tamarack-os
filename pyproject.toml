@@ -29,3 +29,11 @@ ignore_missing_imports = true
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src", "branding"]
+
+# Qt's decorators (Slot/Property) are untyped in some PySide6 builds.
+[[tool.mypy.overrides]]
+module = ["tamarack.ui.*"]
+disallow_untyped_decorators = false
+disallow_subclassing_any = false
+warn_return_any = false
+warn_unused_ignores = false
