@@ -205,6 +205,13 @@ Kirigami.Page {
                             }
                         }
                     }
+                    Controls.SwitchDelegate {
+                        Layout.fillWidth: true
+                        visible: backend.hybridGraphics
+                        text: qsTr("Run Steam and its games on the discrete GPU (uses more battery)")
+                        checked: backend.steamOnDiscreteGpu
+                        onToggled: backend.setSteamOnDiscreteGpu(checked)
+                    }
                     Controls.CheckDelegate {
                         Layout.fillWidth: true
                         text: qsTr("Also install Proton tools and other game launchers (Heroic for Epic/GOG, Bottles)")

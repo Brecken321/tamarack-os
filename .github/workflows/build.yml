@@ -54,7 +54,7 @@ jobs:
           for js in output/branding/usr/share/plasma/look-and-feel/*/contents/layouts/*.js; do
             node --check "$js"
           done
-          find output/branding -name '*.desktop' -print0 | xargs -0 desktop-file-validate
+          find output/branding -type f -name '*.desktop' -print0 | xargs -0 desktop-file-validate
 
       - name: Tamarack Center QML loads
         env:

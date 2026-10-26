@@ -25,7 +25,10 @@ Kirigami.ScrollablePage {
         }
     ]
 
-    Component.onCompleted: backend.refreshLibrary()
+    Component.onCompleted: {
+        backend.refreshLibrary();
+        if (!backend.hardware.gpus) backend.refreshHardware();
+    }
 
     ColumnLayout {
         spacing: Kirigami.Units.largeSpacing
@@ -106,6 +109,32 @@ Kirigami.ScrollablePage {
                         }
                     }
                 }
+            }
+        }
+
+        SectionCard {
+            visible: backend.hybridGraphics
+            title: qsTr("Hybrid graphics")
+            iconName: "video-card"
+            subtitle: qsTr("This computer has an integrated and a discrete GPU. By default the desktop and apps use the integrated one to save battery.")
+            RowLayout {
+                Layout.fillWidth: true
+                Controls.Label {
+                    text: qsTr("Run Steam and its games on the discrete GPU")
+                    wrapMode: Text.WordWrap
+                    Layout.fillWidth: true
+                }
+                Controls.Switch {
+                    checked: backend.steamOnDiscreteGpu
+                    onToggled: backend.setSteamOnDiscreteGpu(checked)
+                    Accessible.name: qsTr("Run Steam and its games on the discrete GPU")
+                }
+            }
+            Controls.Label {
+                Layout.fillWidth: true
+                wrapMode: Text.WordWrap
+                opacity: 0.8
+                text: qsTr("Uses more battery while Steam is open. To choose per game instead, leave this off and right-click a game in Steam > Properties > Launch options.")
             }
         }
 

@@ -12,7 +12,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from . import __version__, appearance, apps, doctor, games, hardware, logs, privacy, steam, updates
+from . import __version__, appearance, apps, doctor, games, gaming, hardware, logs, privacy, steam, updates
 from .brand import RUNTIME_BRAND_JSON, Brand, load_runtime_brand
 from .presets import default_preset, layout_script
 from .system import Runner, SubprocessRunner
@@ -194,6 +194,20 @@ def cmd_games(args: argparse.Namespace, runner: Runner) -> int:
             print(f"  {row['title']:22} {row['name']} (app {row['appid']}, {row['compat_tool'] or 'default tool'})")
         print(f"\nProton versions: {', '.join(install.proton_versions + install.custom_tools) or 'none yet'}")
         return 0
+    if args.action == "dgpu":
+        paths = appearance.Paths(Path.home())
+        choice = args.query[0] if args.query else "status"
+        if choice == "status":
+            print("on" if gaming.is_enabled(paths.data) else "off")
+            return 0
+        if choice not in ("on", "off"):
+            raise SystemExit("usage: tamarack games dgpu [status|on|off]")
+        env = gaming.offload_env(hardware.collect(runner).gpus)
+        gaming.set_enabled(paths.data, choice == "on", env)
+        if (paths.autostart / "steam.desktop").exists():
+            appearance.set_steam_autostart(paths, True)
+        print(f"Steam on the discrete GPU: {choice}. Quit and reopen Steam to apply.")
+        return 0
     if args.action == "data":
         info = db.info
         print(
@@ -267,7 +281,7 @@ def build_parser() -> argparse.ArgumentParser:
     ps.set_defaults(func=cmd_preset)
 
     g = sub.add_parser("games", help="game compatibility (anti-cheat) and Steam library")
-    g.add_argument("action", choices=["check", "library", "data"])
+    g.add_argument("action", choices=["check", "library", "data", "dgpu"])
     g.add_argument("query", nargs="*")
     g.add_argument("--json", action="store_true")
     g.set_defaults(func=cmd_games)

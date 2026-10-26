@@ -184,7 +184,7 @@ def restore(paths: Paths, runner: Runner, target: Path | None = None) -> ApplyRe
     if (target / "kdedefaults").is_dir():
         shutil.rmtree(paths.config / "kdedefaults", ignore_errors=True)
         shutil.copytree(target / "kdedefaults", paths.config / "kdedefaults")
-    _set_steam_autostart(paths, bool(manifest.get("steam_autostart")))
+    set_steam_autostart(paths, bool(manifest.get("steam_autostart")))
     result.steps.append(StepResult("restore files", True, f"restored from {target.name}"))
     result.steps.append(
         _step(
@@ -227,14 +227,17 @@ def available_pins(preset: p.Preset, paths: Paths) -> list[str]:
     return pins
 
 
-def _set_steam_autostart(paths: Paths, enabled: bool) -> None:
+def set_steam_autostart(paths: Paths, enabled: bool) -> None:
     target = paths.autostart / "steam.desktop"
     if not enabled:
         target.unlink(missing_ok=True)
         return
-    if not STEAM_DESKTOP.exists():
+    # Prefer the user's own Steam launcher (e.g. the discrete-GPU one from gaming.py).
+    user_entry = paths.data / "applications" / "steam.desktop"
+    source = user_entry if user_entry.exists() else STEAM_DESKTOP
+    if not source.exists():
         return
-    text = STEAM_DESKTOP.read_text(encoding="utf-8")
+    text = source.read_text(encoding="utf-8")
     # Start minimized to the tray, like Steam's own "run at startup" option.
     text = re.sub(
         r"^Exec=(\S+)(.*)$", lambda m: f"Exec={m.group(1)} -silent{m.group(2)}", text, count=1, flags=re.MULTILINE
@@ -310,7 +313,7 @@ def apply(preset: p.Preset, brand: Brand, runner: Runner, paths: Paths) -> Apply
 
     result.steps.append(_virtual_desktops(runner, preset.desktop.virtual_desktops, preset.desktop.virtual_desktop_rows))
     try:
-        _set_steam_autostart(paths, preset.behavior.steam_autostart)
+        set_steam_autostart(paths, preset.behavior.steam_autostart)
         result.steps.append(StepResult("Steam autostart", True, "on" if preset.behavior.steam_autostart else "off"))
     except OSError as exc:
         result.steps.append(StepResult("Steam autostart", False, str(exc)))

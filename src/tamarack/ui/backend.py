@@ -20,7 +20,7 @@ from typing import Any
 
 from PySide6.QtCore import Property, QObject, QRunnable, Qt, QThreadPool, QUrl, Signal, Slot
 
-from .. import appearance, apps, art, doctor, games, hardware, privacy, steam, updates
+from .. import appearance, apps, art, doctor, games, gaming, hardware, privacy, steam, updates
 from .. import presets as preset_lib
 from ..brand import Brand
 from ..system import CommandResult, Runner
@@ -88,6 +88,7 @@ class Backend(QObject):
     bundlesChanged = Signal()
     updatesChanged = Signal()
     welcomeFinished = Signal()
+    gpuChanged = Signal()
 
     def __init__(
         self, brand: Brand, runner: Runner, welcome: bool = False, home: Path | None = None, dry_run: bool = False
@@ -362,6 +363,27 @@ class Backend(QObject):
     def _set_hardware(self, data: dict[str, Any]) -> None:
         self._hardware = data
         self.hardwareChanged.emit()
+        self.gpuChanged.emit()
+
+    @Property(bool, notify=gpuChanged)
+    def hybridGraphics(self) -> bool:
+        return gaming.offload_env(self._hardware.get("gpus", [])) is not None
+
+    @Property(bool, notify=gpuChanged)
+    def steamOnDiscreteGpu(self) -> bool:
+        return gaming.is_enabled(self._paths.data)
+
+    @Slot(bool)
+    def setSteamOnDiscreteGpu(self, enabled: bool) -> None:
+        try:
+            gaming.set_enabled(self._paths.data, enabled, gaming.offload_env(self._hardware.get("gpus", [])))
+            if (self._paths.autostart / "steam.desktop").exists():
+                appearance.set_steam_autostart(self._paths, True)
+        except (OSError, ValueError) as exc:
+            self.notify.emit(str(exc), "error")
+        else:
+            self.notify.emit("Done. Quit and reopen Steam for this to take effect.", "positive")
+        self.gpuChanged.emit()
 
     # -- privacy -------------------------------------------------------------
     @Property("QVariant", notify=privacyChanged)
