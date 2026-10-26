@@ -196,7 +196,7 @@ Kirigami.Page {
                         delegate: RowLayout {
                             required property var modelData
                             Layout.fillWidth: true
-                            StatusIcon { status: modelData.status }
+                            StatusIcon { level: modelData.status }
                             ColumnLayout {
                                 spacing: 0
                                 Layout.fillWidth: true

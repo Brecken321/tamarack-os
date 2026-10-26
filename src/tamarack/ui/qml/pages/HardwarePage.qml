@@ -79,7 +79,7 @@ Kirigami.ScrollablePage {
                         Layout.fillWidth: true
                         spacing: Kirigami.Units.largeSpacing
                         StatusIcon {
-                            status: modelData.status
+                            level: modelData.status
                             Layout.alignment: Qt.AlignTop
                         }
                         ColumnLayout {

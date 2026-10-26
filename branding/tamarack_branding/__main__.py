@@ -225,7 +225,7 @@ class Generator:
             "Exec=tamarack-center\n"
             f"Icon={b.center_app_id}\n"
             "Terminal=false\n"
-            "Categories=Settings;System;Qt;KDE;\n"
+            "Categories=Settings;Qt;KDE;\n"
             "Keywords=privacy;hardware;drivers;games;proton;anticheat;presets;theme;updates;rollback;\n"
             "StartupNotify=true\n"
         )

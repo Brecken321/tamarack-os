@@ -144,7 +144,7 @@ Kirigami.ScrollablePage {
                 delegate: RowLayout {
                     required property var modelData
                     Layout.fillWidth: true
-                    StatusIcon { status: modelData.result === "success" ? "ok" : "missing" }
+                    StatusIcon { level: modelData.result === "success" ? "ok" : "missing" }
                     Controls.Label { text: modelData.time; Layout.preferredWidth: Kirigami.Units.gridUnit * 10 }
                     Controls.Label { text: modelData.message; elide: Text.ElideRight; Layout.fillWidth: true }
                 }

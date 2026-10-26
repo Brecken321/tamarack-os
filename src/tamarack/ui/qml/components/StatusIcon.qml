@@ -1,10 +1,10 @@
-// Icon + accessible text for a status: ok, attention, missing, info.
+// Icon + accessible text for a status level: ok, attention, missing, info.
 import QtQuick
 import org.kde.kirigami as Kirigami
 
 Kirigami.Icon {
     id: icon
-    property string status: "info"
+    property string level: "info"
 
     implicitWidth: Kirigami.Units.iconSizes.smallMedium
     implicitHeight: Kirigami.Units.iconSizes.smallMedium
@@ -13,12 +13,12 @@ Kirigami.Icon {
         "attention": "emblem-warning",
         "missing": "emblem-error",
         "info": "emblem-information"
-    })[status] || "emblem-information"
+    })[level] || "emblem-information"
     color: ({
         "ok": Kirigami.Theme.positiveTextColor,
         "attention": Kirigami.Theme.neutralTextColor,
         "missing": Kirigami.Theme.negativeTextColor
-    })[status] || Kirigami.Theme.textColor
+    })[level] || Kirigami.Theme.textColor
     isMask: true
 
     Accessible.role: Accessible.Graphic
@@ -27,5 +27,5 @@ Kirigami.Icon {
         "attention": qsTr("Needs attention"),
         "missing": qsTr("Not found"),
         "info": qsTr("Information")
-    })[status] || status
+    })[level] || level
 }

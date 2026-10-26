@@ -59,7 +59,7 @@ Kirigami.ScrollablePage {
                         delegate: RowLayout {
                             required property var modelData
                             Layout.fillWidth: true
-                            StatusIcon { status: modelData.installed ? "ok" : "info" }
+                            StatusIcon { level: modelData.installed ? "ok" : "info" }
                             Controls.Label {
                                 text: modelData.id
                                 elide: Text.ElideRight

@@ -118,7 +118,7 @@ Kirigami.ScrollablePage {
                 delegate: RowLayout {
                     required property var modelData
                     Layout.fillWidth: true
-                    StatusIcon { status: modelData.enabled ? "ok" : "info" }
+                    StatusIcon { level: modelData.enabled ? "ok" : "info" }
                     Controls.Label { text: modelData.name; Layout.fillWidth: true; elide: Text.ElideRight }
                     Controls.Label { text: modelData.enabled ? qsTr("On") : qsTr("Off"); opacity: 0.75 }
                 }

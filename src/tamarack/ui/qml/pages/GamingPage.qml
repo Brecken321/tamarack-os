@@ -266,7 +266,8 @@ Kirigami.ScrollablePage {
         id: logSheet
         title: qsTr("Launch log: %1").arg(page.logGame)
         Controls.TextArea {
-            Layout.preferredWidth: Kirigami.Units.gridUnit * 36
+            implicitWidth: Kirigami.Units.gridUnit * 36
+            implicitHeight: Kirigami.Units.gridUnit * 20
             readOnly: true
             wrapMode: TextEdit.Wrap
             font.family: "monospace"

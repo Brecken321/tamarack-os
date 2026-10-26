@@ -81,7 +81,7 @@ Kirigami.ScrollablePage {
                 delegate: RowLayout {
                     required property string modelData
                     Layout.fillWidth: true
-                    StatusIcon { status: "attention" }
+                    StatusIcon { level: "attention" }
                     Controls.Label {
                         text: modelData
                         wrapMode: Text.WordWrap
@@ -108,7 +108,7 @@ Kirigami.ScrollablePage {
                     model: Object.keys(page.doc.gaming || {})
                     delegate: RowLayout {
                         required property string modelData
-                        StatusIcon { status: page.doc.gaming[modelData] ? "ok" : "missing" }
+                        StatusIcon { level: page.doc.gaming[modelData] ? "ok" : "missing" }
                         Controls.Label { text: modelData; Layout.fillWidth: true; elide: Text.ElideRight }
                     }
                 }
