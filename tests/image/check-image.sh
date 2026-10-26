@@ -120,6 +120,11 @@ check "tamarack doctor works offline" tamarack doctor --json
 check "anti-cheat dataset bundled" jq -e 'length > 100' /usr/share/tamarack/games/awacy-games.json
 check "PySide6 + Kirigami QML available" python3 -c 'import PySide6.QtQml'
 check "Tamarack Center QML loads (offscreen)" env QT_QPA_PLATFORM=offscreen tamarack-center --self-test
+# Every System Settings page Tamarack Center links to must exist (no dead buttons).
+mapfile -t kcms < <(grep -rhoE 'kcm_[A-Za-z0-9_-]+' /usr/lib/tamarack/python/tamarack/ui/qml | sort -u)
+for kcm in "${kcms[@]}"; do
+    check "System Settings module ${kcm} exists"         bash -c "find /usr/lib64/qt6/plugins -name '${kcm}.so' -print -quit | grep -q . || find /usr/share/applications /usr/share/kservices6 -name '${kcm}.desktop' -print -quit 2>/dev/null | grep -q ."
+done
 
 # --- Boot ---------------------------------------------------------------------
 check "bootc install defaults to a Btrfs root" \

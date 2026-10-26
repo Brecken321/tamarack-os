@@ -84,8 +84,9 @@ jobs:
           key = "$(cat "${RUNNER_TEMP}/vmkey.pub")"
           groups = ["wheel"]
 
-          [customizations.services]
-          enabled = ["sshd"]
+          # Disk images do not support service customizations; enable sshd via a kernel argument.
+          [customizations.kernel]
+          append = "systemd.wants=sshd.service"
 
           [[customizations.filesystem]]
           mountpoint = "/"

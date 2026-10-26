@@ -35,9 +35,9 @@ needs the NVIDIA edition.
 
 ## 4. Before you install
 
-- **Secure Boot** can stay on. The kernel and bootloader are signed by Fedora. The NVIDIA edition's driver is signed by
-  Universal Blue; after the first boot run `ujust enroll-secure-boot-key` and follow the blue MOK screen at the next restart
-  (password: `universalblue`). Without enrolling, the NVIDIA driver will not load while Secure Boot is on.
+- **Secure Boot** can stay on. Bazzite's kernel and drivers (both editions) are signed with Universal Blue's key, which
+  you enroll once: when a blue *MOK management* screen appears after the installer, choose *Enroll MOK* > *Continue* and
+  enter the password `universalblue`. If you missed it, run `ujust enroll-secure-boot-key` and restart.
 - **BitLocker (Windows)**: if you will dual-boot, suspend BitLocker or have your recovery key ready; firmware boot-order
   changes can trigger a recovery prompt.
 - **Fast Startup (Windows)**: turn it off (Control Panel > Power Options > Choose what the power buttons do) so Windows

@@ -76,7 +76,7 @@ Kirigami.ScrollablePage {
                     [qsTr("How do I install apps?"), qsTr("Open the app store (Bazaar) from the start menu, or use the Apps page here. Apps come from Flathub. Advanced users can also use Distrobox containers for any Linux package.")],
                     [qsTr("A Windows game won't start."), qsTr("See Gaming > “When a game won't start”. Some online games block Linux through their anti-cheat; the game checker tells you which ones.")],
                     [qsTr("My laptop has two GPUs."), qsTr("The desktop runs on the integrated GPU to save power. Steam games normally use the faster GPU; enable MangoHud (MANGOHUD=1 %command%) to see which GPU a game uses. The troubleshooting guide explains how to force the NVIDIA GPU.")],
-                    [qsTr("Secure Boot and NVIDIA."), qsTr("The NVIDIA edition's driver is signed with Universal Blue's key. With Secure Boot on, enroll it once: run “ujust enroll-secure-boot-key” in a terminal and follow the prompts at the next restart (the password is “universalblue”).")],
+                    [qsTr("Secure Boot."), qsTr("The kernel and drivers are signed with Universal Blue's key. With Secure Boot on, enroll it once: accept the blue MOK screen after installing, or run “ujust enroll-secure-boot-key” in a terminal and follow the prompts at the next restart (the password is “universalblue”).")],
                     [qsTr("Can I go back to Windows?"), qsTr("If you installed Tamarack OS next to Windows, pick Windows from the boot menu. Tamarack OS never modifies a Windows installation on its own.")],
                     [qsTr("Where are advanced tools?"), qsTr("Open a terminal and run “ujust” for a menu of maintenance tasks, or “tamarack doctor” for a health report.")]
                 ]

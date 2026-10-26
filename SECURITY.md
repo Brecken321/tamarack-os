@@ -19,9 +19,9 @@ reported to those projects; Tamarack picks up their fixes automatically through 
 | Rollback | The previous OS version is kept; a bad update can be undone from the boot menu. |
 | System integrity | `/usr` is read-only at runtime (bootc/ostree). |
 | Privileges | Tamarack Center and the CLI run as the user. Privileged actions (updates, rollback, enabling services, system Flatpak installs) go through polkit (`pkexec`/Flatpak's own authorization), one action at a time. Nothing in the desktop runs as root. |
-| Network | firewalld is active (Fedora Workstation zone). SSH is disabled by default. The Privacy page lists every listening port. |
+| Network | firewalld is enabled at boot and the SSH server is not enabled by default (both verified by the image checks). The Privacy page lists every listening port. |
 | Apps | Flatpak apps run sandboxed with portal-mediated access; permissions are visible and editable (Privacy page, System Settings > Flatpak Permissions). |
-| Secure Boot | Supported: Fedora-signed shim/GRUB/kernel. NVIDIA kernel modules are signed with Universal Blue's key; enroll it with `ujust enroll-secure-boot-key`. Tamarack never asks you to disable Secure Boot. |
+| Secure Boot | Supported on both editions. Bazzite's kernel and kernel modules (including NVIDIA's) are signed with Universal Blue's key, which must be enrolled once: accept the blue *MOK* screen after installation, or run `ujust enroll-secure-boot-key` (password `universalblue`). Tamarack never asks you to disable Secure Boot. |
 | Disk encryption | LUKS2 full-disk encryption is offered by the installer. |
 | Secrets | No credentials are stored by Tamarack tools. The image-signing private key exists only as a GitHub Actions secret and offline with the maintainer; CI tests fail if a private key is ever committed. |
 

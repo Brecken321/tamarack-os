@@ -15,9 +15,10 @@ shareable text version).
 Your personal files are never part of a system update or rollback. To keep a known-good version forever, use
 **Keep this version** (`sudo ostree admin pin booted`).
 
-## Black screen or no graphics after installing (NVIDIA)
+## Secure Boot error, or black screen / no graphics after installing
 
-- **Secure Boot is on and the NVIDIA key is not enrolled.** Boot, switch to a text console with Ctrl+Alt+F3 if needed,
+- **Secure Boot is on and Universal Blue's key is not enrolled** (applies to both editions; the NVIDIA driver is the
+  most visible casualty). Boot, switch to a text console with Ctrl+Alt+F3 if needed,
   log in and run `ujust enroll-secure-boot-key`. At the next restart a blue *MOK management* screen appears: choose
   *Enroll MOK* > *Continue* > enter the password `universalblue`.
 - **Wrong edition.** `tamarack hardware` shows the GPU and driver. NVIDIA GPUs need the NVIDIA edition:

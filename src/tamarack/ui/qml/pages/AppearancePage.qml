@@ -128,6 +128,34 @@ Kirigami.ScrollablePage {
                 text: qsTr("To edit the taskbar directly, right-click it and choose “Enter Edit Mode”. Widgets can be added from the desktop's right-click menu.")
             }
         }
+
+        SectionCard {
+            title: qsTr("Behavior")
+            subtitle: qsTr("How the computer reacts: power button and lid, notifications, default apps, input devices and windows.")
+            Flow {
+                Layout.fillWidth: true
+                spacing: Kirigami.Units.smallSpacing
+                Repeater {
+                    model: [
+                        { text: qsTr("Power button, lid & sleep"), icon: "preferences-system-power-management", kcm: "kcm_powerdevilprofilesconfig" },
+                        { text: qsTr("Notifications"), icon: "preferences-desktop-notification-bell", kcm: "kcm_notifications" },
+                        { text: qsTr("Default apps"), icon: "preferences-desktop-default-applications", kcm: "kcm_componentchooser" },
+                        { text: qsTr("Startup apps"), icon: "system-run", kcm: "kcm_autostart" },
+                        { text: qsTr("Window focus & snapping"), icon: "preferences-system-windows-behavior", kcm: "kcm_kwinoptions" },
+                        { text: qsTr("Displays"), icon: "preferences-desktop-display", kcm: "kcm_kscreen" },
+                        { text: qsTr("Touchpad"), icon: "input-touchpad", kcm: "kcm_touchpad" },
+                        { text: qsTr("Mouse"), icon: "input-mouse", kcm: "kcm_mouse" },
+                        { text: qsTr("File manager & desktop folders"), icon: "system-file-manager", kcm: "kcm_desktoppaths" }
+                    ]
+                    delegate: Controls.Button {
+                        required property var modelData
+                        text: modelData.text
+                        icon.name: modelData.icon
+                        onClicked: backend.openSettings(modelData.kcm)
+                    }
+                }
+            }
+        }
     }
 
     Kirigami.PromptDialog {

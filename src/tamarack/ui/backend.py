@@ -12,6 +12,7 @@ import hashlib
 import itertools
 import json
 import logging
+import re
 import subprocess
 import traceback
 from collections.abc import Callable
@@ -612,7 +613,7 @@ class Backend(QObject):
     @Slot(str)
     def openSettings(self, module: str) -> None:
         """Open a KDE System Settings page (e.g. kcm_flatpak, kcm_autostart)."""
-        if not module.replace("_", "").isalnum():
+        if not re.fullmatch(r"kcm_[A-Za-z0-9_-]+", module):
             return
         try:
             subprocess.Popen(["systemsettings", module], start_new_session=True)
