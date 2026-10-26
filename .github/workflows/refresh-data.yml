@@ -1,0 +1,58 @@
+---
+name: Refresh anti-cheat data
+
+on:
+  schedule:
+    - cron: "17 6 * * 1" # weekly
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-26.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Download the latest AreWeAntiCheatYet data
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          commit="$(gh api repos/AreWeAntiCheatYet/AreWeAntiCheatYet/commits/master --jq .sha)"
+          date="$(gh api repos/AreWeAntiCheatYet/AreWeAntiCheatYet/commits/master --jq .commit.committer.date)"
+          gh api "repos/AreWeAntiCheatYet/AreWeAntiCheatYet/contents/games.json?ref=${commit}" \
+            -H "Accept: application/vnd.github.raw" > /tmp/games.json
+          gh api "repos/AreWeAntiCheatYet/AreWeAntiCheatYet/contents/LICENSE?ref=${commit}" \
+            -H "Accept: application/vnd.github.raw" > /tmp/LICENSE
+          # Only accept data that the loader parses and that is not suspiciously small.
+          PYTHONPATH=src python3 - <<'EOF'
+          from pathlib import Path
+          from tamarack.games import AntiCheatDatabase
+          db = AntiCheatDatabase.load(Path("/tmp/games.json"), None)
+          assert len(db.entries) > 500, f"only {len(db.entries)} entries"
+          print(f"{len(db.entries)} games OK")
+          EOF
+          grep -q "MIT License" /tmp/LICENSE
+          cp /tmp/games.json data/awacy/games.json
+          cp /tmp/LICENSE data/awacy/LICENSE
+          jq --arg c "${commit}" --arg d "${date}" '.commit = $c | .commit_date = $d' data/awacy/source.json > /tmp/source.json
+          mv /tmp/source.json data/awacy/source.json
+
+      - name: Commit if changed
+        run: |
+          if git diff --quiet -- data/awacy; then
+            echo "No changes."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/awacy
+          git commit -m "Refresh AreWeAntiCheatYet data ($(jq -r .commit_date data/awacy/source.json))"
+          git push

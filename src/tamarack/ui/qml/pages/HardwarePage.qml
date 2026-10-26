@@ -37,7 +37,7 @@ Kirigami.ScrollablePage {
                 reportArea.text = lines.join("\n");
                 reportArea.selectAll();
                 reportArea.copy();
-                Controls.ApplicationWindow.window.showPassiveNotification(qsTr("Hardware report copied to the clipboard."));
+                backend.notify(qsTr("Hardware report copied to the clipboard."), "positive");
             }
         },
         Kirigami.Action {

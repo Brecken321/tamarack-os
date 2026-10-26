@@ -17,9 +17,10 @@ on:
     # Weekly fresh installer ISOs.
     - cron: "0 9 * * 1"
 
+# Queue rather than cancel: a VM test that is already running always finishes.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 permissions:
   contents: read

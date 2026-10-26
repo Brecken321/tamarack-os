@@ -8,7 +8,9 @@ ConditionPathExists=/usr/share/tamarack/flatpaks/base.list
 StartLimitIntervalSec=0
 
 [Service]
-Type=oneshot
+# exec, not oneshot: targets wait for oneshot units they want, so a oneshot
+# would hold up "boot finished" until every download completes.
+Type=exec
 ExecStart=/usr/libexec/tamarack/flatpak-setup
 # Retry until it succeeds (e.g. first boot without internet).
 Restart=on-failure

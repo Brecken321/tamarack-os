@@ -92,6 +92,8 @@ check "cosign public key installed" test -s "/etc/pki/containers/${BRAND_IMAGE_M
 check "sigstore attachments enabled for registry" \
     grep -q "${BRAND_REGISTRY}" "/etc/containers/registries.d/${BRAND_IMAGE_MAIN}.yaml"
 check "firewalld present" bash -c 'rpm -q firewalld'
+check "firewall enabled at boot" systemctl is-enabled firewalld.service
+check "SSH server not enabled by default" bash -c '! systemctl is-enabled sshd.service 2>/dev/null | grep -qx enabled'
 check "no private signing key shipped" bash -c '! find / -xdev -name cosign.key -print -quit 2>/dev/null | grep -q .'
 
 # --- Services -----------------------------------------------------------------
