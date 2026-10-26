@@ -16,7 +16,7 @@ tagline = "Your PC, your rules. No ads, ready to play."
 vendor = "Tamarack OS contributors"
 home_url = "https://github.com/brecken321/tamarack-os"
 documentation_url = "https://github.com/brecken321/tamarack-os/tree/main/docs"
-support_url = "https://github.com/brecken321/tamarack-os/blob/main/docs/TROUBLESHOOTING.md"
+support_url = "https://github.com/brecken321/tamarack-os/blob/main/TROUBLESHOOTING.md"
 bug_report_url = "https://github.com/brecken321/tamarack-os/issues"
 # Shown in "About" screens. Required attribution; Tamarack OS is not an
 # official Bazzite, Universal Blue, Fedora, Valve or Microsoft product.

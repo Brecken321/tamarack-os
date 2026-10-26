@@ -1,8 +1,11 @@
 """Consistency checks across build configuration files."""
 
 import re
+import subprocess
 import tomllib
 from pathlib import Path
+
+import pytest
 
 from tamarack.brand import Brand
 
@@ -54,11 +57,15 @@ def test_no_secrets_in_repository() -> None:
     assert not (ROOT / "cosign.key").exists()
     pub = (ROOT / "cosign.pub").read_text(encoding="utf-8")
     assert pub.startswith("-----BEGIN PUBLIC KEY-----")
-    # Built at runtime so this file does not match its own search.
-    private_marker = "BEGIN ENCRYPTED " + "SIGSTORE PRIVATE KEY"
-    for path in ROOT.rglob("*"):
-        hidden = any(part.startswith(".") and part not in (".github",) for part in path.relative_to(ROOT).parts)
-        if hidden or not path.is_file() or path.suffix in (".png", ".jpg", ".json"):
+    # Built at runtime so neither this file nor its bytecode matches the search.
+    private_marker = " ".join(["BEGIN", "ENCRYPTED", "SIGSTORE", "PRIVATE", "KEY"])
+    try:
+        tracked = subprocess.run(["git", "ls-files"], cwd=ROOT, capture_output=True, text=True, check=True)
+    except (OSError, subprocess.CalledProcessError):
+        pytest.skip("git is not available")
+    for name in tracked.stdout.splitlines():
+        path = ROOT / name
+        if not path.is_file() or path.suffix in (".png", ".jpg", ".json"):
             continue
         text = path.read_text(encoding="utf-8", errors="ignore")
         assert private_marker not in text, path
