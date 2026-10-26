@@ -1,5 +1,5 @@
 set dotenv-filename := "image.env"
-set dotenv-load := true
+set dotenv-load
 
 export image_vendor := env("IMAGE_VENDOR")
 export image_registry := env("IMAGE_REGISTRY")
