@@ -42,11 +42,11 @@ Kirigami.ScrollablePage {
             text: qsTr("Presets change the real desktop: theme, taskbar position and style, start menu, animations, fonts, window buttons and more. Your previous setup is saved first, so you can always undo.")
         }
 
-        GridLayout {
-            columns: page.width > Kirigami.Units.gridUnit * 50 ? 3 : page.width > Kirigami.Units.gridUnit * 30 ? 2 : 1
-            columnSpacing: Kirigami.Units.largeSpacing * 2
-            rowSpacing: Kirigami.Units.largeSpacing * 2
+        // CardsLayout sizes rows after the descriptions wrap; a plain grid
+        // can squeeze them away.
+        Kirigami.CardsLayout {
             Layout.fillWidth: true
+            maximumColumns: 3
 
             Repeater {
                 model: backend.presets
@@ -54,9 +54,6 @@ Kirigami.ScrollablePage {
                     id: card
                     required property var modelData
                     preset: modelData
-                    Layout.preferredWidth: 1
-                    Layout.fillWidth: true
-                    Layout.fillHeight: true
 
                     actions: [
                         Kirigami.Action {

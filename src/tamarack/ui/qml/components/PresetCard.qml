@@ -38,5 +38,9 @@ Kirigami.Card {
             opacity: 0.8
             Layout.fillWidth: true
         }
+        // Cards in a row share its height: keep the text at the top.
+        Item {
+            Layout.fillHeight: true
+        }
     }
 }

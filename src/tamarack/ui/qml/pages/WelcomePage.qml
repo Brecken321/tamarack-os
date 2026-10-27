@@ -205,20 +205,15 @@ Kirigami.Page {
                     title: qsTr("Choose a look")
                     text: qsTr("Pick a starting point. It applies right away and can be undone.")
                 }
-                GridLayout {
-                    columns: page.width > Kirigami.Units.gridUnit * 50 ? 3 : page.wide ? 2 : 1
-                    columnSpacing: Kirigami.Units.largeSpacing * 2
-                    rowSpacing: Kirigami.Units.largeSpacing * 2
+                Kirigami.CardsLayout {
                     Layout.fillWidth: true
+                    maximumColumns: 3
                     Repeater {
                         model: backend.presets.filter(p => p.builtin)
                         delegate: PresetCard {
                             id: lookCard
                             required property var modelData
                             preset: modelData
-                            Layout.preferredWidth: 1
-                            Layout.fillWidth: true
-                            Layout.fillHeight: true
                             actions: [
                                 Kirigami.Action {
                                     text: lookCard.modelData.current ? qsTr("Selected") : qsTr("Use this")
