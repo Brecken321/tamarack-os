@@ -55,6 +55,15 @@ neutral = "#E39A2C"
 negative = "#D9534F"
 link = "#3E9BD6"
 visited = "#9B6CC2"
+# Section colors in Tamarack Center's sidebar (white icons sit on them).
+section_home = "#2E8B62"
+section_appearance = "#8E5CC2"
+section_apps = "#2F80D1"
+section_gaming = "#D9822B"
+section_hardware = "#5B6BBF"
+section_privacy = "#1E9AA0"
+section_updates = "#C2507A"
+section_help = "#6B7A80"
 
 [art]
 # Wallpaper packages generated into /usr/share/wallpapers/<Name>/.

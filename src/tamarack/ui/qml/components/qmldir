@@ -3,6 +3,7 @@ AppRow 1.0 AppRow.qml
 CategoryChip 1.0 CategoryChip.qml
 HeroBanner 1.0 HeroBanner.qml
 IconBadge 1.0 IconBadge.qml
+NavItem 1.0 NavItem.qml
 Pill 1.0 Pill.qml
 PresetCard 1.0 PresetCard.qml
 PrimaryButton 1.0 PrimaryButton.qml

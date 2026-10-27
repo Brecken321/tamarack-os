@@ -75,18 +75,20 @@ def settle(ms: int) -> None:
     loop.exec()
 
 
+def _prop(obj: Any, name: str) -> Any:
+    """A QML property, or None when PySide cannot convert its type."""
+    try:
+        return obj.property(name)
+    except (RuntimeError, TypeError):
+        return None
+
+
 def _label(item: Any) -> str:
     for prop in ("text", "title"):
-        value = item.property(prop)
+        value = _prop(item, prop)
         if isinstance(value, str) and value.strip():
             return value.strip()
-    action = item.property("action")
-    if action is not None and isinstance(action.property("text"), str) and action.property("text"):
-        return str(action.property("text"))
-    accessible = item.property("Accessible.name")
-    if isinstance(accessible, str) and accessible:
-        return accessible
-    icon = item.property("icon")
+    icon = _prop(item, "icon")
     name = getattr(icon, "name", "") if icon is not None else ""
     return f"{type(item).__name__} ({name or item.metaObject().className()})"
 
@@ -137,7 +139,7 @@ class ButtonCheck:
             if not item.isEnabled() or item.width() <= 0 or item.height() <= 0:
                 continue
             # Cards that only group content are not buttons.
-            if item.property("showClickFeedback") is False:
+            if _prop(item, "showClickFeedback") is False:
                 continue
             if _label(item) in IGNORED:
                 continue
@@ -146,37 +148,38 @@ class ButtonCheck:
 
     def actions(self) -> list[Any]:
         """The current page's actions, including ones only in overflow menus."""
-        page = self.window.property("pageStack").property("currentItem")
+        page = (
+            _prop(_prop(self.window, "pageStack"), "currentItem")
+            if _prop(self.window, "pageStack") is not None
+            else None
+        )
         if page is None:
             return []
         result = []
         for child in [page, *page.findChildren(QObject)]:
             if not child.inherits("QQuickAction"):
                 continue
-            if child.property("enabled") is False or child.property("visible") is False:
+            if _prop(child, "enabled") is False or _prop(child, "visible") is False:
                 continue
-            if (child.property("text") or "") in IGNORED:
+            if (_prop(child, "text") or "") in IGNORED:
                 continue
-            try:
-                if child.property("children"):  # a submenu: its entries are the actions
-                    continue
-            except (RuntimeError, TypeError):
-                pass
+            if _prop(child, "children"):  # a submenu: its entries are the actions
+                continue
             result.append(child)
         return result
 
     def _state(self) -> dict[str, Any]:
         popups = len(self._items("QQuickPopupItem"))
         windows = sum(1 for w in QGuiApplication.topLevelWindows() if w.isVisible())
-        stack = self.window.property("pageStack")
+        stack = _prop(self.window, "pageStack")
         steps = self.window.findChild(QObject, "welcomeSteps")
         selection = tuple(
-            bool(item.property("checked")) for item in self._items("QQuickAbstractButton") if item.property("checkable")
+            bool(_prop(item, "checked")) for item in self._items("QQuickAbstractButton") if _prop(item, "checkable")
         )
         return {
             "selection": selection,
             "page": self.window.property("currentPage"),
-            "depth": stack.property("depth") if stack is not None else 0,
+            "depth": _prop(stack, "depth") if stack is not None else 0,
             "step": steps.property("currentIndex") if steps is not None else -1,
             "popups": popups,
             "windows": windows,
@@ -219,10 +222,10 @@ class ButtonCheck:
         result = Result(page, control)
         before = self._state()
         warned = len(self.warnings)
-        was = item.property("checked") if item is not None else None
+        was = _prop(item, "checked") if item is not None else None
         act()
         settle(400)
-        now = item.property("checked") if item is not None else None
+        now = _prop(item, "checked") if item is not None else None
         result.effects = self._effects(before, self._state(), (was, now))
         result.errors = [
             w
@@ -246,14 +249,15 @@ class ButtonCheck:
             label = _label(item)
             results.append(self._press(page, label, functools.partial(self._click, item), item))
         self._reload(page)
-        names = [a.property("text") or "(action)" for a in self.actions()]
+        names = [_prop(a, "text") or "(action)" for a in self.actions()]
         for index, name in enumerate(names):
             self._reload(page)
             current = self.actions()
             if index >= len(current):
                 break
             action = current[index]
-            results.append(self._press(page, f"action: {name}", action.trigger, None))
+            trigger = functools.partial(QMetaObject.invokeMethod, action, "trigger", Qt.ConnectionType.DirectConnection)
+            results.append(self._press(page, f"action: {name}", trigger, None))
         return results
 
     @staticmethod
