@@ -33,6 +33,10 @@ ssh_vm() {
         -o ConnectTimeout=10 -o ServerAliveInterval=15 -o ServerAliveCountMax=4 -o LogLevel=ERROR \
         "${user}@127.0.0.1" "$@"
 }
+# Run a phase of in-vm-checks.sh, adding its output to LOG (download-checks.txt by default).
+in_vm() { # PHASE ARGS... (already quoted for the remote shell)
+    ssh_vm "bash /tmp/in-vm-checks.sh '${password}' $*" | tee -a "${out}/${LOG:-download-checks.txt}" || status=1
+}
 scp_to_vm() {
     scp -i "${key}" -P "${port}" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
         -o LogLevel=ERROR "$1" "${user}@127.0.0.1:$2"
@@ -113,6 +117,36 @@ ssh_vm "${session_env}; tamarack preset reset" | tee -a "${out}/presets.txt" || 
 sleep 12
 shot "05-preset-reset"
 
+# Windows-style shortcuts open what they say (pressed on the virtual keyboard).
+shortcut() { # NAME WINDOW_TEXT PROCESS KEYS...
+    local name="$1" text="$2" process="$3"
+    shift 3
+    qmp key "$@"
+    LOG=shortcut-checks.txt in_vm wait "${name}" "'${text}'" 45 "${process}"
+    sleep 3
+    shot "05-shortcut-${name}"
+    ssh_vm "pkill -x '${process}'" || true
+    sleep 2
+}
+shortcut settings "Settings" systemsettings meta_l i
+# Process names are cut to 15 characters by the kernel (pgrep -x matches those).
+shortcut task-manager "System Monitor" plasma-systemmo ctrl shift esc
+shortcut file-manager "Dolphin" dolphin meta_l e
+shortcut emoji "Emoji" plasma-emojier meta_l dot
+# Search (KRunner) and Task View (the overview) are not app windows.
+qmp key meta_l s
+sleep 3
+shot "05-shortcut-search"
+qmp key esc
+sleep 2
+qmp key meta_l tab
+sleep 3
+shot "05-shortcut-task-view"
+qmp key esc
+sleep 2
+ssh_vm "grep -E 'Meta\+I|Ctrl\+Shift\+Esc|Meta\+Tab|Meta\+S' ~/.config/kglobalshortcutsrc" |
+    sed 's/^/INFO: /' | tee -a "${out}/shortcut-checks.txt" || true
+
 # Start the app as a user unit so it gets the Plasma session's environment
 # (theme, icons, style) exactly like launching it from the start menu.
 for page in home appearance apps gaming privacy hardware updates help; do
@@ -132,9 +166,6 @@ ssh_vm "${session_env}; systemctl --user stop tamarack-welcome" || true
 # buttons run), each opened on the desktop; the Bazaar app store; and Steam's
 # own first-run download up to its sign-in window.
 ssh_vm "bash /tmp/in-vm-checks.sh '${password}' downloads" | tee "${out}/download-checks.txt" || status=1
-in_vm() { # PHASE ARGS... (already quoted for the remote shell)
-    ssh_vm "bash /tmp/in-vm-checks.sh '${password}' $*" | tee -a "${out}/download-checks.txt" || status=1
-}
 open_app() { # NAME WINDOW_TEXT TIMEOUT DESKTOP_ID
     in_vm start "$1" "$4"
     in_vm wait "$1" "'$2'" "$3"

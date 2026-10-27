@@ -41,14 +41,18 @@ Kirigami.ScrollablePage {
                 Repeater {
                     model: [
                         ["Meta", qsTr("Open the start menu")],
-                        ["Meta + type", qsTr("Search apps, files and settings")],
-                        ["Meta + W", qsTr("Overview of all windows and desktops")],
+                        ["Meta + S, or Meta + type", qsTr("Search apps, files and settings")],
+                        ["Meta + Tab / Meta + W", qsTr("Overview of all windows and desktops (Task View)")],
+                        ["Meta + I", qsTr("Settings")],
                         ["Meta + ← / → / ↑", qsTr("Snap a window to a side or maximize it")],
                         ["Meta + T", qsTr("Edit custom window tiling layouts")],
                         ["Meta + E", qsTr("Open the file manager")],
+                        ["Meta + D", qsTr("Show the desktop")],
+                        ["Meta + V", qsTr("Clipboard history")],
+                        ["Meta + .", qsTr("Emoji picker")],
                         ["Ctrl + Alt + T", qsTr("Open a terminal")],
                         ["Meta + Shift + S / Print", qsTr("Take a screenshot or screen recording (Spectacle)")],
-                        ["Ctrl + Esc", qsTr("System monitor")],
+                        ["Ctrl + Shift + Esc", qsTr("System monitor (Task Manager)")],
                         ["Meta + L", qsTr("Lock the screen")],
                         ["Meta + Ctrl + ← / →", qsTr("Switch virtual desktop")],
                         ["Right Shift + F12 (in games)", qsTr("Toggle the MangoHud performance overlay")]

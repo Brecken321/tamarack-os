@@ -461,15 +461,18 @@ def preview_svg(brand: Brand, preset: Preset, width: int = 480, height: int = 27
     tail = [w for w in panel.widgets if w in ("tray", "clock", "showdesktop")]
     head = [w for w in panel.widgets if w not in tail]
     labels = panel.task_manager == "tasks"
+    centre = rect[0] + rect[2] / 2 if horizontal else rect[1] + rect[3] / 2
+    # A spacer before the launcher centers the launcher and the apps together.
+    launcher_centred = "spacer" in head and head.index("spacer") < head.index("launcher")
     for widget in head:
         if widget == "launcher":
+            if launcher_centred:
+                pos = max(pos, centre - step * (len(panel.pins) + 1) / 2)
             place(pos, "launcher")
             pos += step
         elif widget == "tasks":
-            if "spacer" in head and head.index("spacer") < head.index("tasks"):
-                pos = max(
-                    pos, (rect[0] + rect[2] / 2 if horizontal else rect[1] + rect[3] / 2) - step * len(panel.pins) / 2
-                )
+            if not launcher_centred and "spacer" in head and head.index("spacer") < head.index("tasks"):
+                pos = max(pos, centre - step * len(panel.pins) / 2)
             for _ in panel.pins[:5]:
                 place(pos, "label" if labels else "app")
                 pos += step * 2.3 if labels and horizontal else step

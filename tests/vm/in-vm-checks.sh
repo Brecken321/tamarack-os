@@ -170,9 +170,12 @@ if [[ "${phase}" == "wait" ]]; then
     if [[ -n "${process}" ]]; then
         check "${process} is running" pgrep -u "$(id -u)" -x "${process}"
     fi
-    check "${name} is still running" systemctl --user is-active "tamarack-open-${name}"
+    # Apps started by the test run as a unit; ones opened by a shortcut do not.
+    if systemctl --user cat "tamarack-open-${name}" >/dev/null 2>&1; then
+        check "${name} is still running" systemctl --user is-active "tamarack-open-${name}"
+        info "processes" systemctl --user status "tamarack-open-${name}" --no-pager -n 0
+    fi
     info "windows (KWin search for \"window\")" windows_matching window
-    info "processes" systemctl --user status "tamarack-open-${name}" --no-pager -n 0
 fi
 
 if [[ "${phase}" == "close" ]]; then

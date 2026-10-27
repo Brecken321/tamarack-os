@@ -23,6 +23,26 @@ kw /etc/xdg/kscreenlockerrc --group Greeter --group Wallpaper --group org.kde.im
 kw /etc/xdg/kscreenlockerrc --group Greeter --group Wallpaper --group org.kde.image --group General \
     --key PreviewImage "${wallpaper}"
 
+# Windows shortcuts that Plasma lacks (it already has Win, Win+E, Win+D, Win+L,
+# Win+V, Win+arrows and Win+Shift+S). kglobalaccel reads only the user's own
+# kglobalshortcutsrc, so these are defaults for new accounts; anyone can
+# change them in System Settings > Shortcuts.
+skel_shortcuts=/etc/skel/.config/kglobalshortcutsrc
+mkdir -p "$(dirname "${skel_shortcuts}")"
+[[ -f "${skel_shortcuts}" ]] && log "extending existing ${skel_shortcuts}"
+# Win+I: Settings.
+kw "${skel_shortcuts}" --group services --group systemsettings.desktop --key _launch "Meta+I"
+# Ctrl+Shift+Esc: the task manager (System Monitor); Plasma's Ctrl+Esc stays.
+kw "${skel_shortcuts}" --group services --group org.kde.plasma-systemmonitor.desktop --key _launch $'Ctrl+Esc\tCtrl+Shift+Esc'
+# Win+S: search, next to Plasma's Alt+Space.
+kw "${skel_shortcuts}" --group services --group org.kde.krunner.desktop --key _launch $'Alt+Space\tAlt+F2\tSearch\tMeta+S'
+# Win+Tab: the overview of windows and desktops (Task View). Plasma uses
+# Win+Tab to cycle Activities, which most people never set up.
+kw "${skel_shortcuts}" --group kwin --key Overview $'Meta+W\tMeta+Tab,Meta+W,Toggle Overview'
+kw "${skel_shortcuts}" --group plasmashell --key "next activity" "none,Meta+Tab,Walk through activities"
+kw "${skel_shortcuts}" --group plasmashell --key "previous activity" "none,Meta+Shift+Tab,Walk backwards through activities"
+sed 's/^/    /' "${skel_shortcuts}"
+
 # Quiet notifications while a game or video is fullscreen.
 kw /etc/xdg/plasmanotifyrc --group DoNotDisturb --key WhenFullscreen true
 

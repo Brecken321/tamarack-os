@@ -2,7 +2,7 @@
 # setting; tamarack_branding/presets.py validates the file at build time.
 id = "clean-modern"
 name = "Clean Modern"
-summary = "Floating taskbar with centered apps. Switches between light and dark with the time of day."
+summary = "Start button and apps centered on a floating taskbar, familiar if you come from Windows 11. Switches between light and dark with the time of day."
 default = true
 
 [appearance]
@@ -25,7 +25,9 @@ hiding = "none"
 opacity = "adaptive"
 launcher = "kickoff"
 task_manager = "icontasks"
-widgets = ["launcher", "spacer", "tasks", "spacer", "tray", "clock", "showdesktop"]
+# Start button and pinned apps centered together (the two spacers), tray and
+# clock on the right: the Windows 11 arrangement.
+widgets = ["spacer", "launcher", "tasks", "spacer", "tray", "clock", "showdesktop"]
 pins = [
   "preferred://browser",
   "preferred://filemanager",
