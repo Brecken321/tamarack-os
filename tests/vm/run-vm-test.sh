@@ -23,8 +23,12 @@ shot() {
     if qmp screenshot "${out}/screens/$1.png"; then echo "screenshot: $1"; else echo "screenshot failed: $1"; fi
 }
 ssh_vm() {
-    ssh -i "${key}" -p "${port}" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-        -o ConnectTimeout=10 -o LogLevel=ERROR "${user}@127.0.0.1" "$@"
+    # Every remote command is bounded so a hang fails the test with logs
+    # instead of running into the job timeout.
+    timeout "${SSH_TIMEOUT:-1800}" ssh -i "${key}" -p "${port}" \
+        -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+        -o ConnectTimeout=10 -o ServerAliveInterval=15 -o ServerAliveCountMax=4 -o LogLevel=ERROR \
+        "${user}@127.0.0.1" "$@"
 }
 scp_to_vm() {
     scp -i "${key}" -P "${port}" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \

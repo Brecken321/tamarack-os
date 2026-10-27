@@ -23,6 +23,7 @@ _CHARS.update({" ": "spc", "-": "minus", ".": "dot", "/": "slash", "\n": "ret", 
 class Qmp:
     def __init__(self, path: str) -> None:
         self.sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        self.sock.settimeout(60)  # a stuck QEMU must not hang the test
         self.sock.connect(path)
         self.file = self.sock.makefile("rw", encoding="utf-8")
         self._read()  # greeting

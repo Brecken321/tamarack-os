@@ -35,8 +35,10 @@ if [[ "${phase}" == "system" ]]; then
     # shellcheck source=/dev/null
     source /usr/lib/os-release
     check "booted Tamarack OS (${PRETTY_NAME})" test "${ID}" = "tamarack"
-    check "system finished booting" bash -c 'state=$(systemctl is-system-running --wait); [[ $state == running || $state == degraded ]]'
+    # Bounded: a start job that never finishes would otherwise block forever.
+    check "system finished booting" bash -c 'state=$(timeout 600 systemctl is-system-running --wait); [[ $state == running || $state == degraded ]]'
     info "system state" systemctl is-system-running
+    info "pending jobs" systemctl list-jobs --no-pager
     check "no failed system units" bash -c '[[ -z "$(systemctl --failed --no-legend --plain)" ]]'
     info "failed units" systemctl --failed --no-legend --plain
     for unit in $(systemctl --failed --no-legend --plain | awk '{print $1}'); do
