@@ -61,3 +61,18 @@ def test_parse_rejects_bad_bundles() -> None:
         apps.parse_bundles({"bundle": [{"id": "a", "apps": ["org.a.b"]}, {"id": "a", "apps": ["org.c.d"]}]})
     with pytest.raises(ValueError, match="non-empty"):
         apps.parse_bundles({"bundle": [{"id": "a", "apps": []}]})
+
+
+def test_apps_have_display_names() -> None:
+    for bundle in apps.load_bundles(BUNDLES):
+        for app_id in bundle.apps:
+            assert bundle.name_of(app_id) != app_id, f"{app_id} needs a display name"
+    runner = FakeRunner()
+    runner.add(["flatpak", "list"], "")
+    office = next(b for b in apps.bundles_with_state(runner, BUNDLES) if b["id"] == "office")
+    assert office["apps"][0] == {"id": "org.libreoffice.LibreOffice", "name": "LibreOffice", "installed": False}
+
+
+def test_bare_ids_are_still_accepted() -> None:
+    (bundle,) = apps.parse_bundles({"bundle": [{"id": "x", "apps": ["org.a.b"]}]})
+    assert bundle.apps == ("org.a.b",) and bundle.name_of("org.a.b") == "org.a.b"

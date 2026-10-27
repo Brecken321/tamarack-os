@@ -59,11 +59,18 @@ Kirigami.ScrollablePage {
                         delegate: RowLayout {
                             required property var modelData
                             Layout.fillWidth: true
-                            StatusIcon { level: modelData.installed ? "ok" : "info" }
+                            StatusIcon {
+                                level: "ok"
+                                opacity: modelData.installed ? 1 : 0
+                                Accessible.ignored: !modelData.installed
+                            }
                             Controls.Label {
-                                text: modelData.id
+                                text: modelData.name
                                 elide: Text.ElideRight
                                 Layout.fillWidth: true
+                                Controls.ToolTip.text: modelData.id
+                                Controls.ToolTip.visible: nameHover.hovered
+                                HoverHandler { id: nameHover }
                             }
                             Controls.Label {
                                 text: modelData.installed ? qsTr("Installed") : ""
@@ -76,9 +83,9 @@ Kirigami.ScrollablePage {
                                 display: Controls.AbstractButton.IconOnly
                                 enabled: !backend.busy
                                 onClicked: backend.uninstallApp(modelData.id)
-                                Controls.ToolTip.text: qsTr("Remove %1").arg(modelData.id)
+                                Controls.ToolTip.text: qsTr("Remove %1").arg(modelData.name)
                                 Controls.ToolTip.visible: hovered
-                                Accessible.name: qsTr("Remove %1").arg(modelData.id)
+                                Accessible.name: qsTr("Remove %1").arg(modelData.name)
                             }
                         }
                     }

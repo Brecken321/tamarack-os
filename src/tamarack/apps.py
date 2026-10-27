@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import re
 import tomllib
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
@@ -21,6 +21,11 @@ class Bundle:
     name: str
     description: str
     apps: tuple[str, ...]
+    # Human-readable names for the app ids (falls back to the id).
+    names: dict[str, str] = field(default_factory=dict)
+
+    def name_of(self, app_id: str) -> str:
+        return self.names.get(app_id, app_id)
 
 
 def parse_bundles(data: dict[str, Any]) -> list[Bundle]:
@@ -34,10 +39,19 @@ def parse_bundles(data: dict[str, Any]) -> list[Bundle]:
         if bundle_id in seen:
             raise ValueError(f"duplicate bundle id {bundle_id!r}")
         seen.add(bundle_id)
+        ids: list[str] = []
+        names: dict[str, str] = {}
         for app in apps:
-            if not isinstance(app, str) or not _APP_ID.match(app):
+            # Either a bare id or a table: { id = "...", name = "..." }.
+            app_id = app.get("id") if isinstance(app, dict) else app
+            if not isinstance(app_id, str) or not _APP_ID.match(app_id):
                 raise ValueError(f"bundle {bundle_id!r}: {app!r} is not a valid Flatpak app id")
-        bundles.append(Bundle(bundle_id, str(raw.get("name", bundle_id)), str(raw.get("description", "")), tuple(apps)))
+            ids.append(app_id)
+            if isinstance(app, dict) and isinstance(app.get("name"), str):
+                names[app_id] = app["name"]
+        bundles.append(
+            Bundle(bundle_id, str(raw.get("name", bundle_id)), str(raw.get("description", "")), tuple(ids), names)
+        )
     return bundles
 
 
@@ -55,8 +69,8 @@ def bundles_with_state(runner: Runner, path: Path = BUNDLES) -> list[dict[str, A
     installed = installed_apps(runner)
     out = []
     for bundle in load_bundles(path):
-        data = asdict(bundle)
-        data["apps"] = [{"id": a, "installed": a in installed} for a in bundle.apps]
+        data: dict[str, Any] = {"id": bundle.id, "name": bundle.name, "description": bundle.description}
+        data["apps"] = [{"id": a, "name": bundle.name_of(a), "installed": a in installed} for a in bundle.apps]
         data["installed_count"] = sum(1 for a in bundle.apps if a in installed)
         out.append(data)
     return out
