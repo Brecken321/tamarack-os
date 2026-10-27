@@ -33,9 +33,8 @@ Kirigami.ScrollablePage {
         SectionCard {
             title: qsTr("Useful keyboard shortcuts")
             iconName: "preferences-desktop-keyboard-shortcut"
-            GridLayout {
-                columns: 2
-                columnSpacing: Kirigami.Units.largeSpacing * 2
+            ColumnLayout {
+                spacing: Kirigami.Units.smallSpacing
                 Layout.fillWidth: true
                 Repeater {
                     model: [
@@ -52,12 +51,22 @@ Kirigami.ScrollablePage {
                         ["Meta + Ctrl + ← / →", qsTr("Switch virtual desktop")],
                         ["Right Shift + F12 (in games)", qsTr("Toggle the MangoHud performance overlay")]
                     ]
-                    delegate: Controls.Label {
+                    delegate: RowLayout {
                         required property var modelData
-                        required property int index
-                        text: modelData[0] + "\t" + modelData[1]
-                        Layout.columnSpan: 2
-                        textFormat: Text.PlainText
+                        Layout.fillWidth: true
+                        spacing: Kirigami.Units.largeSpacing
+                        Controls.Label {
+                            text: modelData[0]
+                            font.bold: true
+                            textFormat: Text.PlainText
+                            Layout.preferredWidth: Kirigami.Units.gridUnit * 12
+                        }
+                        Controls.Label {
+                            text: modelData[1]
+                            wrapMode: Text.WordWrap
+                            textFormat: Text.PlainText
+                            Layout.fillWidth: true
+                        }
                     }
                 }
             }
