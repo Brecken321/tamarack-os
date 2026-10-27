@@ -14,11 +14,13 @@ Kirigami.AbstractCard {
     Layout.fillWidth: true
 
     contentItem: ColumnLayout {
-        spacing: Kirigami.Units.largeSpacing
+        // No layout spacing: the filler at the end must not add a gap.
+        spacing: 0
 
         RowLayout {
             visible: card.title.length > 0
             spacing: Kirigami.Units.largeSpacing
+            Layout.bottomMargin: Kirigami.Units.largeSpacing
             Kirigami.Icon {
                 visible: card.iconName.length > 0
                 source: card.iconName
@@ -48,6 +50,12 @@ Kirigami.AbstractCard {
             id: body
             spacing: Kirigami.Units.smallSpacing
             Layout.fillWidth: true
+        }
+
+        // Cards in a CardsLayout row are stretched to the tallest one; this
+        // keeps the content at the top instead of spread down the card.
+        Item {
+            Layout.fillHeight: true
         }
     }
 }

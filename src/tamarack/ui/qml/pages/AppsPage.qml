@@ -92,7 +92,8 @@ Kirigami.ScrollablePage {
 
                     Controls.Button {
                         text: bundleCard.missing.length === 0 ? qsTr("All installed")
-                              : qsTr("Install %n app(s)", "", bundleCard.missing.length)
+                              : bundleCard.missing.length === 1 ? qsTr("Install 1 app")
+                              : qsTr("Install %1 apps").arg(bundleCard.missing.length)
                         icon.name: "download"
                         enabled: bundleCard.missing.length > 0 && !backend.busy
                         onClicked: backend.installApps(bundleCard.missing)

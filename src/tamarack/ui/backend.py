@@ -540,11 +540,13 @@ class Backend(QObject):
         if not ids:
             return
 
+        count = "1 app" if len(ids) == 1 else f"{len(ids)} apps"
+
         def done(res: CommandResult) -> None:
-            self._report("Installing apps", res, f"Installed {len(ids)} app(s).")
+            self._report("Installing apps", res, f"Installed {count}.")
             self.refreshBundles()
 
-        self._run(f"Installing {len(ids)} app(s) from Flathub", lambda: apps.install(self._runner, ids), done)
+        self._run(f"Installing {count} from Flathub", lambda: apps.install(self._runner, ids), done)
 
     @Slot(str)
     def uninstallApp(self, app_id: str) -> None:
