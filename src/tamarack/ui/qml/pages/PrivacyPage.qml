@@ -23,7 +23,7 @@ Kirigami.ScrollablePage {
     Component.onCompleted: backend.refreshPrivacy()
 
     ColumnLayout {
-        spacing: Kirigami.Units.largeSpacing
+        spacing: Kirigami.Units.largeSpacing * 2
 
         Controls.Label {
             Layout.fillWidth: true
@@ -33,7 +33,8 @@ Kirigami.ScrollablePage {
 
         SectionCard {
             title: qsTr("Your choices")
-            iconName: "preferences-system-privacy"
+            iconName: "security-high"
+            tint: Kirigami.Theme.visitedLinkColor
 
             Repeater {
                 model: [
@@ -69,6 +70,7 @@ Kirigami.ScrollablePage {
         SectionCard {
             title: qsTr("App permissions")
             iconName: "preferences-security"
+            tint: Kirigami.Theme.linkColor
             subtitle: qsTr("Store apps (Flatpak) run in a sandbox. Apps that ship with the OS are not sandboxed and can access what your account can.")
 
             Repeater {
@@ -76,7 +78,30 @@ Kirigami.ScrollablePage {
                 delegate: RowLayout {
                     required property var modelData
                     Layout.fillWidth: true
-                    Controls.Label { text: modelData.app_id; elide: Text.ElideRight; Layout.fillWidth: true }
+                    spacing: Kirigami.Units.largeSpacing
+                    Kirigami.Icon {
+                        source: modelData.icon ? "file://" + modelData.icon : modelData.app_id
+                        fallback: "application-x-executable"
+                        implicitWidth: Kirigami.Units.iconSizes.smallMedium
+                        implicitHeight: Kirigami.Units.iconSizes.smallMedium
+                        Accessible.ignored: true
+                    }
+                    ColumnLayout {
+                        spacing: 0
+                        Layout.fillWidth: true
+                        Controls.Label {
+                            text: modelData.name || modelData.app_id
+                            font.weight: Font.DemiBold
+                            elide: Text.ElideRight
+                            Layout.fillWidth: true
+                        }
+                        Controls.Label {
+                            text: modelData.files
+                            opacity: 0.7
+                            elide: Text.ElideRight
+                            Layout.fillWidth: true
+                        }
+                    }
                     Repeater {
                         model: [
                             { on: modelData.camera, label: qsTr("Camera"), icon: "camera-web" },
@@ -95,12 +120,6 @@ Kirigami.ScrollablePage {
                             HoverHandler { id: hover }
                         }
                     }
-                    Controls.Label {
-                        text: modelData.files
-                        opacity: 0.75
-                        elide: Text.ElideRight
-                        Layout.maximumWidth: Kirigami.Units.gridUnit * 12
-                    }
                 }
             }
             Controls.Button {
@@ -113,6 +132,7 @@ Kirigami.ScrollablePage {
         SectionCard {
             title: qsTr("Apps that start automatically")
             iconName: "system-run"
+            tint: Kirigami.Theme.positiveTextColor
             Repeater {
                 model: page.report.autostart || []
                 delegate: RowLayout {
@@ -133,6 +153,7 @@ Kirigami.ScrollablePage {
         SectionCard {
             title: qsTr("What connects to the internet, and why")
             iconName: "network-connect"
+            tint: Kirigami.Theme.linkColor
             Repeater {
                 model: page.report.network_catalog || []
                 delegate: ColumnLayout {
@@ -155,6 +176,7 @@ Kirigami.ScrollablePage {
         SectionCard {
             title: qsTr("Open network ports")
             iconName: "network-server"
+            tint: Kirigami.Theme.neutralTextColor
             subtitle: page.exposed.length === 0 ? qsTr("No program is accepting connections from other devices. The firewall is on.")
                                                 : qsTr("These programs accept connections from other devices (the firewall may still block them):")
             Repeater {
@@ -174,7 +196,8 @@ Kirigami.ScrollablePage {
 
         SectionCard {
             title: qsTr("Background services")
-            iconName: "preferences-system-services"
+            iconName: "system-run"
+            tint: Kirigami.Theme.visitedLinkColor
             subtitle: qsTr("Enabled system services. Ones Tamarack knows about are explained; others show their technical name.")
             Repeater {
                 model: (page.report.services || []).filter(s => s.known)

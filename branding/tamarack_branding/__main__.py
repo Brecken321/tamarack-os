@@ -156,6 +156,16 @@ class Generator:
             )
             self.render(shot, self.out / f"{base}/contents/screenshot.png", 400, 250)
 
+    def banners(self) -> None:
+        """Wide artwork from the default wallpaper for Tamarack Center's page banners."""
+        name = self.brand.wallpapers[0]
+        _top, height = art.BANNER_BAND
+        for variant in ("light", "dark"):
+            svg = self.write(
+                f"usr/share/tamarack/art/src/banner-{variant}.svg", art.banner_svg(name, variant, self.brand.art_seed)
+            )
+            self.render(svg, self.out / f"usr/share/tamarack/art/banner-{variant}.jpg", 1920, height)
+
     def look_and_feel(self) -> None:
         default = default_preset(self.presets)
         layout = layout_script(default, self.brand.logo_icon, replace_panels=False)
@@ -285,6 +295,7 @@ class Generator:
             self.icons,
             self.boot_watermark,
             self.wallpapers,
+            self.banners,
             self.look_and_feel,
             self.presets_data,
             self.desktop_entries,

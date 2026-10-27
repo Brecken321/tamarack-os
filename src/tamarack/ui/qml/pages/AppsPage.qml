@@ -3,6 +3,7 @@ import QtQuick.Controls as Controls
 import QtQuick.Layouts
 import org.kde.kirigami as Kirigami
 import "../components"
+import "../components/looks.js" as Looks
 
 Kirigami.ScrollablePage {
     id: page
@@ -24,12 +25,51 @@ Kirigami.ScrollablePage {
     Component.onCompleted: backend.refreshBundles()
 
     ColumnLayout {
-        spacing: Kirigami.Units.largeSpacing
+        spacing: Kirigami.Units.largeSpacing * 2
 
-        Controls.Label {
-            Layout.fillWidth: true
-            wrapMode: Text.WordWrap
-            text: qsTr("Tamarack OS installs only a browser and a few basic viewers. Add more here or in the app store. Apps come from Flathub and run in a sandbox. Nothing is installed unless you choose it, and an app you remove is never reinstalled behind your back.")
+        SectionCard {
+            title: qsTr("Find apps and games")
+            subtitle: qsTr("Search thousands of apps on Flathub. They run in a sandbox, nothing is installed unless you choose it, and an app you remove is never reinstalled behind your back.")
+            iconName: "search"
+            tint: Kirigami.Theme.linkColor
+
+            Kirigami.SearchField {
+                id: search
+                Layout.fillWidth: true
+                placeholderText: qsTr("Search Flathub, for example Discord, OBS or SuperTux")
+                autoAccept: false
+                text: backend.searchQuery
+                onAccepted: backend.searchApps(text)
+            }
+            Repeater {
+                model: backend.searchResults
+                delegate: AppRow {
+                    required property var modelData
+                    app: modelData
+                }
+            }
+            Controls.Label {
+                visible: backend.searchQuery.length > 0 && backend.searchResults.length === 0 && !backend.busy
+                text: qsTr("No apps found for “%1”. Try another name, or the app store.").arg(backend.searchQuery)
+                wrapMode: Text.WordWrap
+                opacity: 0.8
+                Layout.fillWidth: true
+            }
+        }
+
+        ColumnLayout {
+            spacing: 0
+            Layout.topMargin: Kirigami.Units.largeSpacing
+            Kirigami.Heading {
+                text: qsTr("Bundles")
+                level: 2
+            }
+            Controls.Label {
+                text: qsTr("Hand-picked sets of apps. Install one app or the whole bundle.")
+                opacity: 0.75
+                wrapMode: Text.WordWrap
+                Layout.fillWidth: true
+            }
         }
 
         Kirigami.PlaceholderMessage {
@@ -40,9 +80,11 @@ Kirigami.ScrollablePage {
             explanation: qsTr("Flatpak could not be queried. You can still use the app store.")
         }
 
-        Kirigami.CardsLayout {
+        GridLayout {
+            columns: page.width > Kirigami.Units.gridUnit * 44 ? 2 : 1
+            columnSpacing: Kirigami.Units.largeSpacing * 2
+            rowSpacing: Kirigami.Units.largeSpacing * 2
             Layout.fillWidth: true
-            maximumColumns: 2
 
             Repeater {
                 model: backend.bundles
@@ -53,50 +95,33 @@ Kirigami.ScrollablePage {
 
                     title: modelData.name
                     subtitle: modelData.description
+                    iconName: Looks.bundleIcon(modelData.id)
+                    tint: Looks.bundleTint(modelData.id, Kirigami.Theme)
+                    Layout.preferredWidth: 1
+                    Layout.fillHeight: true
 
                     Repeater {
                         model: bundleCard.modelData.apps
-                        delegate: RowLayout {
+                        delegate: AppRow {
                             required property var modelData
-                            Layout.fillWidth: true
-                            StatusIcon {
-                                level: "ok"
-                                opacity: modelData.installed ? 1 : 0
-                                Accessible.ignored: !modelData.installed
-                            }
-                            Controls.Label {
-                                text: modelData.name
-                                elide: Text.ElideRight
-                                Layout.fillWidth: true
-                                Controls.ToolTip.text: modelData.id
-                                Controls.ToolTip.visible: nameHover.hovered
-                                HoverHandler { id: nameHover }
-                            }
-                            Controls.Label {
-                                text: modelData.installed ? qsTr("Installed") : ""
-                                opacity: 0.7
-                            }
-                            Controls.ToolButton {
-                                visible: modelData.installed
-                                icon.name: "edit-delete"
-                                text: qsTr("Remove")
-                                display: Controls.AbstractButton.IconOnly
-                                enabled: !backend.busy
-                                onClicked: backend.uninstallApp(modelData.id)
-                                Controls.ToolTip.text: qsTr("Remove %1").arg(modelData.name)
-                                Controls.ToolTip.visible: hovered
-                                Accessible.name: qsTr("Remove %1").arg(modelData.name)
-                            }
+                            app: modelData
                         }
                     }
 
-                    Controls.Button {
-                        text: bundleCard.missing.length === 0 ? qsTr("All installed")
-                              : bundleCard.missing.length === 1 ? qsTr("Install 1 app")
-                              : qsTr("Install %1 apps").arg(bundleCard.missing.length)
-                        icon.name: "download"
-                        enabled: bundleCard.missing.length > 0 && !backend.busy
-                        onClicked: backend.installApps(bundleCard.missing)
+                    RowLayout {
+                        Layout.topMargin: Kirigami.Units.smallSpacing
+                        Controls.Label {
+                            text: qsTr("%1 of %2 installed").arg(bundleCard.modelData.installed_count).arg(bundleCard.modelData.apps.length)
+                            opacity: 0.7
+                            Layout.fillWidth: true
+                        }
+                        Controls.Button {
+                            visible: bundleCard.missing.length > 1
+                            text: qsTr("Install all %1").arg(bundleCard.missing.length)
+                            icon.name: "download"
+                            enabled: !backend.busy
+                            onClicked: backend.installApps(bundleCard.missing)
+                        }
                     }
                 }
             }

@@ -30,7 +30,7 @@ Kirigami.ScrollablePage {
     Component.onCompleted: backend.refreshUpdates()
 
     ColumnLayout {
-        spacing: Kirigami.Units.largeSpacing
+        spacing: Kirigami.Units.largeSpacing * 2
 
         Kirigami.InlineMessage {
             Layout.fillWidth: true
@@ -85,6 +85,7 @@ Kirigami.ScrollablePage {
             visible: page.staged !== null
             title: qsTr("Update ready: %1").arg(page.staged ? page.staged.version : "")
             iconName: "system-reboot"
+            tint: Kirigami.Theme.neutralTextColor
             subtitle: qsTr("Restart whenever it suits you to start using it.")
             Controls.Button {
                 text: qsTr("Restart now…")
@@ -96,6 +97,7 @@ Kirigami.ScrollablePage {
         SectionCard {
             title: qsTr("Go back to the previous version")
             iconName: "edit-undo"
+            tint: Kirigami.Theme.linkColor
             subtitle: page.previous ? (page.previous.version ? qsTr("Previous version: %1 (%2)").arg(page.previous.version).arg(page.previous.date)
                                                              : qsTr("Previous version from %1").arg(page.previous.date))
                                     : qsTr("No previous version is available yet.")
@@ -125,6 +127,7 @@ Kirigami.ScrollablePage {
         SectionCard {
             title: qsTr("If the computer won't start")
             iconName: "tools-wizard"
+            tint: Kirigami.Theme.negativeTextColor
             Controls.Label {
                 Layout.fillWidth: true
                 wrapMode: Text.WordWrap
@@ -140,6 +143,7 @@ Kirigami.ScrollablePage {
         SectionCard {
             title: qsTr("Update history")
             iconName: "view-history"
+            tint: Kirigami.Theme.visitedLinkColor
             Repeater {
                 model: (page.st.history || []).slice().reverse()
                 delegate: RowLayout {
@@ -160,6 +164,7 @@ Kirigami.ScrollablePage {
         SectionCard {
             title: qsTr("Back up your files")
             iconName: "backup"
+            tint: Kirigami.Theme.positiveTextColor
             Controls.Label {
                 Layout.fillWidth: true
                 wrapMode: Text.WordWrap

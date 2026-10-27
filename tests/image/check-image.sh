@@ -64,6 +64,7 @@ done
 check "logo icon (256px)" test -s "/usr/share/icons/hicolor/256x256/apps/${BRAND_LOGO_ICON}.png"
 check "boot splash watermark is a PNG" bash -c 'file -b /usr/share/plymouth/themes/spinner/watermark.png | grep -q PNG'
 check "preset previews rendered" test "$(find /usr/share/tamarack/presets/previews -name '*.png' | wc -l)" -ge 7
+check "Tamarack Center banner artwork rendered" test -s /usr/share/tamarack/art/banner-light.jpg -a -s /usr/share/tamarack/art/banner-dark.jpg
 check "SVG sources stripped from image" test ! -d /usr/share/tamarack/art/src
 
 # --- Desktop defaults ---------------------------------------------------------

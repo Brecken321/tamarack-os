@@ -38,10 +38,16 @@ jobs:
           dnf5 -y install --setopt=install_weak_deps=False \
             git python3 python3-pyside6 python3-pillow kf6-kirigami kf6-qqc2-desktop-style qt6-qtsvg \
             qt6-qtdeclarative qt6-qtimageformats mesa-dri-drivers breeze-icon-theme google-noto-sans-fonts \
-            librsvg2-tools flatpak
+            librsvg2-tools flatpak plasma-integration plasma-breeze xorg-x11-server-Xvfb
 
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: QML loads
+        env:
+          QT_QPA_PLATFORM: offscreen
+          PYTHONPATH: src
+        run: python3 -m tamarack.ui.app --self-test
 
       - name: Render branding (wallpapers, preset previews, logo)
         run: PYTHONPATH=src:branding python3 -m tamarack_branding --brand branding/brand.toml --presets branding/presets --out output/branding
@@ -54,24 +60,33 @@ jobs:
           ls "${catalog}/icons/128x128" | head -n 3
           echo "APPSTREAM=${catalog}" >> "$GITHUB_ENV"
 
+      # Same look as in a Plasma session: KDE platform theme (colors, icons
+      # and fonts from kdeglobals), Breeze style, OpenGL (Mesa llvmpipe).
       - name: Render pages
+        shell: bash
         env:
-          QT_QPA_PLATFORM: offscreen
-          QT_QUICK_BACKEND: software
+          QT_QPA_PLATFORM: xcb
+          QT_QPA_PLATFORMTHEME: kde
+          DISPLAY: ":99"
           PYTHONPATH: src
         run: |
           set -euo pipefail
+          Xvfb :99 -screen 0 1280x900x24 -nolisten tcp &
+          sleep 3
           for scheme in Dark Light; do
             config="$(mktemp -d)"
-            cp "output/branding/usr/share/color-schemes/Tamarack${scheme}.colors" "${config}/kdeglobals"
             icons=breeze
             [[ "${scheme}" == Dark ]] && icons=breeze-dark
+            {
+              cat "output/branding/usr/share/color-schemes/Tamarack${scheme}.colors"
+              printf '\n[Icons]\nTheme=%s\n\n[KDE]\nwidgetStyle=Breeze\n' "${icons}"
+            } > "${config}/kdeglobals"
             for mode in center welcome; do
               flag=""
               [[ "${mode}" == welcome ]] && flag="--welcome"
               XDG_CONFIG_HOME="${config}" XDG_DATA_DIRS="${PWD}/output/branding/usr/share:/usr/share" \
                 python3 -m tamarack.ui.app --screenshots "preview/${scheme,,}" --data-root output/branding \
-                --appstream "${APPSTREAM}" --icon-theme "${icons}" ${flag}
+                --appstream "${APPSTREAM}" ${flag}
             done
           done
           ls -R preview

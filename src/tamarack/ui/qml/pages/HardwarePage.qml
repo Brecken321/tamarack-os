@@ -9,6 +9,22 @@ Kirigami.ScrollablePage {
     title: qsTr("Hardware")
 
     readonly property var items: backend.hardware.items || []
+    // Icon and color for each category hardware.py reports.
+    function look(category) {
+        var looks = {
+            "Processor": ["cpu", Kirigami.Theme.linkColor],
+            "Memory": ["memory", Kirigami.Theme.visitedLinkColor],
+            "Graphics": ["monitor", Kirigami.Theme.neutralTextColor],
+            "Displays": ["video-display", Kirigami.Theme.linkColor],
+            "Storage": ["drive-harddisk", Kirigami.Theme.positiveTextColor],
+            "Network": ["network-wireless", Kirigami.Theme.linkColor],
+            "Audio": ["audio-speakers", Kirigami.Theme.visitedLinkColor],
+            "Bluetooth": ["network-bluetooth", Kirigami.Theme.linkColor],
+            "Controllers": ["input-gamepad", Kirigami.Theme.neutralTextColor]
+        };
+        if (category.indexOf("Battery") === 0) return ["battery-full", Kirigami.Theme.positiveTextColor];
+        return looks[category] || ["computer", Kirigami.Theme.highlightColor];
+    }
     readonly property var categories: {
         var seen = [];
         for (var i = 0; i < items.length; ++i) {
@@ -50,7 +66,7 @@ Kirigami.ScrollablePage {
     Component.onCompleted: backend.refreshHardware()
 
     ColumnLayout {
-        spacing: Kirigami.Units.largeSpacing
+        spacing: Kirigami.Units.largeSpacing * 2
 
         Controls.Label {
             Layout.fillWidth: true
@@ -71,6 +87,8 @@ Kirigami.ScrollablePage {
                 id: group
                 required property string modelData
                 title: modelData
+                iconName: page.look(modelData)[0]
+                tint: page.look(modelData)[1]
 
                 Repeater {
                     model: page.items.filter(it => it.category === group.modelData)

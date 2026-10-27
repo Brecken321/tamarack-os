@@ -31,11 +31,12 @@ Kirigami.ScrollablePage {
     }
 
     ColumnLayout {
-        spacing: Kirigami.Units.largeSpacing
+        spacing: Kirigami.Units.largeSpacing * 2
 
         SectionCard {
             title: qsTr("Play mode")
             iconName: "input-gamepad"
+            tint: Kirigami.Theme.neutralTextColor
 
             RowLayout {
                 Layout.fillWidth: true
@@ -84,6 +85,7 @@ Kirigami.ScrollablePage {
         SectionCard {
             title: qsTr("Will this game work?")
             iconName: "search"
+            tint: Kirigami.Theme.linkColor
             subtitle: qsTr("Search by name or Steam app ID. Answers come from the %1 anti-cheat database (%2 games, updated %3). Single-player games without anti-cheat usually work through Proton.")
                         .arg(backend.datasetInfo.name || "AreWeAntiCheatYet")
                         .arg(backend.datasetInfo.games || "?")
@@ -163,7 +165,8 @@ Kirigami.ScrollablePage {
         SectionCard {
             visible: backend.hybridGraphics
             title: qsTr("Hybrid graphics")
-            iconName: "video-card"
+            iconName: "monitor"
+            tint: Kirigami.Theme.positiveTextColor
             subtitle: qsTr("This computer has an integrated and a discrete GPU. By default the desktop and apps use the integrated one to save battery.")
             RowLayout {
                 Layout.fillWidth: true
@@ -189,6 +192,7 @@ Kirigami.ScrollablePage {
         SectionCard {
             title: qsTr("Your Steam library")
             iconName: "steam"
+            tint: Kirigami.Theme.linkColor
 
             Kirigami.PlaceholderMessage {
                 Layout.fillWidth: true
@@ -265,6 +269,7 @@ Kirigami.ScrollablePage {
         SectionCard {
             title: qsTr("When a game won't start")
             iconName: "tools-report-bug"
+            tint: Kirigami.Theme.negativeTextColor
             Controls.Label {
                 Layout.fillWidth: true
                 wrapMode: Text.WordWrap

@@ -1,3 +1,11 @@
-StatusIcon 1.0 StatusIcon.qml
+ActionTile 1.0 ActionTile.qml
+AppRow 1.0 AppRow.qml
 CategoryChip 1.0 CategoryChip.qml
+HeroBanner 1.0 HeroBanner.qml
+IconBadge 1.0 IconBadge.qml
+Pill 1.0 Pill.qml
+PresetCard 1.0 PresetCard.qml
+PrimaryButton 1.0 PrimaryButton.qml
 SectionCard 1.0 SectionCard.qml
+StatusIcon 1.0 StatusIcon.qml
+StepIndicator 1.0 StepIndicator.qml

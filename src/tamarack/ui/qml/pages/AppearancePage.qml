@@ -34,7 +34,7 @@ Kirigami.ScrollablePage {
     Component.onCompleted: backend.refreshPresets()
 
     ColumnLayout {
-        spacing: Kirigami.Units.largeSpacing
+        spacing: Kirigami.Units.largeSpacing * 2
 
         Controls.Label {
             Layout.fillWidth: true
@@ -42,24 +42,22 @@ Kirigami.ScrollablePage {
             text: qsTr("Presets change the real desktop: theme, taskbar position and style, start menu, animations, fonts, window buttons and more. Your previous setup is saved first, so you can always undo.")
         }
 
-        Kirigami.CardsLayout {
+        GridLayout {
+            columns: page.width > Kirigami.Units.gridUnit * 50 ? 3 : page.width > Kirigami.Units.gridUnit * 30 ? 2 : 1
+            columnSpacing: Kirigami.Units.largeSpacing * 2
+            rowSpacing: Kirigami.Units.largeSpacing * 2
             Layout.fillWidth: true
-            maximumColumns: 3
 
             Repeater {
                 model: backend.presets
-                delegate: Kirigami.Card {
+                delegate: PresetCard {
                     id: card
                     required property var modelData
-                    banner.source: modelData.preview
-                    banner.title: modelData.name
-                    banner.titleIcon: modelData.current ? "emblem-ok-symbolic" : ""
-                    Accessible.name: modelData.name
+                    preset: modelData
+                    Layout.preferredWidth: 1
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
 
-                    contentItem: Controls.Label {
-                        text: card.modelData.summary
-                        wrapMode: Text.WordWrap
-                    }
                     actions: [
                         Kirigami.Action {
                             text: card.modelData.current ? qsTr("Re-apply") : qsTr("Apply")
@@ -95,6 +93,8 @@ Kirigami.ScrollablePage {
 
         SectionCard {
             title: qsTr("Fine-tune in System Settings")
+            iconName: "configure"
+            tint: Kirigami.Theme.visitedLinkColor
             subtitle: qsTr("Every option is also available in KDE System Settings, where you can change it individually.")
             Flow {
                 Layout.fillWidth: true
@@ -131,6 +131,8 @@ Kirigami.ScrollablePage {
 
         SectionCard {
             title: qsTr("Behavior")
+            iconName: "input-mouse"
+            tint: Kirigami.Theme.linkColor
             subtitle: qsTr("How the computer reacts: power button and lid, notifications, default apps, input devices and windows.")
             Flow {
                 Layout.fillWidth: true

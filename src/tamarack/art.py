@@ -286,6 +286,21 @@ def wallpaper_svg(name: str, variant: str, width: int, height: int, seed: int) -
     return _wrap(scene_svg_body(name, variant, width, height, seed), width, height)
 
 
+# The band of a 1920x1080 scene used for banners: the ridges and treeline.
+BANNER_BAND = (420, 480)
+
+
+def banner_svg(name: str, variant: str, seed: int) -> str:
+    """A wide crop of a wallpaper scene, used as artwork behind page banners."""
+    top, height = BANNER_BAND
+    body = scene_svg_body(name, variant, 1920, 1080, seed)
+    return (
+        '<?xml version="1.0" encoding="UTF-8"?>\n'
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="{height}" '
+        f'viewBox="0 {top} 1920 {height}">\n{body}\n</svg>\n'
+    )
+
+
 # --- Logo -----------------------------------------------------------------
 
 _TIERS = ((46.0, 34.0, 34.0), (84.0, 50.0, 44.0), (124.0, 66.0, 54.0))  # apex y, half-width, height

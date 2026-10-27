@@ -9,11 +9,12 @@ Kirigami.ScrollablePage {
     title: qsTr("Help & About")
 
     ColumnLayout {
-        spacing: Kirigami.Units.largeSpacing
+        spacing: Kirigami.Units.largeSpacing * 2
 
         SectionCard {
             title: backend.brand.name
             iconName: backend.brand.logo
+            iconMask: false
             subtitle: backend.brand.tagline
             Controls.Label {
                 Layout.fillWidth: true
@@ -32,7 +33,8 @@ Kirigami.ScrollablePage {
 
         SectionCard {
             title: qsTr("Useful keyboard shortcuts")
-            iconName: "preferences-desktop-keyboard-shortcut"
+            iconName: "input-keyboard"
+            tint: Kirigami.Theme.linkColor
             ColumnLayout {
                 spacing: Kirigami.Units.smallSpacing
                 Layout.fillWidth: true
@@ -80,6 +82,7 @@ Kirigami.ScrollablePage {
         SectionCard {
             title: qsTr("Common questions")
             iconName: "help-contents"
+            tint: Kirigami.Theme.positiveTextColor
             Repeater {
                 model: [
                     [qsTr("How do I install apps?"), qsTr("Open the app store (Bazaar) from the start menu, or use the Apps page here. Apps come from Flathub. Advanced users can also use Distrobox containers for any Linux package.")],
@@ -102,6 +105,7 @@ Kirigami.ScrollablePage {
         SectionCard {
             title: qsTr("Accessibility")
             iconName: "preferences-desktop-accessibility"
+            tint: Kirigami.Theme.visitedLinkColor
             Controls.Label {
                 Layout.fillWidth: true
                 wrapMode: Text.WordWrap

@@ -9,9 +9,12 @@ Kirigami.AbstractCard {
     property string title: ""
     property string subtitle: ""
     property string iconName: ""
+    property color tint: Kirigami.Theme.highlightColor
+    property bool iconMask: true
     default property alias content: body.data
 
     Layout.fillWidth: true
+    padding: Kirigami.Units.largeSpacing * 2
 
     contentItem: ColumnLayout {
         // No layout spacing: the filler at the end must not add a gap.
@@ -19,20 +22,23 @@ Kirigami.AbstractCard {
 
         RowLayout {
             visible: card.title.length > 0
-            spacing: Kirigami.Units.largeSpacing
-            Layout.bottomMargin: Kirigami.Units.largeSpacing
-            Kirigami.Icon {
+            spacing: Kirigami.Units.largeSpacing * 1.5
+            Layout.bottomMargin: Kirigami.Units.largeSpacing * 1.5
+            IconBadge {
                 visible: card.iconName.length > 0
-                source: card.iconName
-                implicitWidth: Kirigami.Units.iconSizes.medium
-                implicitHeight: Kirigami.Units.iconSizes.medium
+                iconName: card.iconName
+                tint: card.tint
+                mask: card.iconMask
+                Layout.alignment: Qt.AlignTop
             }
             ColumnLayout {
-                spacing: 0
+                spacing: Kirigami.Units.smallSpacing / 2
                 Layout.fillWidth: true
+                Layout.alignment: Qt.AlignVCenter
                 Kirigami.Heading {
                     text: card.title
                     level: 3
+                    font.weight: Font.DemiBold
                     wrapMode: Text.WordWrap
                     Layout.fillWidth: true
                 }
@@ -40,7 +46,7 @@ Kirigami.AbstractCard {
                     visible: card.subtitle.length > 0
                     text: card.subtitle
                     wrapMode: Text.WordWrap
-                    opacity: 0.8
+                    opacity: 0.75
                     Layout.fillWidth: true
                 }
             }
@@ -48,12 +54,12 @@ Kirigami.AbstractCard {
 
         ColumnLayout {
             id: body
-            spacing: Kirigami.Units.smallSpacing
+            spacing: Kirigami.Units.largeSpacing
             Layout.fillWidth: true
         }
 
-        // Cards in a CardsLayout row are stretched to the tallest one; this
-        // keeps the content at the top instead of spread down the card.
+        // Cards in a grid row are stretched to the tallest one; this keeps
+        // the content at the top instead of spread down the card.
         Item {
             Layout.fillHeight: true
         }

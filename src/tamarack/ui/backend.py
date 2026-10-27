@@ -178,13 +178,12 @@ class Backend(QObject):
             "accent": b.palette["accent"],
             "amber": b.palette["amber"],
             "palette": dict(b.palette),
-            "hero": {"light": self._wallpaper_url("images"), "dark": self._wallpaper_url("images_dark")},
+            "banner": {"light": self._banner_url("light"), "dark": self._banner_url("dark")},
         }
 
-    def _wallpaper_url(self, folder: str) -> str:
-        """The default wallpaper, used as artwork in page banners ("" if missing)."""
-        wallpaper = self._data_root / "usr/share/wallpapers" / self._brand.wallpapers[0]
-        path = wallpaper / "contents" / folder / "1920x1080.jpg"
+    def _banner_url(self, variant: str) -> str:
+        """Artwork for page banners, generated from the default wallpaper ("" if missing)."""
+        path = self._data_root / f"usr/share/tamarack/art/banner-{variant}.jpg"
         return QUrl.fromLocalFile(str(path)).toString() if path.is_file() else ""
 
     @Property(bool, constant=True)
@@ -566,7 +565,7 @@ class Backend(QObject):
 
         def done(res: CommandResult) -> None:
             self._report("Installing apps", res, f"Installed {count}.")
-            self.refreshBundles()
+            self._refresh_apps()
 
         self._run(f"Installing {count} from Flathub", lambda: apps.install(self._runner, ids), done)
 
@@ -574,9 +573,15 @@ class Backend(QObject):
     def uninstallApp(self, app_id: str) -> None:
         def done(res: CommandResult) -> None:
             self._report("Removing app", res, "App removed.")
-            self.refreshBundles()
+            self._refresh_apps()
 
         self._run(f"Removing {app_id}", lambda: apps.uninstall(self._runner, app_id), done)
+
+    def _refresh_apps(self) -> None:
+        """Show the new installed state in the bundles and in search results."""
+        self.refreshBundles()
+        if self._search_query:
+            self.searchApps(self._search_query)
 
     @Property("QVariant", notify=searchChanged)
     def searchResults(self) -> list[dict[str, Any]]:

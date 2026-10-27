@@ -45,8 +45,6 @@ Kirigami.ApplicationWindow {
             titleIcon: backend.brand.logo
             isMenu: false
             modal: !root.wideScreen
-            collapsible: true
-            showHeaderWhenCollapsed: true
 
             actions: [
                 Kirigami.Action {
