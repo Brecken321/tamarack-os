@@ -75,7 +75,11 @@ Disk images (`.github/workflows/build-disk.yml`): after each published build, bo
 creates a qcow2 for each variant with a throwaway test user, QEMU/KVM boots it, and
 `tests/vm/` checks the running system over SSH, logs into Plasma through the virtual keyboard,
 applies presets, opens Tamarack Center and takes screenshots. Installer ISOs (Anaconda,
-`disk_config/iso-*.toml`) are built after the VM test passes.
+`disk_config/iso-*.toml`) are built after the VM test passes, and an unattended install from a test ISO
+is booted and checked the same way. Disk jobs run on `ubuntu-24.04` runners because osbuild's container
+mount fails on the kernel 7.0 `ubuntu-26.04` runners
+([osbuild/osbuild#2579](https://github.com/osbuild/osbuild/issues/2579)); `tests/vm/build-disk.sh`
+calls bootc-image-builder directly so test-only configs (throwaway user, kickstart) can be passed.
 
 ## Runtime components
 
