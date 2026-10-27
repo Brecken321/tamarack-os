@@ -3,8 +3,11 @@
 # signed registry image so normal updates work.
 [customizations.installer.kickstart]
 contents = """
+# Always boot the installed system to the graphical login, even when the
+# installer itself ran in text mode (Anaconda then defaults to a text boot).
+xconfig --startxonboot
 %post --erroronfail
-bootc switch --mutate-in-place --transport registry ghcr.io/brecken321/tamarack-os-nvidia:stable
+bootc switch --mutate-in-place --enforce-container-sigpolicy --transport registry ghcr.io/brecken321/tamarack-os-nvidia:stable
 %end
 """
 

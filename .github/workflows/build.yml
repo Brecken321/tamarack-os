@@ -9,6 +9,10 @@ on:
     paths-ignore:
       - "**.md"
       - "docs/**"
+      # Disk/ISO configs and VM tests do not change the image itself.
+      - "disk_config/**"
+      - "tests/vm/**"
+      - ".github/workflows/build-disk.yml"
   schedule:
     # Daily rebuild to pick up upstream Bazzite/Fedora security fixes.
     - cron: "40 7 * * *"

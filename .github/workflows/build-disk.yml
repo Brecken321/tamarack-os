@@ -233,9 +233,11 @@ jobs:
           user --name=tamarack --password=${password} --plaintext --groups=wheel
           sshkey --username=tamarack "$(cat "${RUNNER_TEMP}/vmkey.pub")"
           services --enabled=sshd
+          # Same as the release ISOs: graphical login even after a text-mode install.
+          xconfig --startxonboot
           reboot
           %post --erroronfail
-          bootc switch --mutate-in-place --transport registry ${{ steps.meta.outputs.ref }}
+          bootc switch --mutate-in-place --enforce-container-sigpolicy --transport registry ${{ steps.meta.outputs.ref }}
           %end
           """
 
