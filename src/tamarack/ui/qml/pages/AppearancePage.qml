@@ -54,6 +54,8 @@ Kirigami.ScrollablePage {
                     id: card
                     required property var modelData
                     preset: modelData
+                    // Same base width for every card, so the columns come out equal.
+                    Layout.preferredWidth: Kirigami.Units.gridUnit * 20
 
                     actions: [
                         Kirigami.Action {
