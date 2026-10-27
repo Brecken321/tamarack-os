@@ -12,9 +12,9 @@ Under the hood it is a custom image built on [Bazzite](https://bazzite.gg/) and
 drivers, Steam integration and security updates come from mature, actively maintained projects.
 Tamarack adds its own identity, defaults, privacy settings and tools on top.
 
-> **Project status: early development.** Both editions build, pass about 80 automated image checks, and boot to a
-> working Plasma desktop in CI virtual machines, where presets, Tamarack Center, first-boot apps and signed updates
-> are exercised. Tamarack OS has **not yet been validated on physical hardware** (no real GPU, games, Wi-Fi or audio
+> **Project status: early development.** Both editions build, pass about 80 automated image checks, install from their
+> ISO onto a blank disk, and boot to a working Plasma desktop in CI virtual machines, where presets, Tamarack Center,
+> first-boot apps and signed updates are exercised. Tamarack OS has **not yet been validated on physical hardware** (no real GPU, games, Wi-Fi or audio
 > tested). Read
 > [TESTING.md](TESTING.md) for exactly what has and has not been tested before installing it on a PC
 > you depend on. Tamarack OS is an independent project, not affiliated with or endorsed by Bazzite,

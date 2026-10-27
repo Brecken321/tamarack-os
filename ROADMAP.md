@@ -12,13 +12,13 @@ Status legend: ✅ done and tested in CI · 🟡 done, needs physical-hardware v
 | Privacy defaults (countme off, Firefox sponsored content & telemetry off) | ✅ image checks |
 | Signed images + signature policy for updates | ✅ signing verified in CI; 🟡 update path verified in VM test |
 | Seven desktop presets with backup/undo, custom presets, import/export | ✅ unit tests; 🟡 VM screenshots |
-| Tamarack Center (home, appearance, apps, gaming, hardware, privacy, updates, help) + Welcome | ✅ QML self-test; 🟡 VM screenshots |
+| Tamarack Center (home, appearance, apps, gaming, hardware, privacy, updates, help) + Welcome | ✅ QML self-test and VM screenshots |
 | `tamarack` CLI and `ujust tamarack-*` recipes | ✅ |
 | Game compatibility center with sourced anti-cheat data, Steam library view, launch logs | ✅ |
 | Hybrid-laptop option: Steam on the discrete GPU | 🟡 |
-| First-boot default apps (never reinstalls removed apps) | 🟡 VM test |
+| First-boot default apps (never reinstalls removed apps) | ✅ VM test |
 | VM boot test with screenshots in CI | ✅ |
-| Anaconda installer ISOs | ✅ built in CI; 🟡 install not yet exercised end to end |
+| Anaconda installer ISOs | ✅ built in CI; ✅ unattended install + first boot tested in a VM; 🟡 interactive installer not automated |
 | Documentation set | ✅ |
 
 ## Milestone 2: Validated on real hardware
@@ -27,7 +27,6 @@ Status legend: ✅ done and tested in CI · 🟡 done, needs physical-hardware v
   and at least one AMD desktop; record results in [docs/HARDWARE.md](docs/HARDWARE.md).
 - 🔜 Real game tests (a free-to-play title and a Proton title) with MangoHud frame-time captures.
 - 🔜 Measure boot time, idle RAM/CPU, and compare with upstream Bazzite on the same machine.
-- 🔜 Automated unattended ISO install test in CI (kickstart-driven) followed by first boot.
 
 ## Milestone 3: Polish
 

@@ -26,7 +26,7 @@ needs the NVIDIA edition.
 ## 3. Get the installer
 
 1. Open the latest successful [Disk images and VM test](https://github.com/Brecken321/tamarack-os/actions/workflows/build-disk.yml)
-   run and download the `tamarack-os-iso` or `tamarack-os-nvidia-iso` artifact (about 7–9 GB; you need that much free space
+   run and download the `tamarack-os-iso` or `tamarack-os-nvidia-iso` artifact (about 6–6.5 GB; you need that much free space
    on the PC you download to). You must be signed in to GitHub to download workflow artifacts.
 2. Verify the download. In a terminal on Linux/macOS: `sha256sum -c tamarack-os-*.iso.sha256`. On Windows PowerShell:
    `Get-FileHash .\tamarack-os-*.iso -Algorithm SHA256` and compare with the `.sha256` file.

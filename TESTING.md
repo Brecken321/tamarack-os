@@ -7,7 +7,7 @@ real hardware and is done by hand with the checklist below.
 |---|---|---|---|
 | 1. Static + unit | ruff, mypy `--strict`, shellcheck, `just --fmt`; 135+ pytest tests; generated JS syntax (`node --check`); desktop-file validation; QML self-test (every page compiled and instantiated against real Kirigami) | Fedora 44 container | `just lint`, `just test` |
 | 2. Image content | ~75 checks run *inside* each built image: branding, themes, wallpapers, KDE defaults, privacy defaults, signature policy, services, gaming stack, NVIDIA driver presence, CLI, Tamarack Center QML load | Each image (both editions) | `just check-image main` |
-| 3. VM boot | bootc-image-builder makes a qcow2; QEMU/KVM boots it (UEFI); checks over SSH; logs into Plasma via the virtual keyboard; applies presets; opens every Tamarack Center page; screenshots | GitHub-hosted runner with KVM | `tests/vm/run-vm-test.sh` |
+| 3. VM boot and install | bootc-image-builder makes a qcow2; QEMU/KVM boots it (UEFI); checks over SSH; logs into Plasma via the virtual keyboard; applies presets; opens every Tamarack Center page; screenshots. Then: installer ISOs, and an unattended Anaconda install onto a blank virtual disk followed by the same checks | GitHub-hosted runner with KVM | `tests/vm/run-vm-test.sh`, `tests/vm/install-test.sh` |
 | 4. Physical hardware | GPU drivers, real games, Wi-Fi/Bluetooth/audio, sleep, displays, controllers, install/dual-boot | A real PC | [Checklist](#physical-hardware-checklist) |
 
 ## What each automated layer proves, and what it doesn't
@@ -22,13 +22,39 @@ real hardware and is done by hand with the checklist below.
   default apps from Flathub, and that presets and Tamarack Center work in a real Plasma session. A VM has no real GPU
   (software rendering), so it says **nothing** about game performance, NVIDIA drivers, Wi-Fi, Bluetooth, audio hardware,
   sleep or battery.
-- **Installer ISOs** are built in CI, but an end-to-end install from the ISO is not yet automated.
+- **The unattended install test** builds an installer ISO with the same builder and image as the release ISOs (plus a
+  test kickstart that partitions automatically and creates a throwaway user), installs onto an empty virtual disk with
+  Anaconda, then boots the installed system and runs the full VM test on it. It does **not** click through the
+  interactive installer that people use, and it does not test encryption or dual-boot.
 
 ## Results log
 
 Newest first. "CI" entries link to the workflow run that produced them.
 
 <!-- results:start -->
+
+### 2026-10-27: installer ISOs and unattended install (CI [run 40467069805](https://github.com/Brecken321/tamarack-os/actions/runs/40467069805), images 44.20261027)
+
+All six jobs passed: boot test, release ISO and unattended install test for both editions.
+
+| | Standard | NVIDIA |
+|---|---|---|
+| Release ISO | `tamarack-os-20261027-x86_64.iso`, 5.8 GB, SHA-256 `0b5807ae41f55e220883c0b801b1d36485c753084bf649a586317f8a54ed4df1` | `tamarack-os-nvidia-20261027-x86_64.iso`, 6.4 GB, SHA-256 `2184a139db1e00ca28487f3a500e689c1d562c7b268d0d3ede728707962d6b00` |
+| Anaconda install onto a blank 64 GB virtual disk (automatic Btrfs partitioning) | ✅ 8 min 11 s | ✅ 8 min 41 s |
+| Installed system: boot to SSH / systemd to graphical target | ✅ 92 s / 12.5 s | ✅ 132 s / 16.8 s |
+| Installed system tracks the signed registry image (`ostree-image-signed:docker://ghcr.io/brecken321/…:stable`); update check verifies the signature | ✅ | ✅ |
+| No failed units (including `bootloader-update.service` on an Anaconda install) | ✅ | ✅ |
+| Graphical login screen, Plasma session, presets, Tamarack Center, first-boot apps (all 23 VM checks) | ✅ | ✅ |
+
+The previous run ([40460863771](https://github.com/Brecken321/tamarack-os/actions/runs/40460863771)) found that after a
+**text-mode** install Anaconda makes the installed system boot to a text console (`multi-user.target`). Fixed for every
+ISO with `xconfig --startxonboot`, so a fallback to the text installer can no longer leave users without a desktop. That
+run also confirmed the NVIDIA CDI fix (no failed units on either edition). One earlier run
+([40451568833](https://github.com/Brecken321/tamarack-os/actions/runs/40451568833)) lost its NVIDIA runner mid-test with no
+logs; the VM test now bounds every wait so a hang fails with logs instead.
+
+The test ISO differs from the release ISO only in its kickstart (automatic partitioning and a throwaway user instead of
+the interactive screens). The interactive graphical installer has not been clicked through in CI.
 
 ### 2026-10-27: VM boot test, second round (CI [run 40446510853](https://github.com/Brecken321/tamarack-os/actions/runs/40446510853), images 44.20261027)
 
@@ -80,7 +106,8 @@ checks passed (branding, themes, privacy defaults, signature policy, firewall on
 
 - Any physical machine (including the target ASUS TUF F17 with GTX 1650 Ti).
 - Real games, Steam sign-in and downloads, controller input, frame pacing, VRR/HDR, multi-monitor.
-- Installing from the ISO (Anaconda), disk encryption, dual-boot with Windows.
+- The interactive (graphical) installer screens, installing from a USB stick on a real PC, disk encryption, dual-boot
+  with Windows. (The unattended install into a VM is tested.)
 - Secure Boot with NVIDIA key enrollment.
 - Sleep/resume, battery life, Wi-Fi, Bluetooth, printers, webcams.
 - Update from one Tamarack build to the next on a real install (the VM verifies the update *check*, not a full upgrade).
