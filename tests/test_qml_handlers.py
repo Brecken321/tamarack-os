@@ -27,7 +27,7 @@ HANDLED = re.compile(
 )
 # Components whose root is one of the types above; their uses are checked
 # where they are instantiated, not in the component file itself.
-COMPONENT_ROOTS = {"ActionTile.qml", "PresetCard.qml", "PrimaryButton.qml", "SectionCard.qml"}
+COMPONENT_ROOTS = {"ActionTile.qml", "NavItem.qml", "PresetCard.qml", "PrimaryButton.qml", "SectionCard.qml"}
 
 
 def own_properties(block: str) -> str:
