@@ -11,6 +11,9 @@ Usage:
   tamarack-center --screenshots DIR --data-root TREE [--welcome]
                                      render every page with example data
                                      into DIR and exit (CI page previews)
+  tamarack-center --check-buttons REPORT --data-root TREE [--welcome]
+                                     click every button with example data;
+                                     fail if one does nothing or errors
 """
 
 from __future__ import annotations
@@ -48,6 +51,9 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--page", choices=PAGES, default="home")
     parser.add_argument("--self-test", action="store_true", help="load all QML files and exit")
     parser.add_argument("--screenshots", type=Path, metavar="DIR", help="(development) render pages with example data")
+    parser.add_argument(
+        "--check-buttons", type=Path, metavar="REPORT", help="(development) click every button with example data"
+    )
     parser.add_argument("--data-root", type=Path, default=Path("/"), help="(development) generated branding tree")
     parser.add_argument("--appstream", type=Path, help="(development) Flathub catalog for example app icons")
     parser.add_argument("--icon-theme", help="(development) icon theme to use outside a Plasma session")
@@ -124,7 +130,9 @@ def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
     logs.setup(
         verbose=args.verbose,
-        log_file=None if args.self_test or args.screenshots else logs.state_dir() / "tamarack-center.log",
+        log_file=None
+        if args.self_test or args.screenshots or args.check_buttons
+        else logs.state_dir() / "tamarack-center.log",
     )
     if args.welcome and args.first_run_only and welcome_done():
         return 0
@@ -152,7 +160,7 @@ def main(argv: list[str] | None = None) -> int:
         QIcon.setThemeName(args.icon_theme)
 
     backend: Backend
-    if args.screenshots:
+    if args.screenshots or args.check_buttons:
         from .demo import DemoBackend
 
         appstream = args.appstream or Path("/nonexistent")
@@ -178,6 +186,12 @@ def main(argv: list[str] | None = None) -> int:
             log.error("QML error", extra={"detail": warning})
         print("Tamarack Center could not start; see ~/.local/state/tamarack/tamarack-center.log", file=sys.stderr)
         return 1
+    if args.check_buttons:
+        from . import buttoncheck
+
+        pages = [p for p in PAGES if p != "welcome"]
+        code = buttoncheck.run(engine.rootObjects()[0], backend, warnings, args.welcome, pages, args.check_buttons)
+        return code
     if args.screenshots:
         code = capture(engine.rootObjects()[0], args.screenshots, args.welcome)
         for warning in warnings:

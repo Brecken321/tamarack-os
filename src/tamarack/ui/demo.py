@@ -15,7 +15,7 @@ from typing import Any
 
 from PySide6.QtCore import QUrl
 
-from .. import apps, games, privacy
+from .. import appearance, apps, games, privacy
 from .. import presets as preset_lib
 from ..brand import Brand
 from ..system import FakeRunner
@@ -224,6 +224,7 @@ def _search(appstream: Path) -> tuple[str, list[dict[str, Any]]]:
 class DemoBackend(Backend):
     def __init__(self, brand: Brand, data_root: Path, appstream: Path, welcome: bool = False) -> None:
         super().__init__(brand, FakeRunner(), welcome=welcome, data_root=data_root)
+        self.requests: list[str] = []
         self._appstream = appstream
         hardware = _hardware()
         problems = [f"Memory: 7.6 GiB RAM. {hardware['items'][1]['advice']}"]
@@ -261,6 +262,9 @@ class DemoBackend(Backend):
         self._search_query, self._search_results = self._fixture["search"]
 
     def _run(self, label: str, func: Callable[[], Any], on_done: Callable[[Any], None]) -> None:
+        # Every request is recorded (the button check uses this); only data
+        # refreshes are answered.
+        self.requests.append(label)
         key = next((k for prefix, k in REFRESHES.items() if label.startswith(prefix)), None)
         if key is not None:
             on_done(self._fixture[key])
@@ -269,6 +273,9 @@ class DemoBackend(Backend):
         if self._db is None:
             self._db = games.AntiCheatDatabase.load(REPO / "data/awacy/games.json", REPO / "data/awacy/source.json")
         return self._db
+
+    def _find(self, preset_id: str) -> preset_lib.Preset:
+        return appearance.find_preset(preset_lib.load_presets(REPO / "branding/presets"), preset_id)
 
     def _preset_rows(self) -> list[dict[str, Any]]:
         found = preset_lib.load_presets(REPO / "branding/presets")

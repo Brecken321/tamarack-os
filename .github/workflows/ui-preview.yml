@@ -91,7 +91,30 @@ jobs:
           done
           ls -R preview
 
+      # Click every button, switch, card and action on every page and Welcome
+      # step; fails if one does nothing or raises a QML error.
+      - name: Every button does something
+        shell: bash
+        env:
+          QT_QPA_PLATFORM: xcb
+          QT_QPA_PLATFORMTHEME: kde
+          DISPLAY: ":99"
+          PYTHONPATH: src
+        run: |
+          set -euo pipefail
+          pgrep -x Xvfb >/dev/null || { Xvfb :99 -screen 0 1280x900x24 -nolisten tcp & sleep 3; }
+          config="$(mktemp -d)"
+          cp output/branding/usr/share/color-schemes/TamarackLight.colors "${config}/kdeglobals"
+          status=0
+          for flag in "" --welcome; do
+            XDG_CONFIG_HOME="${config}" XDG_DATA_DIRS="${PWD}/output/branding/usr/share:/usr/share" HOME="$(mktemp -d)" \
+              python3 -m tamarack.ui.app --check-buttons preview/buttons.md --data-root output/branding \
+              --appstream "${APPSTREAM}" ${flag} || status=1
+          done
+          exit "${status}"
+
       - name: Upload previews
+        if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: center-preview
