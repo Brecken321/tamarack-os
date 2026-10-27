@@ -19,7 +19,8 @@ floating = true
 length_mode = "fit"
 alignment = "center"
 hiding = "dodgewindows"
-opacity = "translucent"
+# Solid: light-theme text is unreadable over the dark bottom of the wallpaper.
+opacity = "opaque"
 launcher = "kickerdash"
 task_manager = "icontasks"
 widgets = ["launcher", "tasks", "tray", "clock"]

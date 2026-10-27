@@ -22,7 +22,8 @@ floating = true
 length_mode = "fill"
 alignment = "center"
 hiding = "none"
-opacity = "adaptive"
+# Solid: light-theme text is unreadable over the dark bottom of the wallpaper.
+opacity = "opaque"
 launcher = "kickoff"
 task_manager = "icontasks"
 # Start button and pinned apps centered together (the two spacers), tray and

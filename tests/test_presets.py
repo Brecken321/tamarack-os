@@ -90,6 +90,14 @@ def test_load_presets_requires_single_default(tmp_path: Path) -> None:
         p.load_presets(tmp_path)
 
 
+def test_light_themes_get_a_solid_taskbar(presets: list[p.Preset]) -> None:
+    # A see-through taskbar shows the wallpaper's dark treeline behind it;
+    # light-theme text (dark) is then unreadable. Seen in the VM screenshots.
+    for preset in presets:
+        if preset.appearance.mode in ("light", "auto"):
+            assert preset.panel.opacity == "opaque", f"{preset.id}: light theme needs an opaque taskbar"
+
+
 def test_file_name_must_match_id(tmp_path: Path) -> None:
     text = (ROOT / "branding/presets/gaming.toml").read_text(encoding="utf-8")
     (tmp_path / "wrong.toml").write_text(text, encoding="utf-8")

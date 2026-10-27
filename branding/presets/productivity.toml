@@ -19,7 +19,8 @@ floating = false
 length_mode = "fill"
 alignment = "left"
 hiding = "none"
-opacity = "adaptive"
+# Solid: light-theme text is unreadable over the dark bottom of the wallpaper.
+opacity = "opaque"
 launcher = "kickoff"
 task_manager = "tasks"
 widgets = ["launcher", "pager", "tasks", "tray", "clock", "showdesktop"]
