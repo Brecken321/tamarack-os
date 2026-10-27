@@ -12,11 +12,26 @@ Under the hood it is a custom image built on [Bazzite](https://bazzite.gg/) and
 drivers, Steam integration and security updates come from mature, actively maintained projects.
 Tamarack adds its own identity, defaults, privacy settings and tools on top.
 
-> **Project status: early development.** The images build, pass automated checks and boot in CI virtual
-> machines, but Tamarack OS has **not yet been validated on physical hardware**. Read
+> **Project status: early development.** Both editions build, pass about 80 automated image checks, and boot to a
+> working Plasma desktop in CI virtual machines, where presets, Tamarack Center, first-boot apps and signed updates
+> are exercised. Tamarack OS has **not yet been validated on physical hardware** (no real GPU, games, Wi-Fi or audio
+> tested). Read
 > [TESTING.md](TESTING.md) for exactly what has and has not been tested before installing it on a PC
 > you depend on. Tamarack OS is an independent project, not affiliated with or endorsed by Bazzite,
 > Universal Blue, Fedora, KDE, Valve or Microsoft.
+
+## Screenshots
+
+Captured automatically by the CI virtual-machine test (QEMU, 1280×800, no GPU acceleration), not mock-ups.
+
+| | |
+|---|---|
+| ![Default desktop at night](docs/screenshots/desktop.png) | ![Gaming preset](docs/screenshots/preset-gaming.png) |
+| Default "Clean Modern" desktop (dark at night) | Gaming preset |
+| ![Tamarack Center home](docs/screenshots/center-home.png) | ![Appearance presets](docs/screenshots/center-appearance.png) |
+| Tamarack Center: health summary | Appearance presets |
+| ![Gaming page](docs/screenshots/center-gaming.png) | ![Updates and recovery](docs/screenshots/center-updates.png) |
+| Gaming: Game Mode, overlay, anti-cheat checker | Updates and rollback |
 
 ## What you get
 

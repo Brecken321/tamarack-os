@@ -30,6 +30,23 @@ Newest first. "CI" entries link to the workflow run that produced them.
 
 <!-- results:start -->
 
+### 2026-10-27: VM boot test, second round (CI [run 40446510853](https://github.com/Brecken321/tamarack-os/actions/runs/40446510853), images 44.20261027)
+
+| Check | Standard | NVIDIA |
+|---|---|---|
+| Boot to SSH / systemd "startup finished" | ✅ 16.6 s to graphical target | ✅ ~20.5 s |
+| No failed units | ✅ | ❌ `nvidia-cdi-refresh` failed (no NVIDIA GPU in the VM): **fixed** with a skip-without-GPU drop-in |
+| Update check verifies the image signature against the registry | ✅ | ✅ |
+| `bootloader-update.service` | ✅ (fixed by keeping image labels through rechunking) | ✅ |
+| Default apps, Firefox privacy prefs, firewall, countme off | ✅ | ✅ |
+| Plasma session: theme, color scheme, panel layout, wallpaper, Tamarack launcher icon | ✅ | ✅ |
+| Presets applied over the live session (Gaming, Classic, Minimalist, High Contrast, reset) | ✅ all 30 steps | ✅ all 30 steps |
+| Tamarack Center pages render in the session (screenshots) | ✅ | ✅ |
+| Login screen shows the Tamarack wallpaper | ✅ | ✅ |
+| Memory in use with Plasma + Tamarack Center open (6 GB VM) | ~1.8 GB | — |
+
+Screenshot review led to: app names instead of Flatpak ids on the Apps page, aligned shortcut list on Help.
+
 ### 2026-10-27: first VM boot test (CI [run 40435677118](https://github.com/Brecken321/tamarack-os/actions/runs/40435677118), images from 2026-10-26)
 
 Both editions, qcow2 disk, QEMU/KVM, UEFI, 4 vCPU, 6 GB RAM, virtio-gpu (no GPU acceleration).
