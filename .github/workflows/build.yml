@@ -127,10 +127,15 @@ jobs:
           IMAGE: ${{ steps.meta.outputs.image }}
         run: |
           set -euo pipefail
+          # Each push can produce a different manifest digest for the same image,
+          # so record every digest; all of them get signed below.
+          : > /tmp/digests
           for tag in ${TAGS}; do
             podman push --digestfile=/tmp/digestfile "localhost/${IMAGE}:${tag}" "${IMAGE_REGISTRY}/${IMAGE}:${tag}"
+            cat /tmp/digestfile >> /tmp/digests
+            echo >> /tmp/digests
           done
-          echo "digest=$(< /tmp/digestfile)" >> "$GITHUB_OUTPUT"
+          echo "digests=$(sort -u /tmp/digests | grep . | paste -sd' ')" >> "$GITHUB_OUTPUT"
 
       - name: Install cosign
         if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
@@ -143,17 +148,24 @@ jobs:
         env:
           COSIGN_EXPERIMENTAL: false
           COSIGN_PRIVATE_KEY: ${{ secrets.SIGNING_SECRET }}
-          DIGEST: ${{ steps.push.outputs.digest }}
+          DIGESTS: ${{ steps.push.outputs.digests }}
           IMAGE: ${{ steps.meta.outputs.image }}
         run: |
           # Old bundle format keeps signatures readable by rpm-ostree/containers-image
           # (same as ublue-os/image-template).
-          cosign sign -y --new-bundle-format=false --use-signing-config=false \
-            --key env://COSIGN_PRIVATE_KEY "${IMAGE_REGISTRY}/${IMAGE}@${DIGEST}"
+          for digest in ${DIGESTS}; do
+            cosign sign -y --new-bundle-format=false --use-signing-config=false \
+              --key env://COSIGN_PRIVATE_KEY "${IMAGE_REGISTRY}/${IMAGE}@${digest}"
+          done
 
-      - name: Verify signature
+      - name: Verify signatures through every published tag
         if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
         env:
-          DIGEST: ${{ steps.push.outputs.digest }}
+          TAGS: ${{ steps.tags.outputs.tags }}
           IMAGE: ${{ steps.meta.outputs.image }}
-        run: cosign verify --key cosign.pub --insecure-ignore-tlog=true "${IMAGE_REGISTRY}/${IMAGE}@${DIGEST}" > /dev/null
+        run: |
+          # Resolve each tag on the registry, exactly as an updating system does.
+          for tag in ${TAGS}; do
+            cosign verify --key cosign.pub --insecure-ignore-tlog=true "${IMAGE_REGISTRY}/${IMAGE}:${tag}" > /dev/null
+            echo "verified ${IMAGE}:${tag}"
+          done

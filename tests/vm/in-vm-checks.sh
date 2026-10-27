@@ -39,6 +39,9 @@ if [[ "${phase}" == "system" ]]; then
     info "system state" systemctl is-system-running
     check "no failed system units" bash -c '[[ -z "$(systemctl --failed --no-legend --plain)" ]]'
     info "failed units" systemctl --failed --no-legend --plain
+    for unit in $(systemctl --failed --no-legend --plain | awk '{print $1}'); do
+        info "log of ${unit}" journalctl -b -u "${unit}" --no-pager -q
+    done
     check "graphical target reached" systemctl is-active graphical.target
     check "login manager running" bash -c 'systemctl is-active plasmalogin.service || systemctl is-active sddm.service || systemctl is-active display-manager.service'
     check "rpm-ostree reports a booted deployment" bash -c 'rpm-ostree status --json | jq -e ".deployments[] | select(.booted)"'
@@ -75,12 +78,12 @@ if [[ "${phase}" == "session" ]]; then
     lnf="$(kreadconfig6 --file kdeglobals --group KDE --key LookAndFeelPackage)"
     check "Tamarack global theme active (${lnf})" bash -c "[[ '${lnf}' == *tamarack* ]]"
     check "Tamarack color scheme active" bash -c '[[ "$(kreadconfig6 --file kdeglobals --group General --key ColorScheme)" == Tamarack* ]]'
-    layout="$(qdbus6 org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.evaluateScript \
+    layout="$(busctl --user call org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell evaluateScript s \
         'var p = panels(); for (var i = 0; i < p.length; ++i) { var w = p[i].widgets(); var t = []; for (var j = 0; j < w.length; ++j) t.push(w[j].type); print(p[i].location + " floating=" + p[i].floating + " " + t.join(",") + "\n"); } var d = desktops()[0]; d.currentConfigGroup = ["Wallpaper", "org.kde.image", "General"]; print("wallpaper=" + d.readConfig("Image") + "\n");' 2>&1)"
     printf '    %s\n' "${layout}"
     check "default panel layout from the Tamarack theme" bash -c "grep -q 'org.kde.plasma.kickoff' <<<'${layout}' && grep -q 'org.kde.plasma.icontasks' <<<'${layout}'"
     check "Tamarack wallpaper on the desktop" bash -c "grep -q 'wallpapers/Tamarack' <<<'${layout}'"
-    check "Kickoff uses the Tamarack logo" bash -c "qdbus6 org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.evaluateScript 'var w = panels()[0].widgets(\"org.kde.plasma.kickoff\")[0]; w.currentConfigGroup = [\"General\"]; print(w.readConfig(\"icon\", \"\"));' | grep -q tamarack"
+    check "Kickoff uses the Tamarack logo" bash -c "busctl --user call org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell evaluateScript s 'var w = panels()[0].widgets(\"org.kde.plasma.kickoff\")[0]; w.currentConfigGroup = [\"General\"]; print(w.readConfig(\"icon\", \"\"));' | grep -q tamarack"
 fi
 
 echo

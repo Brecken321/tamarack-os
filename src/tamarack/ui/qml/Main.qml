@@ -36,67 +36,69 @@ Kirigami.ApplicationWindow {
         pageStack.push(Qt.resolvedUrl(pageFiles[name]));
     }
 
-    globalDrawer: Kirigami.GlobalDrawer {
-        id: drawer
-        enabled: !backend.welcomeMode
-        visible: !backend.welcomeMode
-        title: qsTr("%1 Center").arg(backend.brand.shortName)
-        titleIcon: backend.brand.logo
-        isMenu: false
-        modal: !root.wideScreen
-        collapsible: true
-        showHeaderWhenCollapsed: true
+    // The navigation sidebar exists only outside the first-run Welcome flow.
+    Component {
+        id: drawerComponent
 
-        actions: [
-            Kirigami.Action {
-                text: qsTr("Home")
-                icon.name: "go-home"
-                checked: root.currentPage === "home"
-                onTriggered: root.showPage("home")
-            },
-            Kirigami.Action {
-                text: qsTr("Appearance")
-                icon.name: "preferences-desktop-theme-global"
-                checked: root.currentPage === "appearance"
-                onTriggered: root.showPage("appearance")
-            },
-            Kirigami.Action {
-                text: qsTr("Apps")
-                icon.name: "plasmadiscover"
-                checked: root.currentPage === "apps"
-                onTriggered: root.showPage("apps")
-            },
-            Kirigami.Action {
-                text: qsTr("Gaming")
-                icon.name: "input-gamepad"
-                checked: root.currentPage === "gaming"
-                onTriggered: root.showPage("gaming")
-            },
-            Kirigami.Action {
-                text: qsTr("Hardware")
-                icon.name: "computer"
-                checked: root.currentPage === "hardware"
-                onTriggered: root.showPage("hardware")
-            },
-            Kirigami.Action {
-                text: qsTr("Privacy")
-                icon.name: "preferences-system-privacy"
-                checked: root.currentPage === "privacy"
-                onTriggered: root.showPage("privacy")
-            },
-            Kirigami.Action {
-                text: qsTr("Updates & Recovery")
-                icon.name: "system-software-update"
-                checked: root.currentPage === "updates"
-                onTriggered: root.showPage("updates")
-            },
-            Kirigami.Action {
-                text: qsTr("Help & About")
-                icon.name: "help-about"
-                checked: root.currentPage === "help"
-                onTriggered: root.showPage("help")
-            }
-        ]
+        Kirigami.GlobalDrawer {
+            title: qsTr("%1 Center").arg(backend.brand.shortName)
+            titleIcon: backend.brand.logo
+            isMenu: false
+            modal: !root.wideScreen
+            collapsible: true
+            showHeaderWhenCollapsed: true
+
+            actions: [
+                Kirigami.Action {
+                    text: qsTr("Home")
+                    icon.name: "go-home"
+                    checked: root.currentPage === "home"
+                    onTriggered: root.showPage("home")
+                },
+                Kirigami.Action {
+                    text: qsTr("Appearance")
+                    icon.name: "preferences-desktop-theme-global"
+                    checked: root.currentPage === "appearance"
+                    onTriggered: root.showPage("appearance")
+                },
+                Kirigami.Action {
+                    text: qsTr("Apps")
+                    icon.name: "plasmadiscover"
+                    checked: root.currentPage === "apps"
+                    onTriggered: root.showPage("apps")
+                },
+                Kirigami.Action {
+                    text: qsTr("Gaming")
+                    icon.name: "input-gamepad"
+                    checked: root.currentPage === "gaming"
+                    onTriggered: root.showPage("gaming")
+                },
+                Kirigami.Action {
+                    text: qsTr("Hardware")
+                    icon.name: "computer"
+                    checked: root.currentPage === "hardware"
+                    onTriggered: root.showPage("hardware")
+                },
+                Kirigami.Action {
+                    text: qsTr("Privacy")
+                    icon.name: "preferences-system-privacy"
+                    checked: root.currentPage === "privacy"
+                    onTriggered: root.showPage("privacy")
+                },
+                Kirigami.Action {
+                    text: qsTr("Updates & Recovery")
+                    icon.name: "system-software-update"
+                    checked: root.currentPage === "updates"
+                    onTriggered: root.showPage("updates")
+                },
+                Kirigami.Action {
+                    text: qsTr("Help & About")
+                    icon.name: "help-about"
+                    checked: root.currentPage === "help"
+                    onTriggered: root.showPage("help")
+                }
+            ]
+        }
     }
 
     footer: Controls.ToolBar {
@@ -125,5 +127,10 @@ Kirigami.ApplicationWindow {
         }
     }
 
-    Component.onCompleted: showPage(initialPage)
+    Component.onCompleted: {
+        if (!backend.welcomeMode) {
+            globalDrawer = drawerComponent.createObject(root);
+        }
+        showPage(initialPage);
+    }
 }

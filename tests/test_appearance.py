@@ -27,10 +27,9 @@ def _kde_runner() -> FakeRunner:
     runner = FakeRunner()
     for cmd in ("plasma-apply-lookandfeel", "kwriteconfig6", "systemctl"):
         runner.add([cmd])
-    runner.add(["qdbus6", "org.kde.plasmashell"])
-    runner.add(["qdbus6", "org.kde.KWin", "/KWin"])
-    runner.add(["qdbus6", "org.kde.KWin", "/VirtualDesktopManager", "org.kde.KWin.VirtualDesktopManager.count"], "1\n")
-    runner.add(["qdbus6", "org.kde.KWin", "/VirtualDesktopManager"])
+    runner.add(["busctl", "--user", "call"])
+    runner.add(["busctl", "--user", "set-property"])
+    runner.add(["busctl", "--user", "get-property", *appearance.VDM, "count"], "u 1\n")
     return runner
 
 
@@ -46,14 +45,39 @@ def test_apply_runs_every_step_and_backs_up(home: Path, brand: Brand, presets: l
     calls = [list(c) for c in runner.calls]
     assert ["plasma-apply-lookandfeel", "--apply", f"{brand.reverse_dns}.light.desktop"] in calls
     assert any(c[:1] == ["kwriteconfig6"] and "AnimationDurationFactor" in c for c in calls)
-    script_call = next(c for c in calls if c[:2] == ["qdbus6", "org.kde.plasmashell"])
+    script_call = next(c for c in calls if "evaluateScript" in c)
+    assert script_call[:4] == ["busctl", "--user", "call", "org.kde.plasmashell"]
     assert '"org.kde.plasma.taskmanager"' in script_call[-1]  # labels-style task manager
-    creates = [c for c in calls if "org.kde.KWin.VirtualDesktopManager.createDesktop" in c]
+    creates = [c for c in calls if "createDesktop" in c]
     assert len(creates) == 3  # 1 -> 4 desktops
+    assert creates[0][-3:] == ["us", "1", "Desktop 2"]
+    assert ["busctl", "--user", "set-property", *appearance.VDM, "rows", "u", "2"] in calls
     backup = Path(result.backup)
     assert (backup / "kdeglobals").read_text(encoding="utf-8") == "[General]\nColorScheme=Mine\n"
     assert not (backup / "unrelatedrc").exists()  # only appearance files are touched
     assert appearance.current_preset(paths) == "productivity"
+
+
+def test_extra_virtual_desktops_are_removed(home: Path, brand: Brand, presets: list[p.Preset]) -> None:
+    runner = _kde_runner()
+    runner.add(["busctl", "--user", "get-property", *appearance.VDM, "count"], "u 3\n")
+    listing = {"type": "a(uss)", "data": [[1, "id-b", "Desktop 2"], [0, "id-a", "Desktop 1"], [2, "id-c", "Desktop 3"]]}
+    runner.add(["busctl", "--user", "--json=short", "get-property", *appearance.VDM, "desktops"], json.dumps(listing))
+    appearance.apply(p.default_preset(presets), brand, runner, appearance.Paths(home))
+    removed = [c[-1] for c in runner.calls if "removeDesktop" in c]
+    assert removed == ["id-b", "id-c"]  # keeps the first desktop by position
+
+
+def test_no_tool_depends_on_qdbus() -> None:
+    """qdbus is packaged under different names; Tamarack must use busctl."""
+    root = Path(__file__).resolve().parents[1]
+    for path in [
+        *root.joinpath("src").rglob("*.py"),
+        *root.joinpath("src").rglob("*.qml"),
+        *root.joinpath("tests/vm").glob("*.sh"),
+    ]:
+        text = path.read_text(encoding="utf-8")
+        assert "qdbus6 " not in text and '"qdbus6"' not in text, path
 
 
 def test_auto_mode_keeps_automatic_switching(home: Path, brand: Brand, presets: list[p.Preset]) -> None:

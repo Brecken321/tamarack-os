@@ -56,6 +56,6 @@ steam_autostart = false       # start Steam minimized at login
    lock-screen wallpaper and the automatic light/dark pair.
 4. A Plasma desktop script (`org.kde.PlasmaShell.evaluateScript`) replaces the panels and sets the wallpaper:
    `tamarack preset script <id>` prints it.
-5. Virtual desktops through KWin's D-Bus API, Steam autostart, then `qdbus6 org.kde.KWin /KWin reconfigure`.
+5. Virtual desktops through KWin's D-Bus API, Steam autostart, then `busctl --user call org.kde.KWin /KWin org.kde.KWin reconfigure`.
 
 Undo (`tamarack preset undo`) restores the backed-up files and restarts the Plasma shell.

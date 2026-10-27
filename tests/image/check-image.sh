@@ -81,7 +81,8 @@ check "default panel template has no Bazzite pins" \
 for desktop in /usr/share/applications/"${BRAND_REVERSE_DNS}".*.desktop "/etc/xdg/autostart/${BRAND_REVERSE_DNS}.Welcome.desktop"; do
     check "valid desktop entry $(basename "${desktop}")" desktop-file-validate "${desktop}"
 done
-check "login screen wallpaper configured" grep -q "Image=file:///usr/share/wallpapers/" /etc/plasmalogin.conf.d/10-tamarack.conf
+check "login screen wallpaper configured (main config wins over drop-ins)" \
+    bash -c '[[ "$(kreadconfig6 --file /etc/plasmalogin.conf --group Greeter --group Wallpaper --group org.kde.image --group General --key Image)" == file:///usr/share/wallpapers/Tamarack* ]]'
 
 # --- Privacy and security -----------------------------------------------------
 check "countme timer not enabled" bash -c '! systemctl is-enabled rpm-ostree-countme.timer 2>/dev/null | grep -qx enabled'

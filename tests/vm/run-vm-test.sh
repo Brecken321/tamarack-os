@@ -20,7 +20,7 @@ mkdir -p "${out}/screens"
 
 qmp() { python3 "${here}/qmp.py" "${out}/qmp.sock" "$@"; }
 shot() {
-    qmp screenshot "${out}/screens/$1.png" && echo "screenshot: $1"
+    if qmp screenshot "${out}/screens/$1.png"; then echo "screenshot: $1"; else echo "screenshot failed: $1"; fi
 }
 ssh_vm() {
     ssh -i "${key}" -p "${port}" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
@@ -84,7 +84,8 @@ ssh_vm "bash /tmp/in-vm-checks.sh '${password}' session" | tee "${out}/session-c
 
 session_env='export XDG_RUNTIME_DIR=/run/user/$(id -u) DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$(id -u)/bus WAYLAND_DISPLAY=wayland-0 QT_QPA_PLATFORM=wayland'
 # Close the first-run welcome so the desktop is visible, then exercise presets.
-ssh_vm "${session_env}; pkill -f 'tamarack-center --welcome' || true"
+# "[t]amarack" keeps pkill from matching the ssh command line running it.
+ssh_vm "pkill -f '[t]amarack-center --welcome'" || true
 sleep 5
 shot "03-desktop-default-preset"
 for preset in gaming classic-desktop minimalist high-contrast; do
@@ -97,12 +98,12 @@ sleep 12
 shot "05-preset-reset"
 
 for page in home appearance gaming privacy hardware updates; do
-    ssh_vm "${session_env}; (setsid tamarack-center --page ${page} >/tmp/center-${page}.log 2>&1 &)"
+    ssh_vm "${session_env}; (setsid tamarack-center --page ${page} >/tmp/center-${page}.log 2>&1 &)" || status=1
     sleep 15
     shot "06-center-${page}"
-    ssh_vm "pkill -f 'tamarack-center --page ${page}' || true"
+    ssh_vm "pkill -f '[t]amarack-center --page ${page}'" || true
 done
-ssh_vm "${session_env}; (setsid tamarack-center --welcome >/tmp/center-welcome.log 2>&1 &)"
+ssh_vm "${session_env}; (setsid tamarack-center --welcome >/tmp/center-welcome.log 2>&1 &)" || status=1
 sleep 15
 shot "07-welcome"
 

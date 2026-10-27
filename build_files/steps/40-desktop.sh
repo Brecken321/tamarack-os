@@ -27,15 +27,16 @@ kw /etc/xdg/kscreenlockerrc --group Greeter --group Wallpaper --group org.kde.im
 kw /etc/xdg/plasmanotifyrc --group DoNotDisturb --key WhenFullscreen true
 
 # Login screen (Plasma Login Manager on Fedora 44; SDDM fallback if present).
-install -d /etc/plasmalogin.conf.d
-cat >/etc/plasmalogin.conf.d/10-tamarack.conf <<EOF
-[Greeter]
-WallpaperPluginId=org.kde.image
-
-[Greeter][Wallpaper][org.kde.image][General]
-Image=${wallpaper}
-PreviewImage=${wallpaper}
-EOF
+# /etc/plasmalogin.conf is the highest-priority source: drop-ins in
+# /usr/lib/plasmalogin/plasmalogin.conf.d are merged after /etc/plasmalogin.conf.d
+# and would override a drop-in of ours there.
+for conf in /etc/plasmalogin.conf /etc/plasmalogin.conf.d/* /usr/lib/plasmalogin/plasmalogin.conf.d/*; do
+    [[ -f "${conf}" ]] && log "login manager config present: ${conf}" && sed 's/^/    /' "${conf}"
+done
+kw /etc/plasmalogin.conf --group Greeter --key WallpaperPluginId org.kde.image
+kw /etc/plasmalogin.conf --group Greeter --group Wallpaper --group org.kde.image --group General --key Image "${wallpaper}"
+kw /etc/plasmalogin.conf --group Greeter --group Wallpaper --group org.kde.image --group General \
+    --key PreviewImage "${wallpaper}"
 if [[ -d /usr/share/sddm/themes/breeze ]]; then
     image="/usr/share/wallpapers/${BRAND_DEFAULT_WALLPAPER}/contents/images/3840x2160.jpg"
     require_file "${image}"

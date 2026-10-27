@@ -203,8 +203,20 @@ def _step(name: str, res: CommandResult) -> StepResult:
     return StepResult(name, res.ok, "" if res.ok else res.error_summary())
 
 
+# KDE is reached over the session bus with systemd's busctl, which every
+# install has (Qt's qdbus tool is packaged under different names).
+KWIN = ("org.kde.KWin", "/KWin", "org.kde.KWin")
+VDM = ("org.kde.KWin", "/VirtualDesktopManager", "org.kde.KWin.VirtualDesktopManager")
+PLASMASHELL = ("org.kde.plasmashell", "/PlasmaShell", "org.kde.PlasmaShell")
+
+
 def _reconfigure_kwin(runner: Runner) -> StepResult:
-    return _step("reload window manager", runner.run(["qdbus6", "org.kde.KWin", "/KWin", "reconfigure"]))
+    return _step("reload window manager", runner.run(["busctl", "--user", "call", *KWIN, "reconfigure"]))
+
+
+def evaluate_script(runner: Runner, script: str) -> CommandResult:
+    """Run a Plasma desktop script in the running plasmashell."""
+    return runner.run(["busctl", "--user", "call", *PLASMASHELL, "evaluateScript", "s", script], timeout=60)
 
 
 def _desktop_file_exists(desktop_id: str, paths: Paths) -> bool:
@@ -248,35 +260,28 @@ def set_steam_autostart(paths: Paths, enabled: bool) -> None:
 
 def _virtual_desktops(runner: Runner, count: int, rows: int) -> StepResult:
     """Use KWin's D-Bus API so changes apply live (config edits alone do not)."""
-    base = ["qdbus6", "org.kde.KWin", "/VirtualDesktopManager"]
-    current = runner.run([*base, "org.kde.KWin.VirtualDesktopManager.count"])
-    if not current.ok or not current.stdout.strip().isdigit():
+    current = runner.run(["busctl", "--user", "get-property", *VDM, "count"])
+    match = re.fullmatch(r"u (\d+)", current.stdout.strip())
+    if not current.ok or not match:
         return StepResult("virtual desktops", False, current.error_summary() or "KWin did not answer")
-    have = int(current.stdout.strip())
+    have = int(match.group(1))
     while have < count:
-        res = runner.run([*base, "org.kde.KWin.VirtualDesktopManager.createDesktop", str(have), f"Desktop {have + 1}"])
+        res = runner.run(["busctl", "--user", "call", *VDM, "createDesktop", "us", str(have), f"Desktop {have + 1}"])
         if not res.ok:
             return _step("virtual desktops", res)
         have += 1
     if have > count:
-        listing = runner.run(
-            [
-                "qdbus6",
-                "--literal",
-                "org.kde.KWin",
-                "/VirtualDesktopManager",
-                "org.freedesktop.DBus.Properties.Get",
-                "org.kde.KWin.VirtualDesktopManager",
-                "desktops",
-            ]
-        )
-        ids = re.findall(r'"([0-9a-f-]{36})"', listing.stdout)
-        for desktop_id in ids[count:]:
-            res = runner.run([*base, "org.kde.KWin.VirtualDesktopManager.removeDesktop", desktop_id])
+        listing = runner.run(["busctl", "--user", "--json=short", "get-property", *VDM, "desktops"])
+        try:
+            desktops = json.loads(listing.stdout).get("data", [])
+        except (json.JSONDecodeError, AttributeError):
+            desktops = []
+        # Each entry is (position, id, name); remove the highest positions first.
+        for entry in sorted(desktops, key=lambda d: d[0])[count:]:
+            res = runner.run(["busctl", "--user", "call", *VDM, "removeDesktop", "s", str(entry[1])])
             if not res.ok:
                 return _step("virtual desktops", res)
-    # qdbus sets a property when a value follows the property name.
-    rows_res = runner.run([*base, "org.kde.KWin.VirtualDesktopManager.rows", str(rows)])
+    rows_res = runner.run(["busctl", "--user", "set-property", *VDM, "rows", "u", str(rows)])
     return StepResult("virtual desktops", rows_res.ok, f"{count} desktop(s), {rows} row(s)")
 
 
@@ -301,15 +306,7 @@ def apply(preset: p.Preset, brand: Brand, runner: Runner, paths: Paths) -> Apply
     )
 
     script = p.layout_script(preset, brand.logo_icon, pins=available_pins(preset, paths), replace_panels=True)
-    result.steps.append(
-        _step(
-            "rebuild panel and wallpaper",
-            runner.run(
-                ["qdbus6", "org.kde.plasmashell", "/PlasmaShell", "org.kde.PlasmaShell.evaluateScript", script],
-                timeout=60,
-            ),
-        )
-    )
+    result.steps.append(_step("rebuild panel and wallpaper", evaluate_script(runner, script)))
 
     result.steps.append(_virtual_desktops(runner, preset.desktop.virtual_desktops, preset.desktop.virtual_desktop_rows))
     try:
