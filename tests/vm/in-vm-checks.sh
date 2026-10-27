@@ -2,12 +2,18 @@
 # Single-quoted bash -c snippets run in a subshell on purpose.
 # shellcheck disable=SC2016
 # Runs inside a booted Tamarack OS VM (over SSH, as the test user).
-# Usage: in-vm-checks.sh PASSWORD PHASE   (PHASE: system | session)
+# Usage: in-vm-checks.sh PASSWORD PHASE [ARGS...]
+#   system | session | downloads | remove
+#   open NAME WINDOW_TEXT TIMEOUT DESKTOP_ID [PROCESS]
+#        start an app in the desktop session and wait for its window (and,
+#        if given, for PROCESS to run too)
+#   close NAME
 # Prints PASS/FAIL lines and exits non-zero if a required check failed.
 set -uo pipefail
 
 password="$1"
 phase="$2"
+shift 2
 failures=0
 pass() { echo "PASS: $*"; }
 fail() {
@@ -30,6 +36,36 @@ info() {
     "$@" 2>&1 | sed 's/^/    /' | head -n 60
 }
 as_root() { echo "${password}" | sudo -S -p '' "$@"; }
+# The desktop session's environment, for commands that talk to Plasma.
+session_env() {
+    XDG_RUNTIME_DIR="/run/user/$(id -u)"
+    export XDG_RUNTIME_DIR
+    export DBUS_SESSION_BUS_ADDRESS="unix:path=${XDG_RUNTIME_DIR}/bus"
+    export WAYLAND_DISPLAY=wayland-0
+}
+# Run a command as a user service of the desktop session: the same context
+# as an app started from the start menu (Tamarack Center's Install button
+# runs `flatpak install` from there, authorized by polkit for the session).
+# Usage: in_session TIMEOUT COMMAND...
+in_session() { timeout "$1" systemd-run --user --quiet --wait --pipe --collect -- "${@:2}"; }
+# Captions of open windows whose title or app name contains $1 (KWin's
+# window search, the one KRunner uses).
+windows_matching() {
+    busctl --user --json=short call org.kde.KWin /WindowsRunner org.kde.krunner1 Match s "$1" |
+        jq -r '.data[0][] | .[1]'
+}
+# The command line of a desktop entry (field codes like %U removed).
+desktop_exec() {
+    local file
+    for file in "${HOME}/.local/share/applications/$1" "/var/lib/flatpak/exports/share/applications/$1" \
+        "/usr/share/applications/$1"; do
+        if [[ -f "${file}" ]]; then
+            grep -m1 '^Exec=' "${file}" | cut -d= -f2- | sed -E 's/ %[a-zA-Z]//g'
+            return 0
+        fi
+    done
+    return 1
+}
 
 if [[ "${phase}" == "system" ]]; then
     # shellcheck source=/dev/null
@@ -72,10 +108,7 @@ if [[ "${phase}" == "system" ]]; then
 fi
 
 if [[ "${phase}" == "session" ]]; then
-    XDG_RUNTIME_DIR="/run/user/$(id -u)"
-    export XDG_RUNTIME_DIR
-    export DBUS_SESSION_BUS_ADDRESS="unix:path=${XDG_RUNTIME_DIR}/bus"
-    export WAYLAND_DISPLAY=wayland-0
+    session_env
     check "Plasma session is running" pgrep -u "$(id -u)" plasmashell
     lnf="$(kreadconfig6 --file kdeglobals --group KDE --key LookAndFeelPackage)"
     check "Tamarack global theme active (${lnf})" bash -c "[[ '${lnf}' == *tamarack* ]]"
@@ -86,6 +119,65 @@ if [[ "${phase}" == "session" ]]; then
     check "default panel layout from the Tamarack theme" bash -c "grep -q 'org.kde.plasma.kickoff' <<<'${layout}' && grep -q 'org.kde.plasma.icontasks' <<<'${layout}'"
     check "Tamarack wallpaper on the desktop" bash -c "grep -q 'wallpapers/Tamarack' <<<'${layout}'"
     check "Kickoff uses the Tamarack logo" bash -c "busctl --user call org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell evaluateScript s 'var w = panels()[0].widgets(\"org.kde.plasma.kickoff\")[0]; w.currentConfigGroup = [\"General\"]; print(w.readConfig(\"icon\", \"\"));' | grep -q tamarack"
+fi
+
+# Real downloads from Flathub: an app, a game and a game launcher, installed
+# by the user through Tamarack's installer (what the Center's Install buttons
+# run), not by root.
+if [[ "${phase}" == "downloads" ]]; then
+    session_env
+    check "Flathub catalog is reachable" bash -c \
+        'flatpak remote-ls --app --columns=application flathub | grep -qx org.supertuxproject.SuperTux'
+    check "app search finds Filelight" bash -c 'tamarack apps search filelight | grep -q "^org.kde.filelight "'
+    check "app search finds SuperTux" bash -c 'tamarack apps search supertux | grep -q "^org.supertuxproject.SuperTux "'
+    for app in org.kde.filelight org.supertuxproject.SuperTux com.heroicgameslauncher.hgl; do
+        start=$(date +%s)
+        check "download and install ${app} as the desktop user" in_session 1500 tamarack apps install "${app}"
+        echo "INFO: ${app} took $(($(date +%s) - start)) s"
+        check "${app} is installed" flatpak info "${app}"
+        check "${app} is in the start menu" test -f "/var/lib/flatpak/exports/share/applications/${app}.desktop"
+    done
+    info "installed apps" flatpak list --app --columns=application,name,size
+    info "disk use" df -h /var
+fi
+
+if [[ "${phase}" == "open" ]]; then
+    session_env
+    name="$1" text="$2" timeout="$3" desktop_id="$4" process="${5:-}"
+    command="$(desktop_exec "${desktop_id}")"
+    check "${desktop_id} has a desktop entry" test -n "${command}"
+    echo "INFO: starting ${command}"
+    systemd-run --user --quiet --collect --unit="tamarack-open-${name}" -- bash -c "exec ${command}"
+    start=$(date +%s)
+    found=""
+    while (($(date +%s) - start < timeout)); do
+        found="$(windows_matching "${text}" 2>/dev/null | head -n 1)"
+        if [[ -n "${process}" ]] && ! pgrep -u "$(id -u)" -x "${process}" >/dev/null; then
+            found=""
+        fi
+        [[ -n "${found}" ]] && break
+        sleep 5
+    done
+    check "${name} opened a window matching \"${text}\" (after $(($(date +%s) - start)) s: ${found:-none})" test -n "${found}"
+    if [[ -n "${process}" ]]; then
+        check "${process} is running" pgrep -u "$(id -u)" -x "${process}"
+    fi
+    check "${name} is still running" systemctl --user is-active "tamarack-open-${name}"
+    info "windows (KWin search for \"window\")" windows_matching window
+    info "processes" systemctl --user status "tamarack-open-${name}" --no-pager -n 0
+fi
+
+if [[ "${phase}" == "close" ]]; then
+    session_env
+    systemctl --user stop "tamarack-open-$1" 2>/dev/null
+    pass "closed $1"
+fi
+
+if [[ "${phase}" == "remove" ]]; then
+    session_env
+    check "remove Filelight as the desktop user" in_session 600 tamarack apps remove org.kde.filelight
+    check "Filelight is gone" bash -c '! flatpak info org.kde.filelight'
+    check "Filelight left the start menu" test ! -e /var/lib/flatpak/exports/share/applications/org.kde.filelight.desktop
 fi
 
 echo

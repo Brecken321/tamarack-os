@@ -91,6 +91,8 @@ def capture(window: Any, out: Path, welcome: bool) -> int:
 
     out.mkdir(parents=True, exist_ok=True)
     window.resize(1180, 800)
+    # An inactive window uses KDE's dimmed "inactive" selection colors.
+    window.requestActivate()
     settle(3000)
     names: list[str] = []
     if welcome:

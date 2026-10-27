@@ -113,6 +113,27 @@ done
 ssh_vm "${session_env}; systemd-run --user --collect --unit=tamarack-welcome tamarack-center --welcome" || status=1
 sleep 15
 shot "07-welcome"
+ssh_vm "${session_env}; systemctl --user stop tamarack-welcome" || true
+
+# Downloads, for real and without accounts: an app, a game and a game
+# launcher from Flathub through Tamarack's installer (what the Install
+# buttons run), each opened on the desktop; the Bazaar app store; and Steam's
+# own first-run download up to its sign-in window.
+ssh_vm "bash /tmp/in-vm-checks.sh '${password}' downloads" | tee "${out}/download-checks.txt" || status=1
+open_app() { # NAME WINDOW_TEXT TIMEOUT DESKTOP_ID [PROCESS]
+    ssh_vm "bash /tmp/in-vm-checks.sh '${password}' open $1 '$2' $3 $4 ${5:-}" | tee -a "${out}/download-checks.txt" ||
+        status=1
+    sleep 10
+    shot "08-open-$1"
+    ssh_vm "bash /tmp/in-vm-checks.sh '${password}' close $1" >/dev/null || true
+    sleep 3
+}
+open_app filelight Filelight 180 org.kde.filelight.desktop
+open_app supertux SuperTux 240 org.supertuxproject.SuperTux.desktop
+open_app heroic Heroic 300 com.heroicgameslauncher.hgl.desktop
+open_app bazaar Bazaar 240 io.github.kolunmi.Bazaar.desktop
+open_app steam Steam 1200 steam.desktop steamwebhelper
+ssh_vm "bash /tmp/in-vm-checks.sh '${password}' remove" | tee -a "${out}/download-checks.txt" || status=1
 
 # Logs for the report.
 ssh_vm "tamarack doctor --json" >"${out}/doctor.json" || true
