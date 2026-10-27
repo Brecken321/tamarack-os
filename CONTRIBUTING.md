@@ -15,7 +15,7 @@
 | `data/awacy/` | Vendored AreWeAntiCheatYet snapshot + source metadata |
 | `disk_config/` | bootc-image-builder configs (installer ISO, VM disk) |
 | `tests/` | Unit tests (`pytest`), image checks (`tests/image`), VM boot test (`tests/vm`) |
-| `.github/workflows/` | CI: build/test/publish images; disk images + VM boot test + ISOs |
+| `.github/workflows/` | CI: build/test/publish images; disk images + VM boot test + ISOs; Center page previews |
 
 ## Development setup
 
@@ -32,6 +32,11 @@ Building images needs Linux with podman (`just build main`). The UI needs PySide
 (on Fedora: `dnf install python3-pyside6 kf6-kirigami kf6-qqc2-desktop-style`); then
 `PYTHONPATH=src python3 -m tamarack.ui.app` runs Tamarack Center from the checkout, and
 `QT_QPA_PLATFORM=offscreen PYTHONPATH=src python3 -m tamarack.ui.app --self-test` compiles every QML file.
+
+To review interface changes without building an image, push them to any branch: the **Center preview** workflow
+(`.github/workflows/ui-preview.yml`) renders every page and Welcome step in the dark and light Tamarack themes, with
+example data from `src/tamarack/ui/demo.py`, and uploads the PNGs as the `center-preview` artifact (about 5 minutes).
+Locally, `tamarack-center --screenshots DIR --data-root output/branding` does the same.
 
 ## Rules of the road
 

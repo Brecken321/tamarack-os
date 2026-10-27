@@ -16,10 +16,10 @@ control = "Tamarack Center > Updates (automatic updates on/off)"
 id = "flatpak"
 name = "App downloads and updates"
 who = "Flathub (flathub.org, dl.flathub.org)"
-what = "Downloads apps you install and their updates. Flathub counts downloads per app; no account is involved."
-why = "Installing and updating apps."
+what = "Downloads apps you install and their updates, and the app catalog (names, descriptions, icons) once at first boot so app search works. Flathub counts downloads per app; no account is involved. Searching happens on this computer."
+why = "Installing, finding and updating apps."
 optional = true
-control = "Only happens when apps are installed or updated"
+control = "Only happens when apps are installed or updated, or the catalog is missing"
 
 [[network]]
 id = "countme"

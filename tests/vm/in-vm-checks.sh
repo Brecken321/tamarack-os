@@ -4,9 +4,9 @@
 # Runs inside a booted Tamarack OS VM (over SSH, as the test user).
 # Usage: in-vm-checks.sh PASSWORD PHASE [ARGS...]
 #   system | session | downloads | remove
-#   open NAME WINDOW_TEXT TIMEOUT DESKTOP_ID [PROCESS]
-#        start an app in the desktop session and wait for its window (and,
-#        if given, for PROCESS to run too)
+#   start NAME DESKTOP_ID          start an app in the desktop session
+#   wait NAME WINDOW_TEXT TIMEOUT [PROCESS]
+#        wait for the app's window (and, if given, for PROCESS to run too)
 #   close NAME
 # Prints PASS/FAIL lines and exits non-zero if a required check failed.
 set -uo pipefail
@@ -128,8 +128,11 @@ if [[ "${phase}" == "downloads" ]]; then
     session_env
     check "Flathub catalog is reachable" bash -c \
         'flatpak remote-ls --app --columns=application flathub | grep -qx org.supertuxproject.SuperTux'
-    check "app search finds Filelight" bash -c 'tamarack apps search filelight | grep -q "^org.kde.filelight "'
-    check "app search finds SuperTux" bash -c 'tamarack apps search supertux | grep -q "^org.supertuxproject.SuperTux "'
+    check "first boot downloaded Flathub's app catalog" test -d /var/lib/flatpak/appstream/flathub
+    for query in filelight:org.kde.filelight supertux:org.supertuxproject.SuperTux; do
+        check "app search for \"${query%%:*}\" finds ${query#*:}" bash -c \
+            "systemd-run --user --quiet --wait --pipe --collect tamarack apps search ${query%%:*} | grep -q '^${query#*:} '"
+    done
     for app in org.kde.filelight org.supertuxproject.SuperTux com.heroicgameslauncher.hgl; do
         start=$(date +%s)
         check "download and install ${app} as the desktop user" in_session 1500 tamarack apps install "${app}"
@@ -141,13 +144,18 @@ if [[ "${phase}" == "downloads" ]]; then
     info "disk use" df -h /var
 fi
 
-if [[ "${phase}" == "open" ]]; then
+if [[ "${phase}" == "start" ]]; then
     session_env
-    name="$1" text="$2" timeout="$3" desktop_id="$4" process="${5:-}"
+    name="$1" desktop_id="$2"
     command="$(desktop_exec "${desktop_id}")"
     check "${desktop_id} has a desktop entry" test -n "${command}"
     echo "INFO: starting ${command}"
-    systemd-run --user --quiet --collect --unit="tamarack-open-${name}" -- bash -c "exec ${command}"
+    check "${name} started" systemd-run --user --quiet --collect --unit="tamarack-open-${name}" -- bash -c "exec ${command}"
+fi
+
+if [[ "${phase}" == "wait" ]]; then
+    session_env
+    name="$1" text="$2" timeout="$3" process="${4:-}"
     start=$(date +%s)
     found=""
     while (($(date +%s) - start < timeout)); do

@@ -13,7 +13,7 @@ servers, which see your IP address.
 | What | Who | What is sent / why | Default | How to control |
 |---|---|---|---|---|
 | OS updates | GitHub Container Registry (ghcr.io) | Downloads new OS images; GitHub sees your IP and which image | On (background, applied at restart) | Tamarack Center > Updates |
-| App downloads/updates | Flathub | Downloads apps; Flathub counts downloads per app (no account) | When installing/updating | — |
+| App downloads/updates | Flathub | Downloads apps; Flathub counts downloads per app (no account). The app catalog (names, descriptions, icons) is downloaded once at first boot; app search in Tamarack Center runs on this computer | When installing/updating; catalog when missing | — |
 | Fedora install counting ("countme") | Fedora mirrors | Weekly request with OS version and an age bucket; no unique ID | **Off** | Tamarack Center > Privacy |
 | Connectivity check | fedoraproject.org | Periodic fetch of a static file to detect Wi-Fi login pages | On | Tamarack Center > Privacy |
 | Time sync | NTP pool servers | Time requests (needed for HTTPS) | On | Not recommended to disable |

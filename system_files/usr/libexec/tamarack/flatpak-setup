@@ -27,6 +27,18 @@ status() {
     echo "[flatpak-setup] $1: $2${3:+ ($3)}"
 }
 
+# Flathub's catalog (app names, descriptions and icons): Tamarack Center's
+# app search and icons read it. Only downloaded while it is missing; Flatpak
+# and the app store keep it current afterwards. Not fatal if offline.
+catalog() {
+    [[ -d "/var/lib/flatpak/appstream/${REMOTE}" ]] && return 0
+    if flatpak update --system --appstream --noninteractive "${REMOTE}"; then
+        echo "[flatpak-setup] downloaded the ${REMOTE} catalog"
+    else
+        echo "[flatpak-setup] could not download the ${REMOTE} catalog yet" >&2
+    fi
+}
+
 mapfile -t wanted < <(grep -vE '^[[:space:]]*(#|$)' "${LIST}")
 pending=()
 for app in "${wanted[@]}"; do
@@ -41,6 +53,7 @@ for app in "${wanted[@]}"; do
 done
 
 if [[ ${#pending[@]} -eq 0 ]]; then
+    catalog
     status "done" "All default apps are set up."
     exit 0
 fi
@@ -48,6 +61,7 @@ fi
 if ! flatpak remotes --system --columns=name | grep -qx "${REMOTE}"; then
     flatpak remote-add --system --if-not-exists "${REMOTE}" /etc/flatpak/remotes.d/flathub.flatpakrepo
 fi
+catalog
 
 failed=0
 total=${#pending[@]}

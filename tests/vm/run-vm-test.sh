@@ -20,6 +20,9 @@ mkdir -p "${out}/screens"
 
 qmp() { python3 "${here}/qmp.py" "${out}/qmp.sock" "$@"; }
 shot() {
+    # A Shift press first: wakes a dimmed or switched-off display (harmless otherwise).
+    qmp key shift_r || true
+    sleep 1
     if qmp screenshot "${out}/screens/$1.png"; then echo "screenshot: $1"; else echo "screenshot failed: $1"; fi
 }
 ssh_vm() {
@@ -87,6 +90,9 @@ shot "02-desktop-first-login"
 ssh_vm "bash /tmp/in-vm-checks.sh '${password}' session" | tee "${out}/session-checks.txt" || status=1
 
 session_env='export XDG_RUNTIME_DIR=/run/user/$(id -u) DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$(id -u)/bus WAYLAND_DISPLAY=wayland-0 QT_QPA_PLATFORM=wayland'
+# Nobody touches the keyboard while apps download, so turn off the automatic
+# screen lock for this test session (otherwise screenshots show the lock screen).
+ssh_vm "${session_env}; kwriteconfig6 --notify --file kscreenlockerrc --group Daemon --key Autolock false" || true
 # Close the first-run welcome so the desktop is visible, then exercise presets.
 # "[t]amarack" keeps pkill from matching the ssh command line running it.
 ssh_vm "pkill -f '[t]amarack-center --welcome'" || true
@@ -126,20 +132,36 @@ ssh_vm "${session_env}; systemctl --user stop tamarack-welcome" || true
 # buttons run), each opened on the desktop; the Bazaar app store; and Steam's
 # own first-run download up to its sign-in window.
 ssh_vm "bash /tmp/in-vm-checks.sh '${password}' downloads" | tee "${out}/download-checks.txt" || status=1
-open_app() { # NAME WINDOW_TEXT TIMEOUT DESKTOP_ID [PROCESS]
-    ssh_vm "bash /tmp/in-vm-checks.sh '${password}' open $1 '$2' $3 $4 ${5:-}" | tee -a "${out}/download-checks.txt" ||
-        status=1
+in_vm() { # PHASE ARGS... (already quoted for the remote shell)
+    ssh_vm "bash /tmp/in-vm-checks.sh '${password}' $*" | tee -a "${out}/download-checks.txt" || status=1
+}
+open_app() { # NAME WINDOW_TEXT TIMEOUT DESKTOP_ID
+    in_vm start "$1" "$4"
+    in_vm wait "$1" "'$2'" "$3"
     sleep 10
     shot "08-open-$1"
-    ssh_vm "bash /tmp/in-vm-checks.sh '${password}' close $1" >/dev/null || true
+    in_vm close "$1" >/dev/null
     sleep 3
 }
 open_app filelight Filelight 180 org.kde.filelight.desktop
 open_app supertux SuperTux 240 org.supertuxproject.SuperTux.desktop
 open_app heroic Heroic 300 com.heroicgameslauncher.hgl.desktop
 open_app bazaar Bazaar 240 io.github.kolunmi.Bazaar.desktop
-open_app steam Steam 1200 steam.desktop steamwebhelper
-ssh_vm "bash /tmp/in-vm-checks.sh '${password}' remove" | tee -a "${out}/download-checks.txt" || status=1
+# Steam: Bazzite's launcher first shows a "Steam is opening for the first
+# time" notice and waits for OK; press Enter like a person would, then let
+# Steam download its client and wait for its window.
+in_vm start steam steam.desktop
+sleep 20
+shot "08-steam-first-run-notice"
+qmp key ret
+sleep 5
+ssh_vm "pkill -x kdialog && echo 'INFO: closed the first-run notice directly (Enter did not reach it)'" |
+    tee -a "${out}/download-checks.txt" || true
+in_vm wait steam Steam 1200 steamwebhelper
+sleep 15
+shot "08-open-steam"
+in_vm close steam >/dev/null
+in_vm remove
 
 # Logs for the report.
 ssh_vm "tamarack doctor --json" >"${out}/doctor.json" || true
