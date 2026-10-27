@@ -21,10 +21,13 @@ def test_demo_refresh_labels_exist_in_backend() -> None:
 def test_install_and_preview_accept_javascript_values(brand: Brand, tmp_path: Path) -> None:
     """QML passes arrays and objects as QJSValue; the slots must accept them."""
     pytest.importorskip("PySide6")
+    from PySide6.QtCore import QCoreApplication
     from PySide6.QtQml import QJSEngine
 
     from tamarack.ui import demo
 
+    # A JavaScript engine needs an application object (Qt aborts otherwise).
+    _app = QCoreApplication.instance() or QCoreApplication([])  # kept alive for the test
     engine = QJSEngine()
     backend = demo.DemoBackend(brand, tmp_path, tmp_path)
     backend.installApps(engine.evaluate('["org.kde.kate", "org.kde.filelight"]'))
