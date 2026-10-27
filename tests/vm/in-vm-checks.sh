@@ -89,6 +89,10 @@ if [[ "${phase}" == "system" ]]; then
     check "firewall active" systemctl is-active firewalld.service
     check "countme timer is off" bash -c '! systemctl is-enabled rpm-ostree-countme.timer 2>/dev/null | grep -qx enabled'
     check "Steam available" command -v steam
+    # Every System Settings page a Tamarack Center button opens must exist.
+    for kcm in $(grep -rhoE '"kcm_[A-Za-z0-9_-]+"' /usr/lib/tamarack/python/tamarack/ui/qml | tr -d '"' | sort -u); do
+        check "System Settings page ${kcm} exists" bash -c "find /usr/lib64/qt6/plugins -name '${kcm}.so' | grep -q ."
+    done
     check "tamarack doctor runs" tamarack doctor --quick
     info "tamarack doctor" tamarack doctor
     check "privacy dashboard data" tamarack privacy --json
