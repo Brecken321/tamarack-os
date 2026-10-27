@@ -59,11 +59,6 @@ jobs:
           flatpak update --user --appstream --noninteractive flathub
           catalog="${HOME}/.local/share/flatpak/appstream/flathub/x86_64/active"
           echo "APPSTREAM=${catalog}" >> "$GITHUB_ENV"
-          # Bundle apps whose icon is not in the catalog (shown with a generic icon).
-          grep -oE 'id = "[^"]+"' system_files/usr/share/tamarack/flatpaks/bundles.toml | cut -d'"' -f2 | while read -r id; do
-            [[ -f "${catalog}/icons/128x128/${id}.png" || -f "${catalog}/icons/64x64/${id}.png" ]] ||
-              echo "no catalog icon: ${id} $(find "${catalog}/icons" -iname "*${id##*.}*" | head -n 3 | tr '\n' ' ')"
-          done
 
       # Same look as in a Plasma session: KDE platform theme (colors, icons
       # and fonts from kdeglobals), Breeze style, OpenGL (Mesa llvmpipe).

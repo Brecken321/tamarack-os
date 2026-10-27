@@ -84,10 +84,13 @@ def installed_apps(runner: Runner) -> set[str]:
 
 def icon_path(app_id: str, appstream: Path = APPSTREAM) -> str:
     """The app's icon from the Flathub catalog, or "" if the catalog has none."""
+    # Older apps are listed under "<id>.desktop", and a few in lowercase.
+    names = (app_id, f"{app_id}.desktop", app_id.lower(), f"{app_id.lower()}.desktop")
     for size in ("128x128", "64x64"):
-        path = appstream / "icons" / size / f"{app_id}.png"
-        if path.is_file():
-            return str(path)
+        for name in names:
+            path = appstream / "icons" / size / f"{name}.png"
+            if path.is_file():
+                return str(path)
     return ""
 
 

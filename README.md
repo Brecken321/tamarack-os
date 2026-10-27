@@ -54,9 +54,9 @@ Captured automatically by the CI virtual-machine test (QEMU, 1280×800, no GPU a
 - **Safe updates.** Updates download in the background and apply at your next restart; the system never
   restarts on its own. The previous version is always kept, so you can roll back from Tamarack Center or
   the boot menu. Images are signed and verified.
-- **A clean install.** A browser and a few viewers; everything else is your choice, from optional bundles
-  (gaming tools, office, creator apps, development, backups…) or the app store. Apps you remove are never
-  reinstalled behind your back.
+- **A clean install.** A browser and a few viewers; everything else is your choice. Search Flathub's
+  thousands of apps and games from Tamarack Center, pick from optional bundles (gaming tools, office, creator
+  apps, development, backups…) or use the app store. Apps you remove are never reinstalled behind your back.
 - **Hardware check.** One page shows each device, its driver and what to do if something needs attention.
 
 ## Get it

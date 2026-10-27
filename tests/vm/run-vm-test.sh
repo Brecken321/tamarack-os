@@ -92,6 +92,12 @@ session_env='export XDG_RUNTIME_DIR=/run/user/$(id -u) DBUS_SESSION_BUS_ADDRESS=
 ssh_vm "pkill -f '[t]amarack-center --welcome'" || true
 sleep 5
 shot "03-desktop-default-preset"
+# The start menu (Meta key), then close it again.
+qmp key meta_l
+sleep 4
+shot "03-start-menu"
+qmp key esc
+sleep 2
 for preset in gaming classic-desktop minimalist high-contrast; do
     ssh_vm "${session_env}; tamarack preset apply ${preset}" | tee -a "${out}/presets.txt" || status=1
     sleep 12

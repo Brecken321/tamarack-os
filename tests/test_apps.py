@@ -119,6 +119,17 @@ def test_search_marks_installed_apps_and_finds_icons(tmp_path: Path) -> None:
     assert found[1]["icon"] == str(icons / "org.kde.filelight.png") and found[0]["icon"] == ""
 
 
+def test_icon_path_finds_legacy_and_lowercase_catalog_names(tmp_path: Path) -> None:
+    icons = tmp_path / "icons/64x64"
+    icons.mkdir(parents=True)
+    for name in ("org.kde.kate.desktop", "org.mozilla.thunderbird"):
+        (icons / f"{name}.png").write_bytes(b"png")
+    assert apps.icon_path("org.kde.kate", tmp_path) == str(icons / "org.kde.kate.desktop.png")
+    # Compared without case: the test may run on a case-insensitive file system.
+    assert Path(apps.icon_path("org.mozilla.Thunderbird", tmp_path)).name.lower() == "org.mozilla.thunderbird.png"
+    assert apps.icon_path("org.example.Missing", tmp_path) == ""
+
+
 def test_search_downloads_the_catalog_when_missing() -> None:
     runner = FakeRunner()
     runner.add(["flatpak", "update"])
