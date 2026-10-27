@@ -97,3 +97,30 @@ def test_actions_use_polkit_and_never_auto_restart() -> None:
     assert ["pkexec", "bootc", "rollback"] in commands
     assert ["pkexec", "systemctl", "disable", "--now", "uupd.timer"] in commands
     assert not any("reboot" in c for c in commands)
+
+
+def test_image_ref_strips_transports() -> None:
+    for ref in (
+        "ostree-unverified-registry:ghcr.io/brecken321/tamarack-os:stable",
+        "ostree-image-signed:docker://ghcr.io/brecken321/tamarack-os:stable",
+        "docker://ghcr.io/brecken321/tamarack-os:stable",
+    ):
+        assert updates._image_ref({"container-image-reference": ref}) == "ghcr.io/brecken321/tamarack-os:stable"
+
+
+def test_booted_version_falls_back_to_os_release(tmp_path: Path) -> None:
+    (tmp_path / "usr/lib").mkdir(parents=True)
+    (tmp_path / "usr/lib/os-release").write_text('NAME="Tamarack OS"\nIMAGE_VERSION="44.20261027"\n', encoding="utf-8")
+    data = {
+        "deployments": [
+            {
+                "booted": True,
+                "timestamp": 1793001600,
+                "container-image-reference": "ostree-unverified-registry:ghcr.io/x/y:stable",
+            }
+        ]
+    }
+    runner = FakeRunner()
+    runner.add(["rpm-ostree", "status"], json.dumps(data))
+    st = updates.status(runner, tmp_path, tmp_path)
+    assert st.booted is not None and st.booted.version == "44.20261027"

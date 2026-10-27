@@ -108,6 +108,18 @@ rechunk flavor="main" tag=default_tag:
     set -xeuo pipefail
     read -r image base < <(just variant "{{ flavor }}")
     GRAPHROOT="$(podman info --format '{{ '{{.Store.GraphRoot}}' }}')"
+    # --rootfs builds a fresh image config, dropping every label. Carry them over
+    # (except ostree's own) and add the version: bootc records it at install time,
+    # and a missing version makes bootupd fail on new installs (coreos/bootupd#1166).
+    LABELS=()
+    while IFS= read -r kv; do
+        LABELS+=(--label "${kv}")
+    done < <(podman image inspect "localhost/${image}:{{ tag }}" |
+        jq -r '.[0].Labels // {} | to_entries[] | select(.key | test("^(ostree\\.|containers\\.bootc$)") | not) | "\(.key)=\(.value)"')
+    version="$(podman run --rm --pull=never --entrypoint /usr/bin/bash "localhost/${image}:{{ tag }}" \
+        -c '. /usr/lib/os-release && echo "${IMAGE_VERSION}"')"
+    [[ -n "${version}" ]] || { echo "IMAGE_VERSION missing from os-release" >&2; exit 1; }
+    LABELS+=(--label "org.opencontainers.image.version=${version}")
     podman run --rm --pull=never --privileged \
       --mount=type=image,src="${image}:{{ tag }}",target=/rpm-ostree \
       --mount=type=bind,src=${GRAPHROOT},target=/run/host-container-storage,rw \
@@ -118,8 +130,12 @@ rechunk flavor="main" tag=default_tag:
       --max-layers 127 \
       --format-version=2 \
       --bootc \
+      "${LABELS[@]}" \
       --rootfs /rpm-ostree \
       --output "containers-storage:[overlay@/run/host-container-storage+/run/rpm-ostree-storage]localhost/${image}:{{ tag }}"
+    # Guard against regressions: the published image must carry its version.
+    podman image inspect "localhost/${image}:{{ tag }}" |
+        jq -e --arg v "${version}" '.[0].Labels["org.opencontainers.image.version"] == $v' >/dev/null
 
 # Tags to publish for a build: tag, tag-YYYYMMDD, YYYYMMDD and tag-<sha> when clean
 [group('Build')]

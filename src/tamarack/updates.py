@@ -11,6 +11,7 @@ Nothing here restarts the computer unless the user explicitly asks.
 
 from __future__ import annotations
 
+import dataclasses
 import datetime as dt
 import json
 import logging
@@ -78,10 +79,36 @@ class UpdateStatus:
         }
 
 
+_TRANSPORT_PREFIXES = (
+    "ostree-unverified-registry:",
+    "ostree-unverified-image:",
+    "ostree-image-signed:",
+    "ostree-remote-image:",
+    "ostree-remote-registry:",
+    "docker://",
+    "registry:",
+)
+
+
 def _image_ref(raw: dict[str, Any]) -> str:
+    """Image name without ostree/containers transport prefixes, e.g. ghcr.io/org/img:stable."""
     ref = str(raw.get("container-image-reference") or raw.get("origin") or "")
-    # e.g. "ostree-image-signed:docker://ghcr.io/brecken321/tamarack-os:stable"
-    return ref.split("docker://", 1)[-1] if "docker://" in ref else ref
+    if "docker://" in ref:
+        return ref.split("docker://", 1)[1]
+    for prefix in _TRANSPORT_PREFIXES:
+        if ref.startswith(prefix):
+            return ref[len(prefix) :]
+    return ref
+
+
+def _os_release_version(root: Path) -> str:
+    try:
+        for line in (root / "usr/lib/os-release").read_text(encoding="utf-8").splitlines():
+            if line.startswith("IMAGE_VERSION="):
+                return line.split("=", 1)[1].strip().strip('"')
+    except OSError:
+        pass
+    return ""
 
 
 def parse_rpm_ostree_status(text: str) -> UpdateStatus:
@@ -111,13 +138,16 @@ def parse_rpm_ostree_status(text: str) -> UpdateStatus:
     return status
 
 
-def status(runner: Runner, var_path: Path = Path("/var")) -> UpdateStatus:
+def status(runner: Runner, var_path: Path = Path("/var"), root: Path = Path("/")) -> UpdateStatus:
     result = runner.run(["rpm-ostree", "status", "--json"], timeout=60)
     if result.ok:
         try:
             st = parse_rpm_ostree_status(result.stdout)
         except (json.JSONDecodeError, TypeError, ValueError) as exc:
             st = UpdateStatus(errors=[f"Could not read update status: {exc}"])
+        # Images without a version label report none; the running system knows its own.
+        if st.booted is not None and not st.booted.version:
+            st.booted = dataclasses.replace(st.booted, version=_os_release_version(root))
     else:
         st = UpdateStatus(errors=[result.error_summary() or "rpm-ostree status failed"])
     timer = runner.run(["systemctl", "is-enabled", "uupd.timer"])

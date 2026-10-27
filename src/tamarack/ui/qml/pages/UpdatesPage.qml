@@ -51,7 +51,7 @@ Kirigami.ScrollablePage {
         }
 
         SectionCard {
-            title: page.booted ? qsTr("You're running %1").arg(page.booted.version) : qsTr("Current version")
+            title: page.booted && page.booted.version ? qsTr("You're running %1").arg(page.booted.version) : qsTr("Current version")
             iconName: "system-software-update"
             subtitle: page.booted ? qsTr("Released %1 · %2").arg(page.booted.date).arg(page.booted.image) : ""
 
@@ -96,7 +96,8 @@ Kirigami.ScrollablePage {
         SectionCard {
             title: qsTr("Go back to the previous version")
             iconName: "edit-undo"
-            subtitle: page.previous ? qsTr("Previous version: %1 (%2)").arg(page.previous.version).arg(page.previous.date)
+            subtitle: page.previous ? (page.previous.version ? qsTr("Previous version: %1 (%2)").arg(page.previous.version).arg(page.previous.date)
+                                                             : qsTr("Previous version from %1").arg(page.previous.date))
                                     : qsTr("No previous version is available yet.")
             Controls.Label {
                 Layout.fillWidth: true

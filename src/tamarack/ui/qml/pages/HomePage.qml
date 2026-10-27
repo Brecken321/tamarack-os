@@ -130,7 +130,7 @@ Kirigami.ScrollablePage {
                     Layout.fillWidth: true
                 }
                 Controls.Button {
-                    text: qsTr("Updates & Recovery")
+                    text: qsTr("Updates && Recovery")
                     icon.name: "go-next"
                     onClicked: Controls.ApplicationWindow.window.showPage("updates")
                 }

@@ -43,6 +43,16 @@ servers, which see your IP address.
 - Enabled background services, explained where known.
 - This network list.
 
+## Notifications from the system
+
+Tamarack OS sends no promotional notifications. Two kinds of system notices exist:
+
+- **Change notices inherited from Bazzite** ("Bazzite Announcements" in the startup list): short messages stored in
+  the image (`/usr/share/ublue-os/announcements/`), shown only when a change affects something you use (for example
+  a tool moving out of the base image). They are never downloaded, can be dismissed for good with "Don't show me
+  this again", and can be turned off in System Settings > Autostart.
+- **Tamarack Welcome** opens once, at your first login.
+
 ## Accounts
 
 No online account is needed to install or use Tamarack OS. Steam, Discord and similar apps need their own accounts only

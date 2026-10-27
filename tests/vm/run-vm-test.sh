@@ -97,20 +97,23 @@ ssh_vm "${session_env}; tamarack preset reset" | tee -a "${out}/presets.txt" || 
 sleep 12
 shot "05-preset-reset"
 
-for page in home appearance gaming privacy hardware updates; do
-    ssh_vm "${session_env}; (setsid tamarack-center --page ${page} >/tmp/center-${page}.log 2>&1 &)" || status=1
+# Start the app as a user unit so it gets the Plasma session's environment
+# (theme, icons, style) exactly like launching it from the start menu.
+for page in home appearance apps gaming privacy hardware updates help; do
+    ssh_vm "${session_env}; systemd-run --user --collect --unit=tamarack-center-${page} tamarack-center --page ${page}" ||
+        status=1
     sleep 15
     shot "06-center-${page}"
-    ssh_vm "pkill -f '[t]amarack-center --page ${page}'" || true
+    ssh_vm "${session_env}; systemctl --user stop tamarack-center-${page}" || true
 done
-ssh_vm "${session_env}; (setsid tamarack-center --welcome >/tmp/center-welcome.log 2>&1 &)" || status=1
+ssh_vm "${session_env}; systemd-run --user --collect --unit=tamarack-welcome tamarack-center --welcome" || status=1
 sleep 15
 shot "07-welcome"
 
 # Logs for the report.
 ssh_vm "tamarack doctor --json" >"${out}/doctor.json" || true
 ssh_vm "journalctl -b --no-pager -o short-monotonic" >"${out}/journal.txt" || true
-ssh_vm "cat /tmp/center-*.log ~/.local/state/tamarack/*.log 2>/dev/null" >"${out}/center-logs.txt" || true
+ssh_vm "journalctl --user -b --no-pager -u 'tamarack-*'; cat ~/.local/state/tamarack/*.log 2>/dev/null" >"${out}/center-logs.txt" || true
 ssh_vm "systemd-analyze; systemd-analyze blame | head -n 25; free -m; df -h /" >"${out}/performance.txt" || true
 
 echo "VM test finished with status ${status}"

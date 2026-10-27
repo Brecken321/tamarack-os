@@ -43,7 +43,7 @@ def _json_file(path: Path) -> dict[str, Any]:
 def report(runner: Runner, root: Path = Path("/"), include_hardware: bool = True) -> dict[str, Any]:
     osr = _os_release(root)
     info = _json_file(root / "usr/share/ublue-os/image-info.json")
-    upd = updates.status(runner, root / "var")
+    upd = updates.status(runner, root / "var", root)
     gaming = {cmd: runner.which(cmd) for cmd in GAMING_TOOLS}
     flatpak_setup = _json_file(root / "var/lib/tamarack/flatpak-setup.status")
     data: dict[str, Any] = {

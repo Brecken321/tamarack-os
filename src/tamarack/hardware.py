@@ -44,7 +44,16 @@ class PciDevice:
 
     @property
     def vendor(self) -> str:
-        return {"10de": "NVIDIA", "1002": "AMD", "8086": "Intel"}.get(self.vendor_id, self.vendor_id)
+        names = {
+            "10de": "NVIDIA",
+            "1002": "AMD",
+            "8086": "Intel",
+            "1af4": "Virtio (virtual machine)",
+            "15ad": "VMware (virtual machine)",
+            "1234": "QEMU (virtual machine)",
+            "80ee": "VirtualBox (virtual machine)",
+        }
+        return names.get(self.vendor_id, self.vendor_id)
 
 
 @dataclass(frozen=True)
