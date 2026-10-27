@@ -43,5 +43,8 @@ Controls.Button {
              : control.hovered ? Qt.lighter(control.fillColor, 1.12) : control.fillColor
         border.width: control.visualFocus ? 2 : 0
         border.color: Qt.lighter(control.fillColor, 1.5)
+        Behavior on color {
+            ColorAnimation { duration: Kirigami.Units.shortDuration }
+        }
     }
 }

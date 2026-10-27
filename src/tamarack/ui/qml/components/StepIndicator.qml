@@ -32,6 +32,9 @@ RowLayout {
                 radius: 1
                 color: step.done || step.active ? Kirigami.Theme.highlightColor : Kirigami.Theme.disabledTextColor
                 opacity: step.done || step.active ? 1 : 0.4
+                Behavior on color {
+                    ColorAnimation { duration: Kirigami.Units.longDuration }
+                }
             }
             Rectangle {
                 implicitWidth: Kirigami.Units.gridUnit * 1.4
@@ -40,6 +43,9 @@ RowLayout {
                 color: step.done || step.active ? Kirigami.Theme.highlightColor : "transparent"
                 border.width: step.done || step.active ? 0 : 1
                 border.color: Kirigami.Theme.disabledTextColor
+                Behavior on color {
+                    ColorAnimation { duration: Kirigami.Units.longDuration }
+                }
                 Controls.Label {
                     anchors.centerIn: parent
                     visible: !step.done
