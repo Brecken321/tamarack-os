@@ -42,6 +42,10 @@ Captured automatically by the CI virtual-machine test (QEMU, 1280×800, no GPU a
   The Gaming page in Tamarack Center checks whether a game's anti-cheat works on Linux before you buy it
   (sourced data, never guesses), lists your Steam library with compatibility ratings, shows Proton launch
   logs, and on hybrid laptops can run Steam on the discrete GPU.
+- **Familiar if you come from Windows.** The Start button and your apps sit centered on the taskbar, the
+  Windows shortcuts work (Win to open Start, Win+E files, Win+I settings, Win+Tab task view, Win+S search,
+  Win+arrows to snap, Ctrl+Shift+Esc for the task manager), and Tamarack Center has a sidebar and a
+  "Find a setting" search like Windows Settings.
 - **Two editions.** `tamarack-os` for AMD and Intel graphics, `tamarack-os-nvidia` for NVIDIA GTX 16-series
   and RTX cards (open kernel modules, signed for Secure Boot).
 - **Presets that change the real desktop.** Clean Modern (default), Classic Desktop, Minimalist, Gaming,
