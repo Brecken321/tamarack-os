@@ -123,6 +123,14 @@ if [[ "${phase}" == "session" ]]; then
     check "default panel layout from the Tamarack theme" bash -c "grep -q 'org.kde.plasma.kickoff' <<<'${layout}' && grep -q 'org.kde.plasma.icontasks' <<<'${layout}'"
     check "Tamarack wallpaper on the desktop" bash -c "grep -q 'wallpapers/Tamarack' <<<'${layout}'"
     check "Kickoff uses the Tamarack logo" bash -c "busctl --user call org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell evaluateScript s 'var w = panels()[0].widgets(\"org.kde.plasma.kickoff\")[0]; w.currentConfigGroup = [\"General\"]; print(w.readConfig(\"icon\", \"\"));' | grep -q tamarack"
+    # Every app pinned to the taskbar or the start menu's favorites is installed.
+    pins="$(busctl --user call org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell evaluateScript s \
+        'var t = panels()[0].widgets("org.kde.plasma.icontasks")[0]; t.currentConfigGroup = ["General"]; print(t.readConfig("launchers", ""));' 2>&1)"
+    favorites="$(grep -h '^Prepend=' /usr/share/kde-settings/kde-profile/default/xdg/kicker-extra-favoritesrc 2>/dev/null)"
+    while read -r entry; do
+        check "pinned app ${entry} is installed" bash -c \
+            "ls /usr/share/applications/${entry} /var/lib/flatpak/exports/share/applications/${entry} 2>/dev/null | grep -q ."
+    done < <(grep -oE '[A-Za-z0-9._-]+\.desktop' <<<"${pins} ${favorites}" | sort -u)
 fi
 
 # Real downloads from Flathub: an app, a game and a game launcher, installed

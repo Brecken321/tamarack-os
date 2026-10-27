@@ -178,6 +178,8 @@ open_app filelight Filelight 180 org.kde.filelight.desktop
 open_app supertux SuperTux 240 org.supertuxproject.SuperTux.desktop
 open_app heroic Heroic 300 com.heroicgameslauncher.hgl.desktop
 open_app bazaar Bazaar 240 io.github.kolunmi.Bazaar.desktop
+open_app firefox Firefox 120 org.mozilla.firefox.desktop
+open_app center "Tamarack Center" 60 io.github.brecken321.tamarack.Center.desktop
 # Steam: Bazzite's launcher first shows a "Steam is opening for the first
 # time" notice and waits for OK; press Enter like a person would, then let
 # Steam download its client and wait for its window.
