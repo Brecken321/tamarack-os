@@ -110,6 +110,8 @@ check "32-bit Vulkan loader present (needed by Steam/Proton)" test -e /usr/lib/l
 if [[ "${flavor}" == "nvidia" ]]; then
     check "NVIDIA kernel module packaged" bash -c 'find /usr/lib/modules -name "nvidia*.ko*" | grep -q .'
     check "NVIDIA userspace driver present" bash -c 'rpm -qa | grep -qiE "^nvidia-driver|^xorg-x11-drv-nvidia"'
+    check "CDI refresh skips cleanly without an NVIDIA GPU" \
+        bash -c 'systemctl cat nvidia-cdi-refresh.service | grep -q "0x10de"'
 else
     check "no NVIDIA kernel module in main flavor" bash -c '! find /usr/lib/modules -name "nvidia.ko*" | grep -q .'
 fi
