@@ -27,6 +27,8 @@ Kirigami.ApplicationWindow {
         "welcome": "pages/WelcomePage.qml"
     })
     property string currentPage: ""
+    // Counts page loads (choosing the current page again reloads it).
+    property int pageLoads: 0
 
     readonly property var colors: backend.brand.palette
     // The sidebar, in order.
@@ -85,6 +87,7 @@ Kirigami.ApplicationWindow {
             name = "home";
         }
         currentPage = name;
+        pageLoads += 1;
         pageStack.clear();
         var page = pageStack.push(Qt.resolvedUrl(pageFiles[name]));
         if (page) {

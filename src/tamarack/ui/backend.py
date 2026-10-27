@@ -20,6 +20,7 @@ from pathlib import Path
 from typing import Any
 
 from PySide6.QtCore import Property, QObject, QRunnable, Qt, QThreadPool, QUrl, Signal, Slot
+from PySide6.QtQml import QJSValue
 
 from .. import appearance, apps, art, doctor, games, gaming, hardware, privacy, steam, updates
 from .. import presets as preset_lib
@@ -29,6 +30,15 @@ from ..system import CommandResult, Runner
 log = logging.getLogger("tamarack.ui")
 
 Callback = Callable[[Any], None]
+
+
+def _plain(value: Any) -> Any:
+    """A JavaScript array or object from QML as a Python list or dict.
+
+    PySide6 hands them to "QVariant" slots as QJSValue, which Python cannot
+    iterate; without this, Install buttons silently did nothing.
+    """
+    return value.toVariant() if isinstance(value, QJSValue) else value
 
 
 class _Task(QRunnable):
@@ -330,7 +340,7 @@ class Backend(QObject):
     @Slot("QVariant", result=str)
     def previewCustom(self, form: Any) -> str:
         try:
-            return self._preview_file(self._preset_from_form(dict(form)))
+            return self._preview_file(self._preset_from_form(dict(_plain(form))))
         except (KeyError, ValueError, preset_lib.PresetError) as exc:
             log.warning("preview failed", extra={"error": str(exc)})
             return ""
@@ -338,7 +348,7 @@ class Backend(QObject):
     @Slot("QVariant", bool, result=str)
     def saveCustomPreset(self, form: Any, apply_now: bool) -> str:
         try:
-            preset = self._preset_from_form(dict(form))
+            preset = self._preset_from_form(dict(_plain(form)))
         except (KeyError, ValueError, preset_lib.PresetError) as exc:
             return str(exc)
         appearance.save_user_preset(self._paths, preset)
@@ -557,7 +567,7 @@ class Backend(QObject):
 
     @Slot("QVariant")
     def installApps(self, app_ids: Any) -> None:
-        ids = [str(a) for a in app_ids]
+        ids = [str(a) for a in _plain(app_ids)]
         if not ids:
             return
 

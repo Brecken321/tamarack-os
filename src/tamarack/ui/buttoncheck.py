@@ -179,6 +179,7 @@ class ButtonCheck:
         return {
             "selection": selection,
             "page": self.window.property("currentPage"),
+            "loads": self.window.property("pageLoads"),
             "depth": _prop(stack, "depth") if stack is not None else 0,
             "step": steps.property("currentIndex") if steps is not None else -1,
             "popups": popups,
@@ -193,6 +194,8 @@ class ButtonCheck:
         effects = []
         if after["page"] != before["page"] or after["depth"] != before["depth"]:
             effects.append(f"opens page {after['page']}")
+        elif after["loads"] != before["loads"]:
+            effects.append("reloads the page")
         if after["step"] != before["step"]:
             effects.append(f"goes to Welcome step {after['step'] + 1}")
         if after["popups"] > before["popups"] or after["windows"] > before["windows"]:
