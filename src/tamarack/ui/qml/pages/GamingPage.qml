@@ -255,12 +255,13 @@ Kirigami.ScrollablePage {
                         Controls.ToolTip.text: text
                         Controls.ToolTip.visible: hovered
                     }
+                    // Installed games start; the others open Steam's install dialog.
                     Controls.Button {
-                        text: qsTr("Play")
-                        icon.name: "media-playback-start"
-                        enabled: gameRow.modelData.installed
-                        onClicked: Qt.openUrlExternally("steam://rungameid/" + gameRow.modelData.appid)
-                        Accessible.name: qsTr("Play %1").arg(gameRow.modelData.name)
+                        readonly property bool installed: gameRow.modelData.installed
+                        text: installed ? qsTr("Play") : qsTr("Install")
+                        icon.name: installed ? "media-playback-start" : "download"
+                        onClicked: Qt.openUrlExternally((installed ? "steam://rungameid/" : "steam://install/") + gameRow.modelData.appid)
+                        Accessible.name: (installed ? qsTr("Play %1") : qsTr("Install %1")).arg(gameRow.modelData.name)
                     }
                 }
             }
