@@ -208,7 +208,11 @@ Kirigami.ApplicationWindow {
         }
     }
 
-    footer: Controls.ToolBar {
+    // Attached only while something runs: a hidden footer still takes its
+    // height from the sidebar.
+    footer: backend.busy ? busyBar : null
+
+    property Controls.ToolBar busyBar: Controls.ToolBar {
         visible: backend.busy
         position: Controls.ToolBar.Footer
         RowLayout {
