@@ -70,6 +70,9 @@ build flavor="main" tag=default_tag:
         fi
     fi
     LABELS+=(--label "org.opencontainers.image.title=${image}")
+    # Override labels inherited from the Bazzite base so the image is not misattributed.
+    LABELS+=(--label "org.opencontainers.image.url=https://github.com/${image_vendor}/tamarack-os")
+    LABELS+=(--label "io.artifacthub.package.logo-url=https://raw.githubusercontent.com/${image_vendor}/tamarack-os/main/docs/assets/tamarack-logo.svg")
     LABELS+=(--label "org.opencontainers.image.description=${image_desc}")
     LABELS+=(--label "org.opencontainers.image.vendor=${image_vendor}")
     LABELS+=(--label "org.opencontainers.image.licenses=Apache-2.0")
