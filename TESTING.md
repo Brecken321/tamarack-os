@@ -18,11 +18,16 @@ real hardware and is done by hand with the checklist below.
   *Verified* is never invented), hardware parsing from real-world fixtures, privacy parsing, update-status parsing,
   preset apply/undo against a fake home directory, and that no secrets are committed.
   They do **not** prove KDE behaves as expected; that is layer 3.
+- **The button check** proves every control in Tamarack Center reacts when used: a page opens, a dialog appears, a
+  request reaches the system layer (install, apply, refresh…), an app or link is started, or a switch flips. It runs
+  against example data, so it does **not** prove the request then succeeds on a real system; the VM test covers the
+  important ones (installing apps, presets, updates check) for real.
 - **Image checks** prove the image contains and enables what we claim. They run with no network and no hardware.
 - **The VM test** proves the image boots, reaches the desktop, verifies its update signature against the registry, installs
-  default apps from Flathub, and that presets and Tamarack Center work in a real Plasma session. A VM has no real GPU
-  (software rendering), so it says **nothing** about game performance, NVIDIA drivers, Wi-Fi, Bluetooth, audio hardware,
-  sleep or battery.
+  default apps from Flathub, that presets, the Windows-style shortcuts and Tamarack Center work in a real Plasma session,
+  and that apps and games really download from Flathub and open, and Steam downloads its client and reaches sign-in. A VM
+  has no real GPU (software rendering), so it says **nothing** about game performance, NVIDIA drivers, Wi-Fi, Bluetooth,
+  audio hardware, sleep or battery, and nothing about downloading games through Steam (that needs an account).
 - **The unattended install test** builds an installer ISO with the same builder and image as the release ISOs (plus a
   test kickstart that partitions automatically and creates a throwaway user), installs onto an empty virtual disk with
   Anaconda, then boots the installed system and runs the full VM test on it. It does **not** click through the
@@ -33,6 +38,45 @@ real hardware and is done by hand with the checklist below.
 Newest first. "CI" entries link to the workflow run that produced them.
 
 <!-- results:start -->
+
+### 2026-10-27: redesigned Center, every button checked, real downloads, Windows-style desktop (CI [run 40584857350](https://github.com/Brecken321/tamarack-os/actions/runs/40584857350), images 44.20261027)
+
+All six jobs passed. Every system below ran the same 126 checks with **0 failures**: both editions booted from a disk
+image, and both installed by Anaconda from their ISO onto a blank disk.
+
+| | Standard | NVIDIA |
+|---|---|---|
+| Boot to SSH / systemd to graphical target | 102 s / 12.1 s | 152 s / 21.2 s |
+| Unattended install from ISO, then boot to SSH | 8 min 1 s, 111 s | 8 min 40 s, 131 s |
+| Memory in use with Plasma open (6 GB VM) | 1.6 GB | 1.7 GB |
+| First boot downloads Flathub's app catalog; Center app search finds Filelight and SuperTux | ✅ | ✅ |
+| Download and install as the desktop user, through Tamarack's installer: Filelight (app), SuperTux (game), Heroic (Epic/GOG launcher) | ✅ 2 s, 52 s, 25 s | ✅ 3 s, 60 s, 28 s |
+| Each one opens its window (SuperTux reaches its title screen) | ✅ | ✅ |
+| Bazaar app store, Firefox and Tamarack Center open from their menu entries | ✅ | ✅ |
+| Steam: first-run notice, client download, **Sign in to Steam** window | ✅ 110 s | ✅ 111 s |
+| Remove an app as the user; it leaves the start menu | ✅ | ✅ |
+| Win+I, Ctrl+Shift+Esc, Win+E, Win+. open Settings, System Monitor, Dolphin, the emoji picker; Win+S and Win+Tab open search and the overview (screenshots) | ✅ | ✅ |
+| Every System Settings page a Center button opens (36) exists; every pinned app is installed | ✅ | ✅ |
+
+Release ISOs from this run: `tamarack-os-20261027-x86_64.iso`, 5.8 GB, SHA-256
+`3abc16f5bcb8879bb3f65680cbc287819d90e37557dea8a9f10a79375ff8e4e6`; `tamarack-os-nvidia-20261027-x86_64.iso`, 6.4 GB,
+SHA-256 `ad7dc0f50434e69310998693655f089abdb3c15cc060df7744d13055bc8c803b`.
+
+The new button check (Center preview workflow) clicks all 232 controls in Tamarack Center and the Welcome flow. Its first run
+found that **every Install button and the preset Customize preview did nothing**: PySide6 hands QML arrays and objects to
+Python as `QJSValue`. Earlier VM tests installed apps through the `tamarack` CLI, so they never caught it. Fixed, with a
+regression test; all 232 controls now pass.
+
+Found and fixed while getting here:
+- App search had no catalog. Flatpak fetches it only on demand, and only from the desktop session; first-boot setup now
+  downloads it.
+- Bazzite's Steam launcher waits for OK on a first-run notice. The test presses Enter, as a person would.
+- The screen locked during the long downloads. Auto-lock is now off for the test session.
+- Closing an app's test unit did not close Flatpak apps. The test now uses `flatpak kill`.
+- Daytime screenshots showed the clock and tray almost invisible: a see-through taskbar over the wallpaper's dark treeline,
+  with the light theme's dark text. Presets that use the light theme now have a solid taskbar, enforced by a unit test.
+  The next VM run checks this.
+- Preset cards lost their descriptions with the VM's font metrics. They are back on Kirigami's `CardsLayout`.
 
 ### 2026-10-27: installer ISOs and unattended install (CI [run 40467069805](https://github.com/Brecken321/tamarack-os/actions/runs/40467069805), images 44.20261027)
 
@@ -106,7 +150,9 @@ checks passed (branding, themes, privacy defaults, signature policy, firewall on
 ## Not tested yet
 
 - Any physical machine (including the target ASUS TUF F17 with GTX 1650 Ti).
-- Real games, Steam sign-in and downloads, controller input, frame pacing, VRR/HDR, multi-monitor.
+- Steam sign-in and downloading games through Steam (needs an account), game performance, controller input, frame
+  pacing, VRR/HDR, multi-monitor. (Downloading and opening a free game from Flathub, and Steam's own first-run download
+  up to its sign-in window, are tested in the VM.)
 - The interactive (graphical) installer screens, installing from a USB stick on a real PC, disk encryption, dual-boot
   with Windows. (The unattended install into a VM is tested.)
 - Secure Boot with NVIDIA key enrollment.

@@ -12,12 +12,15 @@ Status legend: ✅ done and tested in CI · 🟡 done, needs physical-hardware v
 | Privacy defaults (countme off, Firefox sponsored content & telemetry off) | ✅ image checks |
 | Signed images + signature policy for updates | ✅ signing verified in CI; 🟡 update path verified in VM test |
 | Seven desktop presets with backup/undo, custom presets, import/export | ✅ unit tests; 🟡 VM screenshots |
-| Tamarack Center (home, appearance, apps, gaming, hardware, privacy, updates, help) + Welcome | ✅ QML self-test and VM screenshots |
+| Tamarack Center (home, appearance, apps, gaming, hardware, privacy, updates, help) + Welcome, with "Find a setting" | ✅ QML self-test, every-button check, page previews, VM screenshots |
+| App and game search and install from Flathub in Tamarack Center | ✅ VM test downloads and opens an app, a game and a launcher |
+| Windows-style desktop: centered Start button, Windows shortcuts | ✅ VM test presses the shortcuts |
 | `tamarack` CLI and `ujust tamarack-*` recipes | ✅ |
 | Game compatibility center with sourced anti-cheat data, Steam library view, launch logs | ✅ |
 | Hybrid-laptop option: Steam on the discrete GPU | 🟡 |
 | First-boot default apps (never reinstalls removed apps) | ✅ VM test |
 | VM boot test with screenshots in CI | ✅ |
+| Steam first-run download to its sign-in window | ✅ VM test (game downloads through Steam need an account: real hardware) |
 | Anaconda installer ISOs | ✅ built in CI; ✅ unattended install + first boot tested in a VM; 🟡 interactive installer not automated |
 | Documentation set | ✅ |
 
