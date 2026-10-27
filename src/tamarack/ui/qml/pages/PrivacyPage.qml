@@ -106,7 +106,7 @@ Kirigami.ScrollablePage {
             Controls.Button {
                 text: qsTr("Change app permissions")
                 icon.name: "configure"
-                onClicked: backend.openSettings("kcm_flatpak")
+                onClicked: backend.openSettings("kcm_app-permissions")
             }
         }
 

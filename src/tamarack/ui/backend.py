@@ -612,7 +612,7 @@ class Backend(QObject):
     # -- misc ------------------------------------------------------------------
     @Slot(str)
     def openSettings(self, module: str) -> None:
-        """Open a KDE System Settings page (e.g. kcm_flatpak, kcm_autostart)."""
+        """Open a KDE System Settings page (e.g. kcm_app-permissions, kcm_autostart)."""
         if not re.fullmatch(r"kcm_[A-Za-z0-9_-]+", module):
             return
         try:
