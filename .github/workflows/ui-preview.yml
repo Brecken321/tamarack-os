@@ -1,0 +1,84 @@
+---
+name: Center preview
+
+# Renders every Tamarack Center page and Welcome step with example data, in
+# the dark and light Tamarack themes, in about five minutes. This is for
+# reviewing interface changes quickly; the VM test still checks the real app
+# on a booted system.
+on:
+  push:
+    paths:
+      - "src/tamarack/ui/**"
+      - "branding/**"
+      - "system_files/usr/share/tamarack/flatpaks/**"
+      - ".github/workflows/ui-preview.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "src/tamarack/ui/**"
+      - "branding/**"
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  preview:
+    name: Render Center pages
+    runs-on: ubuntu-26.04
+    container: quay.io/fedora/fedora:44
+    timeout-minutes: 30
+    steps:
+      - name: Install tools
+        run: |
+          dnf5 -y install --setopt=install_weak_deps=False \
+            git python3 python3-pyside6 python3-pillow kf6-kirigami kf6-qqc2-desktop-style qt6-qtsvg \
+            qt6-qtdeclarative qt6-qtimageformats mesa-dri-drivers breeze-icon-theme google-noto-sans-fonts \
+            librsvg2-tools flatpak
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Render branding (wallpapers, preset previews, logo)
+        run: PYTHONPATH=src:branding python3 -m tamarack_branding --brand branding/brand.toml --presets branding/presets --out output/branding
+
+      - name: Download Flathub's catalog for app icons
+        run: |
+          flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+          flatpak update --user --appstream --noninteractive flathub
+          catalog="${HOME}/.local/share/flatpak/appstream/flathub/x86_64/active"
+          ls "${catalog}/icons/128x128" | head -n 3
+          echo "APPSTREAM=${catalog}" >> "$GITHUB_ENV"
+
+      - name: Render pages
+        env:
+          QT_QPA_PLATFORM: offscreen
+          QT_QUICK_BACKEND: software
+          PYTHONPATH: src
+        run: |
+          set -euo pipefail
+          for scheme in Dark Light; do
+            config="$(mktemp -d)"
+            cp "output/branding/usr/share/color-schemes/Tamarack${scheme}.colors" "${config}/kdeglobals"
+            icons=breeze
+            [[ "${scheme}" == Dark ]] && icons=breeze-dark
+            for mode in center welcome; do
+              flag=""
+              [[ "${mode}" == welcome ]] && flag="--welcome"
+              XDG_CONFIG_HOME="${config}" XDG_DATA_DIRS="${PWD}/output/branding/usr/share:/usr/share" \
+                python3 -m tamarack.ui.app --screenshots "preview/${scheme,,}" --data-root output/branding \
+                --appstream "${APPSTREAM}" --icon-theme "${icons}" ${flag}
+            done
+          done
+          ls -R preview
+
+      - name: Upload previews
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: center-preview
+          path: preview
+          retention-days: 14

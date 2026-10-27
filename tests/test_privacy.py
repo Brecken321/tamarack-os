@@ -156,3 +156,18 @@ def test_collect_tolerates_missing_tools(tmp_path: Path) -> None:
     assert data["toggles"]["countme"] is None  # unknown, not guessed
     assert data["network_catalog"]
     assert data["services"] == [] and data["apps"] == []
+
+
+def test_flatpak_apps_use_display_names() -> None:
+    runner = FakeRunner()
+    runner.add(["flatpak", "list"], "org.mozilla.firefox\tFirefox\ncom.obsproject.Studio\tOBS Studio\n")
+    runner.add(["flatpak", "permissions"], "")
+    runner.add(["flatpak", "info", "--show-permissions", "org.mozilla.firefox"], FIREFOX_PERMS)
+    runner.add(["flatpak", "info", "--show-permissions", "com.obsproject.Studio"], OBS_PERMS)
+    found = privacy.flatpak_apps(runner)
+    # Sorted by name, as people see them.
+    assert [(a.name, a.app_id) for a in found] == [
+        ("Firefox", "org.mozilla.firefox"),
+        ("OBS Studio", "com.obsproject.Studio"),
+    ]
+    assert found[0].network

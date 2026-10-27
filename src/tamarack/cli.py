@@ -258,6 +258,26 @@ def cmd_apps(args: argparse.Namespace, runner: Runner) -> int:
         result = apps.install(runner, ids)
         print("installed" if result.ok else f"failed: {result.error_summary()}")
         return 0 if result.ok else 1
+    if args.action == "search":
+        try:
+            found = apps.search(runner, " ".join(args.names))
+        except RuntimeError as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            return 1
+        if args.json:
+            _print_json(found)
+            return 0
+        for app in found:
+            mark = "installed" if app["installed"] else ""
+            print(f"{app['id']:40} {app['name']} - {app['summary']} {mark}".rstrip())
+        return 0 if found else 1
+    if args.action == "remove":
+        failed = 0
+        for app_id in args.names:
+            result = apps.uninstall(runner, app_id)
+            print(f"{app_id}: removed" if result.ok else f"{app_id}: failed: {result.error_summary()}")
+            failed += 0 if result.ok else 1
+        return 1 if failed else 0
     raise SystemExit(f"unknown action {args.action}")
 
 
@@ -298,8 +318,8 @@ def build_parser() -> argparse.ArgumentParser:
     u.add_argument("--json", action="store_true")
     u.set_defaults(func=cmd_updates)
 
-    a = sub.add_parser("apps", help="optional app bundles")
-    a.add_argument("action", choices=["bundles", "install"])
+    a = sub.add_parser("apps", help="apps from Flathub: bundles, search, install, remove")
+    a.add_argument("action", choices=["bundles", "search", "install", "remove"])
     a.add_argument("names", nargs="*")
     a.add_argument("--json", action="store_true")
     a.set_defaults(func=cmd_apps)

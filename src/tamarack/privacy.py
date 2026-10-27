@@ -12,10 +12,11 @@ import logging
 import re
 import tomllib
 from collections.abc import Callable
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass, field, replace
 from pathlib import Path
 from typing import Any
 
+from .apps import installed_names
 from .system import CommandResult, Runner
 
 log = logging.getLogger("tamarack.privacy")
@@ -52,6 +53,8 @@ class AppPermissions:
     network: bool
     background: bool
     devices: tuple[str, ...]
+    # Display name from the app's metadata ("" when unknown).
+    name: str = ""
 
 
 @dataclass(frozen=True)
@@ -351,8 +354,8 @@ def set_toggle(runner: Runner, name: str, enabled: bool) -> CommandResult:
 
 
 def flatpak_apps(runner: Runner) -> list[AppPermissions]:
-    listing = runner.run(["flatpak", "list", "--app", "--columns=application"], timeout=30)
-    if not listing.ok:
+    names = installed_names(runner)
+    if not names:
         return []
     store_text = ""
     for table in ("devices", "location", "background"):
@@ -361,9 +364,10 @@ def flatpak_apps(runner: Runner) -> list[AppPermissions]:
             store_text += res.stdout
     store = parse_permission_store(store_text)
     apps = []
-    for app_id in sorted({line.strip() for line in listing.stdout.splitlines() if line.strip()}):
+    for app_id in sorted(names, key=lambda a: (names[a].lower(), a)):
         info = runner.run(["flatpak", "info", "--show-permissions", app_id], timeout=15)
-        apps.append(parse_flatpak_permissions(app_id, info.stdout if info.ok else "", store))
+        perms = parse_flatpak_permissions(app_id, info.stdout if info.ok else "", store)
+        apps.append(replace(perms, name=names[app_id]))
     return apps
 
 

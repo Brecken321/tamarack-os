@@ -50,6 +50,7 @@ Kirigami.Page {
 
         Controls.SwipeView {
             id: steps
+            objectName: "welcomeSteps"
             Layout.fillWidth: true
             Layout.fillHeight: true
             interactive: false

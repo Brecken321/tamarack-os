@@ -90,12 +90,21 @@ class Backend(QObject):
     updatesChanged = Signal()
     welcomeFinished = Signal()
     gpuChanged = Signal()
+    searchChanged = Signal()
 
     def __init__(
-        self, brand: Brand, runner: Runner, welcome: bool = False, home: Path | None = None, dry_run: bool = False
+        self,
+        brand: Brand,
+        runner: Runner,
+        welcome: bool = False,
+        home: Path | None = None,
+        dry_run: bool = False,
+        data_root: Path = Path("/"),
     ) -> None:
         super().__init__()
         self._brand = brand
+        # Where the generated branding lives (``/`` on Tamarack OS).
+        self._data_root = data_root
         self._runner = runner
         self._welcome = welcome
         # dry_run: never start background work (used by --self-test).
@@ -115,6 +124,8 @@ class Backend(QObject):
         self._game_results: list[dict[str, Any]] = []
         self._bundles: list[dict[str, Any]] = []
         self._updates: dict[str, Any] = {}
+        self._search_query = ""
+        self._search_results: list[dict[str, Any]] = []
         self._db: games.AntiCheatDatabase | None = None
         self._cache = self._home / ".cache/tamarack"
 
@@ -166,7 +177,15 @@ class Backend(QObject):
             "logo": b.logo_icon,
             "accent": b.palette["accent"],
             "amber": b.palette["amber"],
+            "palette": dict(b.palette),
+            "hero": {"light": self._wallpaper_url("images"), "dark": self._wallpaper_url("images_dark")},
         }
+
+    def _wallpaper_url(self, folder: str) -> str:
+        """The default wallpaper, used as artwork in page banners ("" if missing)."""
+        wallpaper = self._data_root / "usr/share/wallpapers" / self._brand.wallpapers[0]
+        path = wallpaper / "contents" / folder / "1920x1080.jpg"
+        return QUrl.fromLocalFile(str(path)).toString() if path.is_file() else ""
 
     @Property(bool, constant=True)
     def welcomeMode(self) -> bool:
@@ -218,10 +237,14 @@ class Backend(QObject):
     @Slot()
     def refreshPresets(self) -> None:
         try:
-            found = appearance.all_presets(self._paths)
+            self._presets = self._preset_rows()
         except preset_lib.PresetError as exc:
             self.notify.emit(f"Could not load presets: {exc}", "error")
             return
+        self.presetsChanged.emit()
+
+    def _preset_rows(self) -> list[dict[str, Any]]:
+        found = appearance.all_presets(self._paths)
         current = appearance.current_preset(self._paths)
         builtin_dir = appearance.SYSTEM_PRESETS / "previews"
         result = []
@@ -230,8 +253,7 @@ class Backend(QObject):
             builtin = png.exists()
             preview = QUrl.fromLocalFile(str(png)).toString() if builtin else self._preview_file(p)
             result.append(_preset_dict(p, current, preview, builtin))
-        self._presets = result
-        self.presetsChanged.emit()
+        return result
 
     def _preview_file(self, preset: preset_lib.Preset) -> str:
         svg = art.preview_svg(self._brand, preset)
@@ -556,6 +578,33 @@ class Backend(QObject):
 
         self._run(f"Removing {app_id}", lambda: apps.uninstall(self._runner, app_id), done)
 
+    @Property("QVariant", notify=searchChanged)
+    def searchResults(self) -> list[dict[str, Any]]:
+        return self._search_results
+
+    @Property(str, notify=searchChanged)
+    def searchQuery(self) -> str:
+        return self._search_query
+
+    @Slot(str)
+    def searchApps(self, query: str) -> None:
+        query = query.strip()
+        if not query:
+            self._set_search(("", []))
+            return
+        self._run("Searching Flathub", lambda: (query, apps.search(self._runner, query)), self._set_search)
+
+    def _set_search(self, data: tuple[str, list[dict[str, Any]]]) -> None:
+        self._search_query, self._search_results = data
+        self.searchChanged.emit()
+
+    @Slot(str)
+    def openApp(self, app_id: str) -> None:
+        """Start an installed Flatpak app (its desktop entry has the same id)."""
+        if not apps._APP_ID.match(app_id):
+            return
+        self._start(app_id, app_id)
+
     # -- updates ---------------------------------------------------------------
     @Property("QVariant", notify=updatesChanged)
     def updates(self) -> dict[str, Any]:
@@ -636,13 +685,16 @@ class Backend(QObject):
         desktop_id = desktop_ids.get(app)
         if desktop_id is None:
             return
+        self._start(desktop_id, app)
+
+    def _start(self, desktop_id: str, label: str) -> None:
         for argv in (["kstart", "--application", desktop_id], ["gtk-launch", desktop_id]):
             try:
                 subprocess.Popen(argv, start_new_session=True)
                 return
             except OSError:
                 continue
-        self.notify.emit(f"Could not start {app}.", "error")
+        self.notify.emit(f"Could not start {label}.", "error")
 
     @Slot()
     def finishWelcome(self) -> None:
