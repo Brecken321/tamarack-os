@@ -171,7 +171,7 @@ open_app() { # NAME WINDOW_TEXT TIMEOUT DESKTOP_ID
     in_vm wait "$1" "'$2'" "$3"
     sleep 10
     shot "08-open-$1"
-    in_vm close "$1" >/dev/null
+    in_vm close "$1" "$4" >/dev/null
     sleep 3
 }
 open_app filelight Filelight 180 org.kde.filelight.desktop

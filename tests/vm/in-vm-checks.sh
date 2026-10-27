@@ -179,6 +179,10 @@ if [[ "${phase}" == "wait" ]]; then
         sleep 5
     done
     check "${name} opened a window matching \"${text}\" (after $(($(date +%s) - start)) s: ${found:-none})" test -n "${found}"
+    if [[ -z "${found}" ]]; then
+        info "processes for ${name}" pgrep -a -u "$(id -u)" -i -f "${name}"
+        info "session log for ${name}" bash -c "journalctl --user -b --no-pager -o short-monotonic | grep -i '${name}' | tail -n 30"
+    fi
     if [[ -n "${process}" ]]; then
         check "${process} is running" pgrep -u "$(id -u)" -x "${process}"
     fi
@@ -193,6 +197,13 @@ fi
 if [[ "${phase}" == "close" ]]; then
     session_env
     systemctl --user stop "tamarack-open-$1" 2>/dev/null
+    # Flatpak runs each app in its own scope, out of reach of the unit above.
+    app_id="${2:-}"
+    app_id="${app_id%.desktop}"
+    if [[ -n "${app_id}" ]] && flatpak info "${app_id}" >/dev/null 2>&1; then
+        flatpak kill "${app_id}" 2>/dev/null
+    fi
+    sleep 2
     pass "closed $1"
 fi
 
