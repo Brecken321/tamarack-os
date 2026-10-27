@@ -29,6 +29,34 @@ real hardware and is done by hand with the checklist below.
 Newest first. "CI" entries link to the workflow run that produced them.
 
 <!-- results:start -->
+
+### 2026-10-27: first VM boot test (CI [run 40435677118](https://github.com/Brecken321/tamarack-os/actions/runs/40435677118), images from 2026-10-26)
+
+Both editions, qcow2 disk, QEMU/KVM, UEFI, 4 vCPU, 6 GB RAM, virtio-gpu (no GPU acceleration).
+
+| Check | Standard | NVIDIA |
+|---|---|---|
+| Boot to SSH | ✅ 109 s | ✅ 153 s |
+| Tamarack OS identity, graphical target, login manager running | ✅ | ✅ |
+| First-boot default apps from Flathub (Firefox etc.), Firefox privacy prefs in place | ✅ | ✅ |
+| Firewall active, countme off, Steam present, `tamarack doctor/privacy/games` work | ✅ | ✅ |
+| Log in through the virtual keyboard, Plasma session, Tamarack global theme + color scheme | ✅ | ✅ |
+| Desktop: Tamarack wallpaper, Clean Modern taskbar with Tamarack launcher and pins, Welcome opens (screenshots) | ✅ | ✅ |
+| No failed units | ❌ `bootloader-update.service` failed (under investigation) | ❌ same |
+| Update check (`bootc upgrade --check`) verifies the signature | ❌ `:stable` digest was unsigned: **fixed** (sign every pushed digest, verify every tag) | ❌ same |
+| Session layout checks | ❌ used `qdbus6`, absent on Fedora 44: **fixed** (presets now use `busctl`) | ❌ same |
+| Login screen wallpaper | ❌ still Bazzite's: **fixed** (`/etc/plasmalogin.conf` outranks vendor drop-ins) | ❌ same |
+| Welcome hides the navigation sidebar | ❌ sidebar shown greyed out: **fixed** | ❌ same |
+
+The image content checks added after this run also caught two dead System Settings links (`kcm_flatpak` was renamed
+`kcm_app-permissions` upstream; the firewall page needed `plasma-firewall-firewalld`), both fixed.
+
+### 2026-10-26: image builds (CI [run 40416438687](https://github.com/Brecken321/tamarack-os/actions/runs/40416438687))
+
+Both editions built on `bazzite:stable` / `bazzite-nvidia-open:stable` (Fedora 44, kernel 7.2.11-ogc), all image content
+checks passed (branding, themes, privacy defaults, signature policy, firewall on, SSH off, Steam/Gamescope/MangoHud/Lutris,
+32-bit Vulkan, NVIDIA module presence/absence per edition, CLI, Tamarack Center QML load).
+
 <!-- results:end -->
 
 ## Not tested yet
