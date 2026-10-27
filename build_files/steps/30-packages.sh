@@ -7,6 +7,10 @@ source "${CTX}/lib.sh"
 packages=(
     # Tamarack Center UI (Qt 6 / QML with KDE Kirigami, already in Plasma).
     python3-pyside6
+    # KDE's own settings pages the Privacy page links to: per-app Flatpak
+    # permissions and the firewall (firewalld backend).
+    flatpak-kcm
+    plasma-firewall-firewalld
     # Hardware diagnostics in Tamarack Center (`tamarack hardware`).
     pciutils
     usbutils

@@ -25,6 +25,9 @@ concurrency:
 permissions:
   contents: read
 
+# Disk jobs run on ubuntu-24.04: osbuild's container mount fails with EACCES on
+# the kernel 7.0 ubuntu-26.04 runners (https://github.com/osbuild/osbuild/issues/2579).
+# Move back to ubuntu-26.04 once that issue is fixed.
 env:
   BIB_IMAGE: "quay.io/centos-bootc/bootc-image-builder:latest"
 
@@ -32,7 +35,7 @@ jobs:
   vm-test:
     name: Boot test (${{ matrix.flavor }})
     if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
-    runs-on: ubuntu-26.04
+    runs-on: ubuntu-24.04
     timeout-minutes: 150
     permissions:
       contents: read
@@ -47,8 +50,6 @@ jobs:
 
       - name: Maximize build space
         uses: ublue-os/remove-unwanted-software@695eb75bc387dbcd9685a8e72d23439d8686cba6
-        with:
-          remove-codeql: true
 
       - name: Enable KVM
         run: |
@@ -95,18 +96,12 @@ jobs:
 
       - name: Build VM disk image (qcow2)
         id: build
-        uses: osbuild/bootc-image-builder-action@8661cd3832544ad68c12dcde8681b13ab0f56a8d # main
-        with:
-          builder-image: ${{ env.BIB_IMAGE }}
-          config-file: ./disk_config/ci-vm.toml
-          image: ${{ steps.meta.outputs.ref }}
-          types: qcow2
-          additional-args: --use-librepo=True --rootfs=btrfs
+        run: |
+          bash tests/vm/build-disk.sh qcow2 disk_config/ci-vm.toml "${{ steps.meta.outputs.ref }}" "${RUNNER_TEMP}/disk" | tee build.log
+          echo "path=$(tail -n 1 build.log)" >> "$GITHUB_OUTPUT"
 
       - name: Boot and test
-        run: |
-          disk="$(find "${{ steps.build.outputs.output-directory }}" -name '*.qcow2' | head -n 1)"
-          bash tests/vm/run-vm-test.sh "${disk}" "${RUNNER_TEMP}/vmkey" "${{ steps.user.outputs.password }}" vm-results
+        run: bash tests/vm/run-vm-test.sh "${{ steps.build.outputs.path }}" "${RUNNER_TEMP}/vmkey" "${{ steps.user.outputs.password }}" vm-results
 
       - name: Upload screenshots and logs
         if: always()
@@ -125,7 +120,7 @@ jobs:
     name: Installer ISO (${{ matrix.flavor }})
     needs: vm-test
     if: (github.event_name == 'workflow_dispatch' && inputs.iso) || github.event_name == 'schedule'
-    runs-on: ubuntu-26.04
+    runs-on: ubuntu-24.04
     timeout-minutes: 120
     permissions:
       contents: read
@@ -140,8 +135,6 @@ jobs:
 
       - name: Maximize build space
         uses: ublue-os/remove-unwanted-software@695eb75bc387dbcd9685a8e72d23439d8686cba6
-        with:
-          remove-codeql: true
 
       - name: Resolve image
         id: meta
@@ -153,22 +146,19 @@ jobs:
 
       - name: Build installer ISO
         id: build
-        uses: osbuild/bootc-image-builder-action@8661cd3832544ad68c12dcde8681b13ab0f56a8d # main
-        with:
-          builder-image: ${{ env.BIB_IMAGE }}
-          config-file: ./disk_config/iso-${{ matrix.flavor }}.toml
-          image: ${{ steps.meta.outputs.ref }}
-          types: anaconda-iso
-          additional-args: --use-librepo=True --rootfs=btrfs
+        run: |
+          bash tests/vm/build-disk.sh anaconda-iso "disk_config/iso-${{ matrix.flavor }}.toml" "${{ steps.meta.outputs.ref }}" "${RUNNER_TEMP}/iso" | tee build.log
+          echo "path=$(tail -n 1 build.log)" >> "$GITHUB_OUTPUT"
 
       - name: Name and checksum
         id: files
         run: |
-          dir="${{ steps.build.outputs.output-directory }}"
-          iso="$(find "${dir}" -name '*.iso' | head -n 1)"
+          dir="${RUNNER_TEMP}/release"
+          mkdir -p "${dir}"
           target="${dir}/${{ steps.meta.outputs.name }}-$(date -u +%Y%m%d)-x86_64.iso"
-          sudo mv "${iso}" "${target}"
-          (cd "${dir}" && sha256sum "$(basename "${target}")" | sudo tee "$(basename "${target}").sha256")
+          mv "${{ steps.build.outputs.path }}" "${target}"
+          (cd "${dir}" && sha256sum "$(basename "${target}")" > "$(basename "${target}").sha256")
+          cat "${dir}"/*.sha256
           ls -lh "${dir}"
           echo "dir=${dir}" >> "$GITHUB_OUTPUT"
 
@@ -187,7 +177,7 @@ jobs:
     name: Unattended install test (${{ matrix.flavor }})
     needs: vm-test
     if: (github.event_name == 'workflow_dispatch' && inputs.iso) || github.event_name == 'schedule'
-    runs-on: ubuntu-26.04
+    runs-on: ubuntu-24.04
     timeout-minutes: 180
     permissions:
       contents: read
@@ -202,8 +192,6 @@ jobs:
 
       - name: Maximize build space
         uses: ublue-os/remove-unwanted-software@695eb75bc387dbcd9685a8e72d23439d8686cba6
-        with:
-          remove-codeql: true
 
       - name: Enable KVM
         run: |
@@ -267,19 +255,12 @@ jobs:
 
       - name: Build test installer ISO
         id: build
-        uses: osbuild/bootc-image-builder-action@8661cd3832544ad68c12dcde8681b13ab0f56a8d # main
-        with:
-          builder-image: ${{ env.BIB_IMAGE }}
-          config-file: ./disk_config/ci-install.toml
-          image: ${{ steps.meta.outputs.ref }}
-          types: anaconda-iso
-          additional-args: --use-librepo=True --rootfs=btrfs
+        run: |
+          bash tests/vm/build-disk.sh anaconda-iso disk_config/ci-install.toml "${{ steps.meta.outputs.ref }}" "${RUNNER_TEMP}/iso" | tee build.log
+          echo "path=$(tail -n 1 build.log)" >> "$GITHUB_OUTPUT"
 
       - name: Install, boot and test
-        run: |
-          iso="$(find "${{ steps.build.outputs.output-directory }}" -name '*.iso' | head -n 1)"
-          sudo chmod a+r "${iso}"
-          bash tests/vm/install-test.sh "${iso}" "${RUNNER_TEMP}/vmkey" "${{ steps.user.outputs.password }}" install-results
+        run: bash tests/vm/install-test.sh "${{ steps.build.outputs.path }}" "${RUNNER_TEMP}/vmkey" "${{ steps.user.outputs.password }}" install-results
 
       - name: Upload screenshots and logs
         if: always()
