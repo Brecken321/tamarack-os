@@ -114,7 +114,7 @@ shot "07-welcome"
 ssh_vm "tamarack doctor --json" >"${out}/doctor.json" || true
 ssh_vm "journalctl -b --no-pager -o short-monotonic" >"${out}/journal.txt" || true
 ssh_vm "journalctl --user -b --no-pager -u 'tamarack-*'; cat ~/.local/state/tamarack/*.log 2>/dev/null" >"${out}/center-logs.txt" || true
-ssh_vm "systemd-analyze; systemd-analyze blame | head -n 25; free -m; df -h /" >"${out}/performance.txt" || true
+ssh_vm "systemd-analyze; systemd-analyze blame | head -n 15; free -m; df -h /var /sysroot; top -bn1 | head -n 20" >"${out}/performance.txt" || true
 
 echo "VM test finished with status ${status}"
 exit "${status}"
