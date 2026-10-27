@@ -137,71 +137,74 @@ Kirigami.ApplicationWindow {
 
             readonly property var results: root.findSettings(finder.text)
 
+            // Everything sits in topContent, so it starts right under the
+            // title (the drawer's own action list stays empty).
             topContent: [
                 Kirigami.SearchField {
                     id: finder
                     Layout.fillWidth: true
-                    Layout.bottomMargin: Kirigami.Units.smallSpacing
+                    Layout.leftMargin: Kirigami.Units.smallSpacing
+                    Layout.rightMargin: Kirigami.Units.smallSpacing
+                    Layout.bottomMargin: Kirigami.Units.largeSpacing
                     placeholderText: qsTr("Find a setting")
                     // Enter opens the best match.
                     autoAccept: false
                     onAccepted: if (drawer.results.length > 0) root.openSetting(drawer.results[0])
                     Accessible.name: qsTr("Find a setting")
+                },
+                ColumnLayout {
+                    spacing: Kirigami.Units.smallSpacing / 2
+                    Layout.fillWidth: true
+
+                    Repeater {
+                        model: finder.text.length === 0 ? root.navigation : []
+                        delegate: NavItem {
+                            required property var modelData
+                            text: modelData.text
+                            iconName: modelData.icon
+                            tint: modelData.tint
+                            current: root.currentPage === modelData.page
+                            onClicked: {
+                                root.showPage(modelData.page);
+                                if (drawer.modal) drawer.close();
+                            }
+                        }
+                    }
+
+                    Repeater {
+                        model: drawer.results
+                        delegate: NavItem {
+                            required property var modelData
+                            readonly property var section: root.navigation.filter(n => n.page === modelData.page)[0]
+                            text: modelData.text
+                            subtitle: section ? qsTr("%1 Center · %2").arg(backend.brand.shortName).arg(section.text) : qsTr("System Settings")
+                            iconName: section ? section.icon : "configure"
+                            tint: section ? section.tint : root.colors.section_help
+                            onClicked: {
+                                root.openSetting(modelData);
+                                finder.text = "";
+                                if (drawer.modal) drawer.close();
+                            }
+                        }
+                    }
+
+                    Controls.Label {
+                        visible: finder.text.length > 0 && drawer.results.length === 0
+                        text: qsTr("No setting matches “%1”.").arg(finder.text)
+                        wrapMode: Text.WordWrap
+                        opacity: 0.7
+                        Layout.fillWidth: true
+                        Layout.margins: Kirigami.Units.largeSpacing
+                    }
+                    Controls.Button {
+                        visible: finder.text.length > 0 && drawer.results.length === 0
+                        text: qsTr("Search all System Settings")
+                        icon.name: "configure"
+                        onClicked: backend.openSettings("kcm_landingpage")
+                        Layout.leftMargin: Kirigami.Units.largeSpacing
+                    }
                 }
             ]
-
-            ColumnLayout {
-                spacing: Kirigami.Units.smallSpacing / 2
-                Layout.fillWidth: true
-
-                Repeater {
-                    model: finder.text.length === 0 ? root.navigation : []
-                    delegate: NavItem {
-                        required property var modelData
-                        text: modelData.text
-                        iconName: modelData.icon
-                        tint: modelData.tint
-                        current: root.currentPage === modelData.page
-                        onClicked: {
-                            root.showPage(modelData.page);
-                            if (drawer.modal) drawer.close();
-                        }
-                    }
-                }
-
-                Repeater {
-                    model: drawer.results
-                    delegate: NavItem {
-                        required property var modelData
-                        readonly property var section: root.navigation.filter(n => n.page === modelData.page)[0]
-                        text: modelData.text
-                        subtitle: section ? qsTr("%1 Center · %2").arg(backend.brand.shortName).arg(section.text) : qsTr("System Settings")
-                        iconName: section ? section.icon : "configure"
-                        tint: section ? section.tint : root.colors.section_help
-                        onClicked: {
-                            root.openSetting(modelData);
-                            finder.text = "";
-                            if (drawer.modal) drawer.close();
-                        }
-                    }
-                }
-
-                Controls.Label {
-                    visible: finder.text.length > 0 && drawer.results.length === 0
-                    text: qsTr("No setting matches “%1”.").arg(finder.text)
-                    wrapMode: Text.WordWrap
-                    opacity: 0.7
-                    Layout.fillWidth: true
-                    Layout.margins: Kirigami.Units.largeSpacing
-                }
-                Controls.Button {
-                    visible: finder.text.length > 0 && drawer.results.length === 0
-                    text: qsTr("Search all System Settings")
-                    icon.name: "configure"
-                    onClicked: backend.openSettings("kcm_landingpage")
-                    Layout.leftMargin: Kirigami.Units.largeSpacing
-                }
-            }
         }
     }
 
