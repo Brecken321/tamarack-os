@@ -238,9 +238,13 @@ class ButtonCheck:
         before = self._state()
         warned = len(self.warnings)
         was = _prop(item, "checked") if item is not None else None
+        # Read before clicking: a control that opens another page is gone afterwards.
+        named = item is None or bool(accessible_name(item))
         act()
         settle(400)
         now = _prop(item, "checked") if item is not None else None
+        if not isinstance(now, bool) or not isinstance(was, bool):
+            was = now = None
         result.effects = self._effects(before, self._state(), (was, now))
         result.errors = [
             w
@@ -248,7 +252,7 @@ class ButtonCheck:
             if any(s in w for s in ("Error", "is not a function", "Cannot read", "undefined", "Unable to assign"))
         ]
         # Screen readers need a name for every control.
-        if item is not None and not accessible_name(item):
+        if not named:
             result.errors.append("no accessible name (a screen reader cannot announce it)")
         return result
 

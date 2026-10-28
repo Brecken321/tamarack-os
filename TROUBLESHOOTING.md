@@ -90,6 +90,14 @@ The first-boot setup installs each default app only once and never reinstalls re
 (`/var/lib/tamarack/flatpak-setup.record`). If default apps are missing, check `systemctl status tamarack-flatpak-setup`
 and `journalctl -u tamarack-flatpak-setup` (it retries every 5 minutes until it has internet).
 
+- **Search in Tamarack Center > Apps finds nothing:** the search uses Flathub's app catalog, which first-boot setup
+  downloads once you are online. Check `ls /var/lib/flatpak/appstream/flathub`, or run `tamarack apps search NAME`
+  in a terminal to see the error.
+- **Install does nothing or asks for a password:** installing for everyone needs an administrator account (the first
+  account is one). The progress shows at the bottom of Tamarack Center; `tamarack apps install APP_ID` shows errors in a
+  terminal.
+- **The Bazaar app store shows "Refreshing" for a while** the first time: it builds its search index once.
+
 ## The desktop looks wrong after changing presets
 
 Tamarack Center > Appearance > **Undo last change** restores the previous configuration
