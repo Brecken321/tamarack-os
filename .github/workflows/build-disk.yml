@@ -137,10 +137,12 @@ jobs:
           set -a; source image.env; set +a
           repo="${IMAGE_REGISTRY}/${IMAGE_MAIN}"
           new_digest="$(skopeo inspect --format '{{.Digest}}' "docker://${repo}:${DEFAULT_TAG}")"
+          new_created="$(skopeo inspect --format '{{.Created}}' "docker://${repo}:${DEFAULT_TAG}")"
           old=""
-          # Newest dated build whose image differs from the current one.
+          # Newest dated build that is a different build from the current one
+          # (each tag push gets its own manifest digest, so compare creation times).
           for tag in $(skopeo list-tags "docker://${repo}" | jq -r '.Tags[]' | grep -E "^${DEFAULT_TAG}-[0-9]{8}$" | sort -r); do
-            if [[ "$(skopeo inspect --format '{{.Digest}}' "docker://${repo}:${tag}")" != "${new_digest}" ]]; then
+            if [[ "$(skopeo inspect --format '{{.Created}}' "docker://${repo}:${tag}")" != "${new_created}" ]]; then
               old="${tag}"
               break
             fi

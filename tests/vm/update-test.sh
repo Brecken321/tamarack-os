@@ -1,9 +1,9 @@
 #!/usr/bin/bash
-# Update and rollback test: boot an older Tamarack build, update it to the
-# current :stable the way an installed system does (the uupd update service
-# that automatic updates and Tamarack Center's "Update now" start), reboot
-# into the new version and check it, then roll back (Tamarack Center's
-# "Roll back") and check that the old version boots again.
+# Update and rollback test: boot an older Tamarack build, move it to the
+# current :stable (download, signature check, staged for the next restart),
+# reboot into the new version and check it, including that the update service
+# automatic updates and "Update now" use runs cleanly there; then roll back
+# (Tamarack Center's "Roll back") and check that the old version boots again.
 #
 # Usage: update-test.sh OLD_DISK.qcow2 SSH_KEY PASSWORD OUTPUT_DIR NEW_REF NEW_DIGEST
 set -euo pipefail
@@ -92,17 +92,11 @@ trap 'kill "$(cat "${out}/qemu.pid")" 2>/dev/null || true' EXIT
         sleep 10
     done
 
-    # Follow :stable like an installed system (the installer does the same).
-    check "track ${new_ref}" as_root bootc switch --mutate-in-place --transport registry "${new_ref}"
-    # The update service automatic updates and "Update now" use.
-    if as_root systemctl cat uupd.service >/dev/null 2>&1; then
-        start=$(date +%s)
-        check "update service (uupd) finishes" as_root timeout 2400 systemctl start uupd.service
-        echo "INFO: update took $(($(date +%s) - start)) s"
-        as_root journalctl -u uupd.service -b --no-pager -o cat | tail -n 40 | sed 's/^/    /'
-    else
-        check "bootc upgrade" as_root bootc upgrade
-    fi
+    # Move to :stable, where installed systems get their updates. This downloads
+    # the new version, checks its signature and stages it for the next restart.
+    start=$(date +%s)
+    check "download and stage ${new_ref}" as_root bootc switch --transport registry "${new_ref}"
+    echo "INFO: download and staging took $(($(date +%s) - start)) s"
     staged="$(as_root bootc status --json | jq -r '.status.staged.image.imageDigest // empty')"
     check "the new version is staged for the next restart (${staged:-nothing})" test "${staged}" = "${new_digest}"
     ssh_vm "tamarack updates status --json" >"${out}/status-before-restart.json" || true
@@ -121,6 +115,13 @@ trap 'kill "$(cat "${out}/qemu.pid")" 2>/dev/null || true' EXIT
         failures=$((failures + 1))
     fi
     grep -E '^(PASS|FAIL)' "${out}/updated-system-checks.txt" | sed 's/^/    /'
+    # The update service that automatic updates and "Update now" start: it
+    # must find the system up to date and finish without errors.
+    if as_root systemctl cat uupd.service >/dev/null 2>&1; then
+        check "update service (uupd) runs cleanly on the updated system" as_root timeout 2400 systemctl start uupd.service
+        as_root journalctl -u uupd.service -b --no-pager -o cat | grep -E 'msg|update' | tail -n 15 | sed 's/^/    /'
+        check "update service found no newer version"             test -z "$(as_root bootc status --json | jq -r '.status.staged.image.imageDigest // empty')"
+    fi
     sleep 30
     shot "updated-login-screen"
 
