@@ -22,16 +22,19 @@ Tamarack adds its own identity, defaults, privacy settings and tools on top.
 
 ## Screenshots
 
-Captured automatically by the CI virtual-machine test (QEMU, 1280×800, no GPU acceleration), not mock-ups.
+Captured automatically by the CI virtual-machine test (QEMU, 1280×800, no GPU acceleration, at night so the theme is
+dark), not mock-ups.
 
 | | |
 |---|---|
-| ![Default desktop at night](docs/screenshots/desktop.png) | ![Gaming preset](docs/screenshots/preset-gaming.png) |
-| Default "Clean Modern" desktop (dark at night) | Gaming preset |
-| ![Tamarack Center home](docs/screenshots/center-home.png) | ![Appearance presets](docs/screenshots/center-appearance.png) |
-| Tamarack Center: health summary | Appearance presets |
-| ![Gaming page](docs/screenshots/center-gaming.png) | ![Updates and recovery](docs/screenshots/center-updates.png) |
-| Gaming: Game Mode, overlay, anti-cheat checker | Updates and rollback |
+| ![Start menu and taskbar](docs/screenshots/desktop.png) | ![Welcome](docs/screenshots/welcome.png) |
+| Start menu, with the Start button and apps centered on the taskbar | First-run Welcome |
+| ![Tamarack Center home](docs/screenshots/center-home.png) | ![Apps page](docs/screenshots/center-apps.png) |
+| Tamarack Center: health summary, sidebar with "Find a setting" | Apps: search Flathub, bundles, one-click install |
+| ![Appearance presets](docs/screenshots/center-appearance.png) | ![Gaming page](docs/screenshots/center-gaming.png) |
+| Appearance presets | Gaming: Game Mode, overlay, anti-cheat checker |
+| ![SuperTux running](docs/screenshots/game-supertux.png) | ![Steam sign-in](docs/screenshots/steam-sign-in.png) |
+| SuperTux, downloaded from Flathub and started by the VM test | Steam after downloading its client on first start |
 
 ## What you get
 

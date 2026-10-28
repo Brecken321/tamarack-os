@@ -108,7 +108,8 @@ sleep 4
 shot "03-start-menu"
 qmp key esc
 sleep 2
-for preset in gaming classic-desktop minimalist high-contrast; do
+# Productivity is always light: it shows the taskbar is readable in the light theme.
+for preset in gaming classic-desktop minimalist productivity high-contrast; do
     ssh_vm "${session_env}; tamarack preset apply ${preset}" | tee -a "${out}/presets.txt" || status=1
     sleep 12
     shot "04-preset-${preset}"
