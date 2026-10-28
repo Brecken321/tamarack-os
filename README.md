@@ -13,9 +13,11 @@ drivers, Steam integration and security updates come from mature, actively maint
 Tamarack adds its own identity, defaults, privacy settings and tools on top.
 
 > **Project status: early development.** Both editions build, pass about 80 automated image checks, install from their
-> ISO onto a blank disk, and boot to a working Plasma desktop in CI virtual machines, where presets, Tamarack Center,
-> first-boot apps and signed updates are exercised. Tamarack OS has **not yet been validated on physical hardware** (no real GPU, games, Wi-Fi or audio
-> tested). Read
+> ISO onto a blank disk, and boot to a working Plasma desktop in CI virtual machines. There, 126 checks cover presets,
+> every Tamarack Center page, the Windows-style shortcuts, downloading and opening apps and a game from Flathub, Steam's
+> first-run download, and an update to the next build with rollback. A separate check clicks all 232 controls in
+> Tamarack Center. Tamarack OS has **not yet been validated on physical hardware** (no real GPU, game performance, Wi-Fi
+> or audio tested). Read
 > [TESTING.md](TESTING.md) for exactly what has and has not been tested before installing it on a PC
 > you depend on. Tamarack OS is an independent project, not affiliated with or endorsed by Bazzite,
 > Universal Blue, Fedora, KDE, Valve or Microsoft.

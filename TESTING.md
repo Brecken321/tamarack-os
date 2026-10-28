@@ -8,7 +8,7 @@ real hardware and is done by hand with the checklist below.
 | 1. Static + unit | ruff, mypy `--strict`, shellcheck, `just --fmt`; 170 pytest tests, including a check that every button, switch, card and action in the QML has a handler; generated JS syntax (`node --check`); desktop-file validation; QML self-test (every page compiled and instantiated against real Kirigami) | Fedora 44 container | `just lint`, `just test` |
 | 1b. Center preview and button check | Renders every Tamarack Center page and Welcome step in both themes with example data (KDE platform theme, Breeze, OpenGL), then **clicks every visible button, switch and clickable card and triggers every action** (including overflow-menu ones) and fails if one has no visible effect or raises a QML error | Fedora 44 container with Xvfb | `tamarack-center --screenshots DIR`, `--check-buttons REPORT` |
 | 2. Image content | ~75 checks run *inside* each built image: branding, themes, wallpapers, KDE defaults, privacy defaults, signature policy, services, gaming stack, NVIDIA driver presence, CLI, Tamarack Center QML load | Each image (both editions) | `just check-image main` |
-| 3. VM boot and install | bootc-image-builder makes a qcow2; QEMU/KVM boots it (UEFI); checks over SSH; logs into Plasma via the virtual keyboard; opens the start menu; presses the Windows-style shortcuts and checks the right windows open; applies presets; opens every Tamarack Center page; **downloads an app (Filelight), a game (SuperTux) and a launcher (Heroic) from Flathub as the desktop user and opens each one; opens Bazaar, Firefox and the Center from their menu entries; lets Steam download its client up to its window; removes an app**; checks that every pinned app and every System Settings page a Center button opens exists; screenshots. Then: installer ISOs, and an unattended Anaconda install onto a blank virtual disk followed by the same checks | GitHub-hosted runner with KVM | `tests/vm/run-vm-test.sh`, `tests/vm/install-test.sh` |
+| 3. VM boot and install | bootc-image-builder makes a qcow2; QEMU/KVM boots it (UEFI); checks over SSH; logs into Plasma via the virtual keyboard; opens the start menu; presses the Windows-style shortcuts and checks the right windows open; applies presets; opens every Tamarack Center page; **downloads an app (Filelight), a game (SuperTux) and a launcher (Heroic) from Flathub as the desktop user and opens each one; opens Bazaar, Firefox and the Center from their menu entries; lets Steam download its client up to its window; removes an app**; checks that every pinned app and every System Settings page a Center button opens exists; screenshots. Then: installer ISOs, and an unattended Anaconda install onto a blank virtual disk followed by the same checks. Also: an older build updated to the current one, restarted, checked and rolled back | GitHub-hosted runner with KVM | `tests/vm/run-vm-test.sh`, `tests/vm/install-test.sh`, `tests/vm/update-test.sh` |
 | 4. Physical hardware | GPU drivers, real games, Wi-Fi/Bluetooth/audio, sleep, displays, controllers, install/dual-boot | A real PC | [Checklist](#physical-hardware-checklist) |
 
 ## What each automated layer proves, and what it doesn't
@@ -32,12 +32,47 @@ real hardware and is done by hand with the checklist below.
   test kickstart that partitions automatically and creates a throwaway user), installs onto an empty virtual disk with
   Anaconda, then boots the installed system and runs the full VM test on it. It does **not** click through the
   interactive installer that people use, and it does not test encryption or dual-boot.
+- **The update and rollback test** moves a disk of an older build to the current `:stable` (download, signature check,
+  staging), restarts into it, runs the system checks and the update service, then rolls back and restarts into the old
+  version. It covers one update step on the standard edition, not months of updates.
 
 ## Results log
 
 Newest first. "CI" entries link to the workflow run that produced them.
 
 <!-- results:start -->
+
+### 2026-10-28: update and rollback, accessible names, signing outage fix (CI [run 40763643090](https://github.com/Brecken321/tamarack-os/actions/runs/40763643090) and [run 40775071019](https://github.com/Brecken321/tamarack-os/actions/runs/40775071019), images 44.20261028)
+
+| | Standard | NVIDIA |
+|---|---|---|
+| VM boot test (126 checks) | ✅ 0 failures, 20.5 s to graphical | ✅ 0 failures, 31.3 s |
+| Unattended install from ISO (8 min), then the same 126 checks | ✅ 0 failures | ✅ 0 failures |
+| Light-theme taskbar (Productivity and Minimalist presets): solid and readable (screenshots) | ✅ | ✅ |
+
+**Update and rollback (new test, standard edition).** A disk of yesterday's build (44.20261027) moved to the current
+`:stable`:
+1. It downloaded the new version, verified its signature and staged it in 157 s. `tamarack updates status` reported
+   a restart was needed.
+2. After a restart it booted the new version, kept the old one for rollback, passed all 53 system checks, and the update
+   service (`uupd`, which automatic updates and "Update now" use) ran cleanly and found nothing newer.
+3. `bootc rollback` (what "Roll back" runs) and a restart booted the old version again, with the graphical login and no
+   failed units.
+
+The update was a `bootc switch` to `:stable`. On an installed system `uupd` stages an update the same way, through
+`bootc upgrade`.
+
+**Button check** now also requires an accessible name (what a screen reader announces) on every control: all 232
+controls have one and all still work. Page previews also render in a 640 px window; the layouts reflow to one column.
+
+**Signing outage.** The scheduled build of 2026-10-28 pushed the standard image and then failed to sign it, because
+Sigstore's transparency log returned 502. `:stable` then pointed at an unsigned image, which installed systems refuse.
+Signing now retries and, if the log stays down, signs without a log entry. Verification uses only the public key. The next
+build re-published signed images, and both editions verify.
+
+Release ISOs from run 40763643090: `tamarack-os-20261028-x86_64.iso`, 5.8 GB, SHA-256
+`1fd1bad99e09c6f3c4dbddaf081f4312b4a6dc0fda4ccc424d6fa8803e872b6e`; `tamarack-os-nvidia-20261028-x86_64.iso`, 6.4 GB,
+SHA-256 `6579065042659129750976381fa7b93572b2d653bd96f01ad04dd9332a560e29`.
 
 ### 2026-10-27: redesigned Center, every button checked, real downloads, Windows-style desktop (CI [run 40584857350](https://github.com/Brecken321/tamarack-os/actions/runs/40584857350), images 44.20261027)
 
@@ -160,7 +195,8 @@ checks passed (branding, themes, privacy defaults, signature policy, firewall on
   with Windows. (The unattended install into a VM is tested.)
 - Secure Boot with NVIDIA key enrollment.
 - Sleep/resume, battery life, Wi-Fi, Bluetooth, printers, webcams.
-- Update from one Tamarack build to the next on a real install (the VM verifies the update *check*, not a full upgrade).
+- Updating and rolling back on a real install over many builds. One update from the previous day's build, with
+  rollback, is tested in a VM.
 
 ## Physical hardware checklist
 

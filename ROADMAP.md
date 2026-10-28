@@ -10,7 +10,7 @@ Status legend: ✅ done and tested in CI · 🟡 done, needs physical-hardware v
 | Central branding (name, palette, wallpapers, logo, splash, color schemes, global themes) | ✅ |
 | os-release/image-info rebrand, attribution, installer profile | ✅ |
 | Privacy defaults (countme off, Firefox sponsored content & telemetry off) | ✅ image checks |
-| Signed images + signature policy for updates | ✅ signing verified in CI; 🟡 update path verified in VM test |
+| Signed images + signature policy for updates | ✅ signing verified in CI (retries Rekor outages); ✅ update to the next build and rollback tested in a VM |
 | Seven desktop presets with backup/undo, custom presets, import/export | ✅ unit tests; 🟡 VM screenshots |
 | Tamarack Center (home, appearance, apps, gaming, hardware, privacy, updates, help) + Welcome, with "Find a setting" | ✅ QML self-test, every-button check, page previews, VM screenshots |
 | App and game search and install from Flathub in Tamarack Center | ✅ VM test downloads and opens an app, a game and a launcher |
