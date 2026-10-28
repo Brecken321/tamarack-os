@@ -105,7 +105,7 @@ jobs:
 
       - name: Upload screenshots and logs
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: vm-results-${{ matrix.flavor }}
           path: |
@@ -204,7 +204,7 @@ jobs:
 
       - name: Upload screenshots and logs
         if: always() && steps.refs.outputs.old != ''
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: update-results-main
           path: |
@@ -262,7 +262,7 @@ jobs:
           echo "dir=${dir}" >> "$GITHUB_OUTPUT"
 
       - name: Upload ISO
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ${{ steps.meta.outputs.name }}-iso
           path: |
@@ -365,7 +365,7 @@ jobs:
 
       - name: Upload screenshots and logs
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: install-results-${{ matrix.flavor }}
           path: |
