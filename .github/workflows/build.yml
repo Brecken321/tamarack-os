@@ -157,9 +157,23 @@ jobs:
         run: |
           # Old bundle format keeps signatures readable by rpm-ostree/containers-image
           # (same as ublue-os/image-template).
-          for digest in ${DIGESTS}; do
+          sign() {
             cosign sign -y --new-bundle-format=false --use-signing-config=false \
-              --key env://COSIGN_PRIVATE_KEY "${IMAGE_REGISTRY}/${IMAGE}@${digest}"
+              --key env://COSIGN_PRIVATE_KEY "$@"
+          }
+          # The tags are already published, so an unsigned digest would block
+          # every update. Retry the public transparency log (Rekor), which has
+          # brief outages; if it stays down, sign without a log entry rather than
+          # leave the image unsigned (systems verify with the public key alone).
+          for digest in ${DIGESTS}; do
+            ref="${IMAGE_REGISTRY}/${IMAGE}@${digest}"
+            for attempt in 1 2 3 4; do
+              sign "${ref}" && continue 2
+              echo "::warning::signing ${digest} failed (attempt ${attempt}); retrying in $((attempt * 30)) s"
+              sleep $((attempt * 30))
+            done
+            echo "::warning::Rekor is unavailable: signing ${digest} without a transparency log entry"
+            sign --tlog-upload=false "${ref}"
           done
 
       - name: Verify signatures through every published tag
