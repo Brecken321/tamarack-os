@@ -57,6 +57,7 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--data-root", type=Path, default=Path("/"), help="(development) generated branding tree")
     parser.add_argument("--appstream", type=Path, help="(development) Flathub catalog for example app icons")
     parser.add_argument("--icon-theme", help="(development) icon theme to use outside a Plasma session")
+    parser.add_argument("--size", default="1180x800", help="(development) window size for --screenshots, WxH")
     parser.add_argument("-v", "--verbose", action="store_true")
     # Qt adds its own arguments (e.g. -platform); ignore what we don't know.
     args, _unknown = parser.parse_known_args(argv[1:])
@@ -86,7 +87,7 @@ def self_test(engine: object, backend: object) -> int:
     return 1 if failures else 0
 
 
-def capture(window: Any, out: Path, welcome: bool) -> int:
+def capture(window: Any, out: Path, welcome: bool, size: tuple[int, int] = (1180, 800)) -> int:
     """Save a PNG of every page (or every Welcome step) of the loaded window."""
     from PySide6.QtCore import Q_ARG, QEventLoop, QMetaObject, QObject, QTimer
 
@@ -96,7 +97,7 @@ def capture(window: Any, out: Path, welcome: bool) -> int:
         loop.exec()
 
     out.mkdir(parents=True, exist_ok=True)
-    window.resize(1180, 800)
+    window.resize(*size)
     # An inactive window uses KDE's dimmed "inactive" selection colors.
     window.requestActivate()
     settle(3000)
@@ -193,7 +194,8 @@ def main(argv: list[str] | None = None) -> int:
         code = buttoncheck.run(engine.rootObjects()[0], backend, warnings, args.welcome, pages, args.check_buttons)
         return code
     if args.screenshots:
-        code = capture(engine.rootObjects()[0], args.screenshots, args.welcome)
+        width, _, height = args.size.partition("x")
+        code = capture(engine.rootObjects()[0], args.screenshots, args.welcome, (int(width), int(height)))
         for warning in warnings:
             print(f"WARN {warning}")
         return code

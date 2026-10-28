@@ -88,6 +88,14 @@ jobs:
                 python3 -m tamarack.ui.app --screenshots "preview/${scheme,,}" --data-root output/branding \
                 --appstream "${APPSTREAM}" ${flag}
             done
+            # A small window: the sidebar folds into a menu and grids drop to one column.
+            if [[ "${scheme}" == Dark ]]; then
+              for flag in "" --welcome; do
+                XDG_CONFIG_HOME="${config}" XDG_DATA_DIRS="${PWD}/output/branding/usr/share:/usr/share" \
+                  python3 -m tamarack.ui.app --screenshots preview/narrow --data-root output/branding \
+                  --appstream "${APPSTREAM}" --size 640x760 ${flag}
+              done
+            fi
           done
           ls -R preview
 

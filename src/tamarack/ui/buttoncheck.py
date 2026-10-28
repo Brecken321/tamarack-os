@@ -23,7 +23,7 @@ from pathlib import Path
 from typing import Any
 
 from PySide6.QtCore import Q_ARG, QEventLoop, QMetaObject, QObject, Qt, QTimer, QUrl, Slot
-from PySide6.QtGui import QDesktopServices, QGuiApplication
+from PySide6.QtGui import QAccessible, QDesktopServices, QGuiApplication
 
 from . import backend as backend_module
 
@@ -83,7 +83,19 @@ def _prop(obj: Any, name: str) -> Any:
         return None
 
 
+def accessible_name(item: Any) -> str:
+    """What a screen reader announces for the control ("" if nothing)."""
+    try:
+        iface = QAccessible.queryAccessibleInterface(item)
+    except (RuntimeError, TypeError):
+        return ""
+    return (iface.text(QAccessible.Text.Name) or "").strip() if iface is not None else ""
+
+
 def _label(item: Any) -> str:
+    name = accessible_name(item)
+    if name:
+        return name
     for prop in ("text", "title"):
         value = _prop(item, prop)
         if isinstance(value, str) and value.strip():
@@ -235,6 +247,9 @@ class ButtonCheck:
             for w in self.warnings[warned:]
             if any(s in w for s in ("Error", "is not a function", "Cannot read", "undefined", "Unable to assign"))
         ]
+        # Screen readers need a name for every control.
+        if item is not None and not accessible_name(item):
+            result.errors.append("no accessible name (a screen reader cannot announce it)")
         return result
 
     def check_page(self, page: str) -> list[Result]:
@@ -273,6 +288,9 @@ class ButtonCheck:
 
 
 def run(window: Any, backend: Any, warnings: list[str], welcome: bool, pages: list[str], report: Path) -> int:
+    # Qt Quick builds its accessibility tree only while accessibility is on
+    # (normally when a screen reader connects).
+    QAccessible.setActive(True)
     window.resize(1180, 800)
     window.requestActivate()
     settle(2500)
