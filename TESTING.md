@@ -75,7 +75,10 @@ Found and fixed while getting here:
 - Closing an app's test unit did not close Flatpak apps. The test now uses `flatpak kill`.
 - Daytime screenshots showed the clock and tray almost invisible: a see-through taskbar over the wallpaper's dark treeline,
   with the light theme's dark text. Presets that use the light theme now have a solid taskbar, enforced by a unit test.
-  The next VM run checks this.
+  The follow-up VM run ([run 40610646614](https://github.com/Brecken321/tamarack-os/actions/runs/40610646614), images
+  44.20261028) passed all 126 checks on both editions, but it ran at night, so it shows the dark theme (taskbar solid and
+  readable). From now on the VM test also applies the always-light Productivity preset, so every run screenshots a
+  light taskbar.
 - Preset cards lost their descriptions with the VM's font metrics. They are back on Kirigami's `CardsLayout`.
 
 ### 2026-10-27: installer ISOs and unattended install (CI [run 40467069805](https://github.com/Brecken321/tamarack-os/actions/runs/40467069805), images 44.20261027)
