@@ -236,6 +236,15 @@ settings expect dnd on "'Game Mode: Do Not Disturb (Plasma holds notifications b
 center game-mode-off 0 gaming "expect:Game Mode=on" "click:Game Mode" "expect:Game Mode=off"
 settings expect power_profile "${profile}" "'Game Mode off: previous power profile'"
 settings expect dnd off "'Game Mode off: Do Not Disturb (Plasma shows notifications again)'"
+if [[ "$(state dnd)" == on ]]; then
+    # Seen once (standard edition only): record what Plasma has, and whether it is only late.
+    sleep 30
+    {
+        echo "INFO: Do Not Disturb 30 s later: $(state dnd)"
+        ssh_vm "cat ~/.config/plasmanotifyrc; ${session_env}; busctl --user introspect org.freedesktop.Notifications \
+            /org/freedesktop/Notifications org.freedesktop.Notifications" | sed 's/^/    /'
+    } | tee -a "${out}/settings-checks.txt"
+fi
 # The performance overlay stays on until Steam has been opened below.
 overlay="Performance overlay in all Steam games"
 center overlay-on 0 gaming "expect:${overlay}=off" "click:${overlay}" "expect:${overlay}=on"

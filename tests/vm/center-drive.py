@@ -92,10 +92,9 @@ def find_action(window: Any, name: str) -> Any | None:
     """A visible page action named NAME (or NAME@CONTAINER) that is not shown
     as a button: an overflow menu entry."""
     action, _, container = name.partition("@")
-    stack = window.property("pageStack")
-    page = stack.property("currentItem") if stack is not None else None
+    page = window.property("currentPageItem")
     if page is None:
-        return None
+        raise RuntimeError("cannot read the current page (Main.qml currentPageItem)")
     roots = [page]
     if container:
         roots = [i for i in items(window.contentItem()) if accessible_name(i) == container]

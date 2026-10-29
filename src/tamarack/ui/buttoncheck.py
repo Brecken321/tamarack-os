@@ -171,13 +171,9 @@ class ButtonCheck:
 
     def actions(self) -> list[Any]:
         """The current page's actions, including ones only in overflow menus."""
-        page = (
-            _prop(_prop(self.window, "pageStack"), "currentItem")
-            if _prop(self.window, "pageStack") is not None
-            else None
-        )
+        page = _prop(self.window, "currentPageItem")
         if page is None:
-            return []
+            raise RuntimeError("cannot read the current page (Main.qml currentPageItem)")
         result = []
         for child in [page, *page.findChildren(QObject)]:
             if not child.inherits("QQuickAction"):
@@ -194,7 +190,6 @@ class ButtonCheck:
     def _state(self) -> dict[str, Any]:
         popups = len(self._items("QQuickPopupItem"))
         windows = sum(1 for w in QGuiApplication.topLevelWindows() if w.isVisible())
-        stack = _prop(self.window, "pageStack")
         steps = self.window.findChild(QObject, "welcomeSteps")
         selection = tuple(
             bool(_prop(item, "checked")) for item in self._items("QQuickAbstractButton") if _prop(item, "checkable")
@@ -203,7 +198,7 @@ class ButtonCheck:
             "selection": selection,
             "page": self.window.property("currentPage"),
             "loads": self.window.property("pageLoads"),
-            "depth": _prop(stack, "depth") if stack is not None else 0,
+            "depth": self.window.property("pageDepth"),
             "step": steps.property("currentIndex") if steps is not None else -1,
             "popups": popups,
             "windows": windows,
@@ -292,14 +287,20 @@ class ButtonCheck:
             results.append(result)
             if "opens a dialog or menu" in result.effects:
                 results.extend(self._check_popup(page, label, nth))
-        self._reload(page)
-        names = [_prop(a, "text") or "(action)" for a in self.actions()]
-        for index, name in enumerate(names):
+        done.clear()
+        index = 0
+        while True:
             self._reload(page)
             current = self.actions()
             if index >= len(current):
                 break
             action = current[index]
+            index += 1
+            name = _prop(action, "text") or "(action)"
+            nth = [_prop(a, "text") or "(action)" for a in current[: index - 1]].count(name)
+            if (name, nth) in done:
+                continue
+            done.add((name, nth))
             trigger = functools.partial(QMetaObject.invokeMethod, action, "trigger", Qt.ConnectionType.DirectConnection)
             results.append(self._press(page, f"action: {name}", trigger, None))
         return results

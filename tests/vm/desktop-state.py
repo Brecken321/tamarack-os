@@ -119,7 +119,11 @@ def main() -> int:
 
     theme = p.look_and_feel_for(preset, ids)
     current = kread("kdeglobals", ("KDE",), "LookAndFeelPackage")
-    check(current == theme, f"global theme {theme} ({current})")
+    if preset.appearance.mode == "auto":
+        # KDE switches between light and dark by the time of day.
+        check(current in (ids.light, ids.dark), f"global theme: light or dark by time of day ({current})")
+    else:
+        check(current == theme, f"global theme {theme} ({current})")
     print(f"INFO: color scheme {kread('kdeglobals', ('General',), 'ColorScheme')}", flush=True)
     wrong = []
     writes = p.config_writes(preset, ids)
