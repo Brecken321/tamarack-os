@@ -33,14 +33,17 @@ Status legend: ✅ done and tested in CI · 🟡 done, needs physical-hardware v
 
 ## Milestone 3: Polish
 
-- 🔜 Live ISO (try before installing) using Titanoboa, as Bazzite does.
-- 🔜 Legacy NVIDIA edition (GTX 9xx/10xx) based on `bazzite-nvidia`.
-- 🔜 Steam Gaming Mode session (Gamescope) entry on desktop editions, with a clear "return to desktop".
-- 🔜 Per-game performance profiles (MangoHud/Gamescope presets) in the Gaming page.
-- 🔜 Translations for Tamarack Center (strings already use `qsTr`).
-- 🔜 Steam Deck Verified / ProtonDB data, only if a source with clear terms of use is available.
-- 🔜 Weekly automated refresh of the anti-cheat dataset via pull request.
-- 🔜 Plymouth boot splash with Tamarack colors (currently Fedora's spinner with the Tamarack watermark).
+| Item | Status |
+|---|---|
+| Older-NVIDIA edition (GTX 750/900/1000, Maxwell/Pascal) on `bazzite-nvidia`; Tamarack Center suggests it for those cards | ✅ built and checked in CI (driver 580); 🟡 needs a real Maxwell/Pascal card |
+| Steam Gaming Mode session (Gamescope) on the sign-in screen, with "Switch to Desktop" back to the sign-in screen | ✅ image checks and VM test (without a GPU it falls back to the sign-in screen); 🟡 needs a real GPU |
+| Per-game launch options (frame cap, FPS overlay, FSR upscaling, Gamescope, NVIDIA card on hybrid laptops) in the Gaming page | ✅ unit tests and button check |
+| Boot screen (Plymouth) with the Tamarack logo and colors | ✅ in the image and its initramfs (image and VM checks); seen in the live USB's boot screenshots |
+| Live USB (try before installing), built with Titanoboa from the published images | ✅ built in CI for both editions; booted in a VM to the desktop (8 checks, boot menu and boot screen screenshots); 🟡 needs a real PC (Secure Boot off while in use) |
+| Windows readiness check (edition, free space, Secure Boot, BitLocker, Fast Startup) | ✅ CI on Windows; ✅ run on the ASUS TUF F17 |
+| Weekly automated refresh of the anti-cheat dataset | ✅ validated and committed by a scheduled workflow (direct commit: GitHub Actions may not open pull requests in this repository) |
+| Translations for Tamarack Center (strings already use `qsTr`) | 🔜 |
+| Steam Deck Verified / ProtonDB data, only if a source with clear terms of use is available | 🔜 |
 
 ## Optional power features (prioritized)
 
