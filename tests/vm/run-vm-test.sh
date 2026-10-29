@@ -252,6 +252,14 @@ desktop_is clean-modern
 center look-undo 0 appearance "click:Undo last change"
 sleep 15
 desktop_is gaming
+# A custom look: three changes in Customize, saved and applied, then deleted.
+center look-custom 0 appearance "click:Customize…@Gaming" "click:Floating:" \
+    "click:Blur behind panels and menus:" "click:Start Steam at login:" "click:Save and apply"
+settings expect custom_look "floating,blur,steam" "'Customize: the saved look has the three changes'"
+sleep 10
+desktop_is custom-my-gaming
+center look-delete 0 appearance "click:Delete@My Gaming"
+settings expect custom_look missing "'Delete removes the custom look'"
 # The first-run Welcome, start to finish, picking a look on the way.
 ssh_vm "rm -f ~/.local/state/tamarack/welcome-done"
 center welcome 0 --welcome welcome "click:Get started" "click:Use this@Classic Desktop" \

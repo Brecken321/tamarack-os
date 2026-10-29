@@ -89,14 +89,20 @@ def find_control(window: Any, name: str) -> Any | None:
 
 
 def find_action(window: Any, name: str) -> Any | None:
-    """A page action named NAME that is not shown as a button (an overflow menu entry)."""
+    """A visible page action named NAME (or NAME@CONTAINER) that is not shown
+    as a button: an overflow menu entry."""
+    action, _, container = name.partition("@")
     stack = window.property("pageStack")
     page = stack.property("currentItem") if stack is not None else None
     if page is None:
         return None
-    for child in page.findChildren(QObject):
-        if child.inherits("QQuickAction") and child.property("text") == name:
-            return child
+    roots = [page]
+    if container:
+        roots = [i for i in items(window.contentItem()) if accessible_name(i) == container]
+    for root in roots:
+        for child in root.findChildren(QObject):
+            if child.inherits("QQuickAction") and child.property("text") == action and child.property("visible"):
+                return child
     return None
 
 

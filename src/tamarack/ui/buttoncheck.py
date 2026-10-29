@@ -5,11 +5,12 @@ from demo.py, so nothing is installed, applied or launched for real: apps
 and URLs that a button would open are recorded instead.
 
 For every page (and every Welcome step) it clicks each visible, enabled
-button, switch and clickable card, and triggers every action (including
-those only reachable through "⋮" overflow menus). A control passes when
+button, switch and clickable card, and each one inside the dialogs, sheets
+and menus those open, and triggers every action (including those only
+reachable through "⋮" overflow menus). A control passes when
 the click has a visible effect: another page, a dialog or menu, a request
 to the system (install, apply, refresh…), an app or link being opened, a
-message, or its own on/off state changing. A control fails when it has no
+message, its own on/off state changing, or its dialog closing. A control fails when it has no
 effect or raises a QML error.
 """
 
@@ -103,6 +104,16 @@ def _label(item: Any) -> str:
     icon = _prop(item, "icon")
     name = getattr(icon, "name", "") if icon is not None else ""
     return f"{type(item).__name__} ({name or item.metaObject().className()})"
+
+
+def _in_popup(item: Any) -> bool:
+    """Whether the control is inside a dialog, sheet or menu."""
+    parent = item.parentItem()
+    while parent is not None:
+        if parent.inherits("QQuickPopupItem"):
+            return True
+        parent = parent.parentItem()
+    return False
 
 
 class ButtonCheck:
@@ -220,6 +231,8 @@ class ButtonCheck:
             effects.append("opens " + ", ".join(self.urls.opened[before["urls"] :]))
         if after["signals"] > before["signals"] and not effects:
             effects.append("updates the page")
+        if after["popups"] < before["popups"]:
+            effects.append("closes the dialog")
         if checked[0] != checked[1]:
             effects.append("switches " + ("on" if checked[1] else "off"))
         elif after["selection"] != before["selection"] and not effects:
@@ -269,7 +282,10 @@ class ButtonCheck:
             if not item.isEnabled():
                 continue
             label = _label(item)
-            results.append(self._press(page, label, functools.partial(self._click, item), item))
+            result = self._press(page, label, functools.partial(self._click, item), item)
+            results.append(result)
+            if "opens a dialog or menu" in result.effects:
+                results.extend(self._check_popup(page, index, label))
         self._reload(page)
         names = [_prop(a, "text") or "(action)" for a in self.actions()]
         for index, name in enumerate(names):
@@ -280,6 +296,21 @@ class ButtonCheck:
             action = current[index]
             trigger = functools.partial(QMetaObject.invokeMethod, action, "trigger", Qt.ConnectionType.DirectConnection)
             results.append(self._press(page, f"action: {name}", trigger, None))
+        return results
+
+    def _check_popup(self, page: str, index: int, opener: str) -> list[Result]:
+        """Each control in the dialog, sheet or menu that the page's button INDEX opens."""
+        results: list[Result] = []
+        count = len([b for b in self.buttons() if _in_popup(b)])
+        for inner in range(count):
+            self._reload(page)
+            self._click(self.buttons()[index])
+            settle(400)
+            current = [b for b in self.buttons() if _in_popup(b)]
+            if inner >= len(current):
+                break
+            item = current[inner]
+            results.append(self._press(page, f"{opener} › {_label(item)}", functools.partial(self._click, item), item))
         return results
 
     @staticmethod

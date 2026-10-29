@@ -237,6 +237,7 @@ Kirigami.ScrollablePage {
 
                 Controls.TextField {
                     Kirigami.FormData.label: qsTr("Name:")
+                    Accessible.name: Kirigami.FormData.label
                     text: customizeSheet.form.name || ""
                     onEditingFinished: customizeSheet.set("name", text)
                 }
@@ -245,6 +246,7 @@ Kirigami.ScrollablePage {
 
                 Controls.ComboBox {
                     Kirigami.FormData.label: qsTr("Theme:")
+                    Accessible.name: Kirigami.FormData.label
                     textRole: "text"; valueRole: "value"
                     model: [
                         { text: qsTr("Automatic (light by day, dark at night)"), value: "auto" },
@@ -257,24 +259,28 @@ Kirigami.ScrollablePage {
                 }
                 Controls.ComboBox {
                     Kirigami.FormData.label: qsTr("Wallpaper:")
+                    Accessible.name: Kirigami.FormData.label
                     model: ["Tamarack-Ridge", "Tamarack-Dusk", "Tamarack-Mist"]
                     currentIndex: Math.max(0, model.indexOf(customizeSheet.form.wallpaper))
                     onActivated: customizeSheet.set("wallpaper", currentText)
                 }
                 Controls.SpinBox {
                     Kirigami.FormData.label: qsTr("Text size (pt):")
+                    Accessible.name: Kirigami.FormData.label
                     from: 8; to: 20
                     value: customizeSheet.form.fontSize || 10
                     onValueModified: customizeSheet.set("fontSize", value)
                 }
                 Controls.ComboBox {
                     Kirigami.FormData.label: qsTr("Cursor size:")
+                    Accessible.name: Kirigami.FormData.label
                     model: [24, 30, 36, 48]
                     currentIndex: Math.max(0, model.indexOf(customizeSheet.form.cursorSize))
                     onActivated: customizeSheet.set("cursorSize", model[currentIndex])
                 }
                 Controls.ComboBox {
                     Kirigami.FormData.label: qsTr("Animations:")
+                    Accessible.name: Kirigami.FormData.label
                     textRole: "text"; valueRole: "value"
                     model: [
                         { text: qsTr("Off"), value: 0.0 },
@@ -287,6 +293,7 @@ Kirigami.ScrollablePage {
                 }
                 Controls.Switch {
                     Kirigami.FormData.label: qsTr("Blur behind panels and menus:")
+                    Accessible.name: Kirigami.FormData.label
                     checked: !!customizeSheet.form.blur
                     onToggled: customizeSheet.set("blur", checked)
                 }
@@ -295,6 +302,7 @@ Kirigami.ScrollablePage {
 
                 Controls.ComboBox {
                     Kirigami.FormData.label: qsTr("Position:")
+                    Accessible.name: Kirigami.FormData.label
                     textRole: "text"; valueRole: "value"
                     model: [
                         { text: qsTr("Bottom"), value: "bottom" }, { text: qsTr("Top"), value: "top" },
@@ -305,12 +313,14 @@ Kirigami.ScrollablePage {
                 }
                 Controls.SpinBox {
                     Kirigami.FormData.label: qsTr("Size (px):")
+                    Accessible.name: Kirigami.FormData.label
                     from: 28; to: 96; stepSize: 2
                     value: customizeSheet.form.thickness || 44
                     onValueModified: customizeSheet.set("thickness", value)
                 }
                 Controls.ComboBox {
                     Kirigami.FormData.label: qsTr("Style:")
+                    Accessible.name: Kirigami.FormData.label
                     textRole: "text"; valueRole: "value"
                     model: [
                         { text: qsTr("Full width"), value: "fill" },
@@ -321,6 +331,7 @@ Kirigami.ScrollablePage {
                 }
                 Controls.ComboBox {
                     Kirigami.FormData.label: qsTr("Alignment:")
+                    Accessible.name: Kirigami.FormData.label
                     textRole: "text"; valueRole: "value"
                     model: [
                         { text: qsTr("Start"), value: "left" }, { text: qsTr("Center"), value: "center" },
@@ -331,11 +342,13 @@ Kirigami.ScrollablePage {
                 }
                 Controls.Switch {
                     Kirigami.FormData.label: qsTr("Floating:")
+                    Accessible.name: Kirigami.FormData.label
                     checked: !!customizeSheet.form.floating
                     onToggled: customizeSheet.set("floating", checked)
                 }
                 Controls.ComboBox {
                     Kirigami.FormData.label: qsTr("Hide:")
+                    Accessible.name: Kirigami.FormData.label
                     textRole: "text"; valueRole: "value"
                     model: [
                         { text: qsTr("Always visible"), value: "none" },
@@ -347,6 +360,7 @@ Kirigami.ScrollablePage {
                 }
                 Controls.ComboBox {
                     Kirigami.FormData.label: qsTr("App launcher:")
+                    Accessible.name: Kirigami.FormData.label
                     textRole: "text"; valueRole: "value"
                     model: [
                         { text: qsTr("Start menu"), value: "kickoff" },
@@ -358,6 +372,7 @@ Kirigami.ScrollablePage {
                 }
                 Controls.ComboBox {
                     Kirigami.FormData.label: qsTr("Running apps:")
+                    Accessible.name: Kirigami.FormData.label
                     textRole: "text"; valueRole: "value"
                     model: [
                         { text: qsTr("Icons only"), value: "icontasks" },
@@ -371,12 +386,14 @@ Kirigami.ScrollablePage {
 
                 Controls.SpinBox {
                     Kirigami.FormData.label: qsTr("Virtual desktops:")
+                    Accessible.name: Kirigami.FormData.label
                     from: 1; to: 8
                     value: customizeSheet.form.virtualDesktops || 1
                     onValueModified: customizeSheet.set("virtualDesktops", value)
                 }
                 Controls.Switch {
                     Kirigami.FormData.label: qsTr("Start Steam at login:")
+                    Accessible.name: Kirigami.FormData.label
                     checked: !!customizeSheet.form.steamAutostart
                     onToggled: customizeSheet.set("steamAutostart", checked)
                 }

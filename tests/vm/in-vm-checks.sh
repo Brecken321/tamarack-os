@@ -272,6 +272,23 @@ setting_state() {
                 net.hadess.PowerProfiles Profiles | jq -r '[.data[].Profile.data] | join(",")'
             ;;
         update_runs) journalctl -b -u uupd.service -o cat 2>/dev/null | grep -c '^Starting ' ;;
+        # What the custom look "My Gaming" changes from Gaming ("missing" if there is none).
+        custom_look)
+            python3 -I -c '
+import sys
+from pathlib import Path
+sys.path.insert(0, "/usr/lib/tamarack/python")
+from tamarack import appearance
+found = {p.id: p for p in appearance.all_presets(appearance.Paths(Path.home()))}
+mine, base = found.get("custom-my-gaming"), found["gaming"]
+if mine is None:
+    print("missing")
+else:
+    fields = {"floating": lambda p: p.panel.floating, "blur": lambda p: p.appearance.blur,
+              "steam": lambda p: p.behavior.steam_autostart}
+    print(",".join(n for n, get in fields.items() if get(mine) != get(base)) or "none")
+'
+            ;;
         *) if setting_on "$1"; then echo on; else echo off; fi ;;
     esac
 }
