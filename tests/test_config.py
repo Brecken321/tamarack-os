@@ -82,5 +82,6 @@ def test_workflows_cover_every_flavor() -> None:
     workflow = (ROOT / ".github/workflows/build.yml").read_text(encoding="utf-8")
     assert "flavor: [main, nvidia, nvidia-legacy]" in workflow
     disk = (ROOT / ".github/workflows/build-disk.yml").read_text(encoding="utf-8")
-    assert disk.count("flavor: [main, nvidia, nvidia-legacy]") == 3
+    # VM test, installer ISO, install test, live USB.
+    assert disk.count("flavor: [main, nvidia, nvidia-legacy]") == 4
     assert "github.event_name != 'pull_request'" in workflow  # PRs never publish
