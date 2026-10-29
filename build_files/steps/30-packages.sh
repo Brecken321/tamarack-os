@@ -22,8 +22,15 @@ dnf5 -y install --setopt=install_weak_deps=False "${packages[@]}"
 
 # Steam Gaming Mode: a full-screen Steam session (gamescope) on the sign-in
 # screen. Same packages Bazzite's handheld images use, from its Terra repo.
-dnf5 -y install --setopt=install_weak_deps=False --enable-repo=terra \
-    gamescope-session-plus gamescope-session-steam
+# Terra's mirrors are sometimes caught mid-sync (metadata checksum mismatch):
+# retry with fresh metadata before giving up.
+for attempt in 1 2 3; do
+    dnf5 -y install --refresh --setopt=install_weak_deps=False --enable-repo=terra \
+        gamescope-session-plus gamescope-session-steam && break
+    [[ ${attempt} -lt 3 ]] || die "could not install the Steam Gaming Mode packages from Terra"
+    log "Terra not ready (attempt ${attempt}); retrying in 30 s"
+    sleep 30
+done
 
 # Fail early if the UI stack cannot be imported.
 python3 -c 'import PySide6.QtQml, PySide6.QtGui; print("PySide6", PySide6.__version__)'
