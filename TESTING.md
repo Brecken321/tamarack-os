@@ -9,6 +9,8 @@ real hardware and is done by hand with the checklist below.
 | 1b. Center preview and button check | Renders every Tamarack Center page and Welcome step in both themes with example data (KDE platform theme, Breeze, OpenGL), then **clicks every visible button, switch and clickable card and triggers every action** (including overflow-menu ones) and fails if one has no visible effect or raises a QML error | Fedora 44 container with Xvfb | `tamarack-center --screenshots DIR`, `--check-buttons REPORT` |
 | 2. Image content | ~75 checks run *inside* each built image: branding, themes, wallpapers, KDE defaults, privacy defaults, signature policy, services, gaming stack, NVIDIA driver presence, CLI, Tamarack Center QML load | Each image (both editions) | `just check-image main` |
 | 3. VM boot and install | bootc-image-builder makes a qcow2; QEMU/KVM boots it (UEFI); checks over SSH; logs into Plasma via the virtual keyboard; opens the start menu; presses the Windows-style shortcuts and checks the right windows open; applies presets; opens every Tamarack Center page; **downloads an app (Filelight), a game (SuperTux) and a launcher (Heroic) from Flathub as the desktop user and opens each one; opens Bazaar, Firefox and the Center from their menu entries; lets Steam download its client up to its window; removes an app**; checks that every pinned app and every System Settings page a Center button opens exists; screenshots. Then: installer ISOs, and an unattended Anaconda install onto a blank virtual disk followed by the same checks. Also: an older build updated to the current one, restarted, checked and rolled back | GitHub-hosted runner with KVM | `tests/vm/run-vm-test.sh`, `tests/vm/install-test.sh`, `tests/vm/update-test.sh` |
+| 3b. Live USB | Builds the live ISO from each published image (Titanoboa), boots it in QEMU with UEFI (screenshots of the boot menu, boot screen and desktop), then boots its kernel with a serial console and checks the live system: medium found, live user set up and signed in automatically, Plasma, Welcome, default apps ready without downloading | GitHub-hosted runner with KVM | `tests/vm/live-test.sh` |
+| 3c. Windows readiness check | Edition picks for 20 graphics cards and a full read-only run in Windows PowerShell 5.1 | `windows-latest` runner | `tests/windows/test-check-ready.ps1` |
 | 4. Physical hardware | GPU drivers, real games, Wi-Fi/Bluetooth/audio, sleep, displays, controllers, install/dual-boot | A real PC | [Checklist](#physical-hardware-checklist) |
 
 ## What each automated layer proves, and what it doesn't
@@ -32,6 +34,9 @@ real hardware and is done by hand with the checklist below.
   test kickstart that partitions automatically and creates a throwaway user), installs onto an empty virtual disk with
   Anaconda, then boots the installed system and runs the full VM test on it. It does **not** click through the
   interactive installer that people use, and it does not test encryption or dual-boot.
+- **The live USB test** proves the live ISO boots with UEFI from a CD/USB-like drive and reaches a signed-in Tamarack
+  desktop with nothing written to a disk. It runs without Secure Boot and without a GPU, so it does **not** prove the
+  NVIDIA driver works in the live session, or that a particular PC's firmware boots the stick.
 - **The update and rollback test** moves a disk of an older build to the current `:stable` (download, signature check,
   staging), restarts into it, runs the system checks and the update service, then rolls back and restarts into the old
   version. It covers one update step on the standard edition, not months of updates.
@@ -41,6 +46,39 @@ real hardware and is done by hand with the checklist below.
 Newest first. "CI" entries link to the workflow run that produced them.
 
 <!-- results:start -->
+
+### 2026-10-29: boot screen, Steam Gaming Mode, older-NVIDIA edition, live USB (CI [run 40800886139](https://github.com/Brecken321/tamarack-os/actions/runs/40800886139) and [run 40801940564](https://github.com/Brecken321/tamarack-os/actions/runs/40801940564), images 44.20261029)
+
+| | Standard | NVIDIA | NVIDIA (older cards) |
+|---|---|---|---|
+| VM boot test (131 checks, now including the boot screen theme and the Gaming Mode session) | ✅ 0 failures, 18.1 s to graphical | ✅ 0 failures, 31.3 s | ✅ 0 failures, 30.0 s |
+| Downloads: Filelight, SuperTux, Heroic | ✅ 3 s, 52 s, 26 s | ✅ 4 s, 52 s, 30 s | ✅ 3 s, 42 s, 27 s |
+| Steam reaches **Sign in to Steam** | ✅ 106 s | ✅ 116 s | ✅ 112 s |
+| Memory in use with Plasma open (6 GB VM) | 1.9 GB | 2.2 GB | 2.2 GB |
+| Live USB: UEFI boot menu, boot screen, signed-in desktop with Welcome (8 checks) | ✅ signed in 30 s after boot | ✅ 40 s | not built (use the installer) |
+
+**Older-NVIDIA edition** (new): built on `bazzite-nvidia` with NVIDIA's closed 580 driver (the build refuses a base with
+the open modules), and the VM test passes like the other editions. The driver itself needs a real GTX 750/900/1000-series
+card.
+
+**Steam Gaming Mode** (new): the session is on the sign-in screen and its command is installed (image and VM checks).
+The VM test also signs in to it: without a GPU Gamescope cannot start, and the session returns to the sign-in screen
+instead of leaving a black screen. Playing in Gaming Mode needs real hardware.
+
+**Boot screen** (new): the Tamarack theme is the default and is inside the initramfs (image and VM checks). The VM test
+boots with a text console, so the screen itself is seen in the live USB's boot screenshots: firmware logo, spinner and the
+Tamarack OS logo.
+
+**Live USB** (new): `tamarack-os-live-20261029-x86_64.iso`, 6.05 GB, SHA-256
+`a83291f1c7ee4ac630bb09f5dcf2c4fcb32bfea987c9c909acbc1cdc1aa94ce8`; `tamarack-os-nvidia-live-20261029-x86_64.iso`,
+6.54 GB, SHA-256 `0b2c88611aec7c3921c6ffefc298aa92d7a22e44dfe85baec97941ec8fffa839`. The first run failed one check
+because systemd 258 quotes names in its sign-in log line; the test was fixed, and a GRUB "boot success" timer that cannot
+work on a live medium was turned off.
+
+**Update and rollback**: 44.20261028 → current `:stable` in 173 s, restart, all checks, `uupd` clean, rollback: ✅.
+
+**Windows readiness check** (new): passes on `windows-latest` and, run on the ASUS TUF F17, picks the NVIDIA edition
+for its GTX 1650 Ti.
 
 ### 2026-10-28: update and rollback, accessible names, signing outage fix (CI [run 40763643090](https://github.com/Brecken321/tamarack-os/actions/runs/40763643090) and [run 40775071019](https://github.com/Brecken321/tamarack-os/actions/runs/40775071019), images 44.20261028)
 
@@ -194,6 +232,8 @@ checks passed (branding, themes, privacy defaults, signature policy, firewall on
 - The interactive (graphical) installer screens, installing from a USB stick on a real PC, disk encryption, dual-boot
   with Windows. (The unattended install into a VM is tested.)
 - Secure Boot with NVIDIA key enrollment.
+- The live USB on a real PC (firmware boot, Wi-Fi, the NVIDIA driver in the live session).
+- Steam Gaming Mode with a real GPU (in the VM Gamescope cannot start and the session falls back to the sign-in screen).
 - Sleep/resume, battery life, Wi-Fi, Bluetooth, printers, webcams.
 - Updating and rolling back on a real install over many builds. One update from the previous day's build, with
   rollback, is tested in a VM.

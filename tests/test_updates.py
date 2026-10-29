@@ -124,3 +124,12 @@ def test_booted_version_falls_back_to_os_release(tmp_path: Path) -> None:
     runner.add(["rpm-ostree", "status"], json.dumps(data))
     st = updates.status(runner, tmp_path, tmp_path)
     assert st.booted is not None and st.booted.version == "44.20261027"
+
+
+def test_live_usb_says_updates_come_after_installing(tmp_path: Path) -> None:
+    (tmp_path / "run/initramfs/live").mkdir(parents=True)
+    runner = FakeRunner()
+    st = updates.status(runner, tmp_path, tmp_path)
+    assert st.errors == [updates.LIVE_MESSAGE]
+    assert st.booted is None and st.auto_updates is None
+    assert runner.calls == []

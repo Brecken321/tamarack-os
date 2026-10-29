@@ -27,7 +27,7 @@ lint:
     ruff check src branding tests
     ruff format --check src branding tests
     PYTHONPATH=src:branding python3 -m mypy src/tamarack branding/tamarack_branding
-    find build_files system_files tests -type f \( -name '*.sh' -o -path '*/libexec/tamarack/*' \) \
+    find build_files system_files tests live -type f \( -name '*.sh' -o -path '*/libexec/tamarack/*' \) \
         -exec grep -lE '^#!.*(bash|sh)' {} + | xargs shellcheck --external-sources
     just --unstable --fmt --check -f Justfile
 
@@ -175,3 +175,23 @@ disk flavor="main" type="anaconda-iso" image_ref="":
       -v /var/lib/containers/storage:/var/lib/containers/storage \
       "${bib_image}" --type "{{ type }}" --use-librepo=True --rootfs=btrfs "${ref}"
     sudo chown -R "$(id -u):$(id -g)" output
+
+# Build a live USB ISO (try Tamarack OS without installing) with Titanoboa
+[group('Disk')]
+live flavor="main" image_ref="":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    read -r image base < <(just variant "{{ flavor }}")
+    ref="{{ image_ref }}"
+    [[ -n "${ref}" ]] || ref="${image_registry}/${image}:${default_tag}"
+    sudo podman build --cap-add sys_admin --security-opt label=disable \
+      --build-arg BASE_IMAGE="${ref}" -t localhost/tamarack-live:latest live/
+    titanoboa="$(mktemp -d)"
+    git clone --quiet https://github.com/ublue-os/titanoboa "${titanoboa}"
+    git -C "${titanoboa}" checkout --quiet 5c457c3d0518bd17e754be0fd98a60d29d26abb4
+    mkdir -p output
+    iso="$(TITANOBOA_OUTPUT_DIR="$(pwd)/output" "${titanoboa}/main.sh" localhost/tamarack-live:latest)"
+    sudo chown "$(id -u):$(id -g)" "${iso}"
+    mv "${iso}" "output/${image}-live.iso"
+    rm -rf "${titanoboa}"
+    echo "output/${image}-live.iso"

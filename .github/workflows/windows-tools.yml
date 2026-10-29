@@ -1,0 +1,33 @@
+---
+name: Windows tools
+
+# The readiness check people run on Windows before installing
+# (tools/windows/check-ready.ps1), in Windows PowerShell 5.1 as shipped.
+on:
+  push:
+    paths:
+      - "tools/windows/**"
+      - "tests/windows/**"
+      - ".github/workflows/windows-tools.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "tools/windows/**"
+      - "tests/windows/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check-ready:
+    name: Readiness check
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Edition picks and a full run
+        shell: powershell
+        run: powershell -NoProfile -ExecutionPolicy Bypass -File tests/windows/test-check-ready.ps1

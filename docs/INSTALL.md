@@ -4,6 +4,20 @@
 > (see [TESTING.md](../TESTING.md)). Installing an operating system can erase data. **Back up everything
 > you care about to another drive or cloud storage before you start.**
 
+## Check your PC first (Windows)
+
+The readiness check tells you which edition your PC needs and what to take care of before installing: free space,
+Secure Boot, BitLocker, Fast Startup. It only reads; it changes nothing and sends nothing anywhere.
+
+1. Save [check-ready.ps1](https://github.com/Brecken321/tamarack-os/raw/main/tools/windows/check-ready.ps1)
+   (right-click > *Save link as*) to your Downloads folder.
+2. Open PowerShell in that folder (in File Explorer: *File* > *Open Windows PowerShell*, or type `powershell` in the
+   address bar) and run:
+
+   ```powershell
+   powershell -ExecutionPolicy Bypass -File .\check-ready.ps1
+   ```
+
 ## 1. Choose an edition
 
 | Your graphics | Edition | Image |
@@ -32,6 +46,32 @@ needs the NVIDIA edition.
    `Get-FileHash .\tamarack-os-*.iso -Algorithm SHA256` and compare with the `.sha256` file.
 3. Write it to a USB stick with [Fedora Media Writer](https://flathub.org/apps/org.fedoraproject.MediaWriter),
    balenaEtcher, or Rufus (choose **DD image** mode). This erases the USB stick.
+
+## Optional: try it first with the live USB
+
+The live USB starts Tamarack OS straight from the stick, signed in to the desktop, without touching your disks. Use it
+to check that the screen, Wi-Fi, sound, keyboard and touchpad work before you install. Everything you do in it lives in
+memory and is gone when you shut down.
+
+1. From the same [Disk images and VM test](https://github.com/Brecken321/tamarack-os/actions/workflows/build-disk.yml)
+   run, download `tamarack-os-live-iso` or `tamarack-os-nvidia-live-iso` (the NVIDIA one for any PC with an NVIDIA
+   card, including Intel + NVIDIA laptops). Verify it and write it to a USB stick as in step 3. It is a different stick
+   from the installer, or the same stick rewritten later.
+2. **Turn Secure Boot off for now.** The live USB runs Tamarack's own kernel and NVIDIA driver (so you can test the
+   real driver), and your PC does not trust their signing key until you install and enroll it. On ASUS laptops: press
+   F2 at power-on, F7 for *Advanced Mode*, *Security* > *Secure Boot* > *Secure Boot Control*: **Disabled**, then F10
+   to save.
+   - **If Windows uses BitLocker or Device Encryption** (common on Windows 11 laptops), changing Secure Boot makes
+     Windows ask for the recovery key at its next start. Write the key down first: it is at
+     [account.microsoft.com/devices/recoverykey](https://account.microsoft.com/devices/recoverykey), or in Windows run
+     `manage-bde -protectors -get C:` as administrator.
+3. Boot from the stick (ASUS: Esc or F8 at power-on) and choose **Try Tamarack OS**. If the screen stays black, restart
+   and choose **Try Tamarack OS (basic graphics)**.
+4. When you are done, shut down, remove the stick, and turn Secure Boot back on if you are not installing yet (some
+   games' anti-cheat on Windows requires it).
+
+Good to know: apps and games you install in the live session download into memory, so keep to small ones on a PC with
+8 GB of RAM. Updates are off in the live session, and it cannot install Tamarack OS; use the installer for that.
 
 ## 4. Before you install
 

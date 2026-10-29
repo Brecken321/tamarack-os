@@ -27,6 +27,15 @@ log = logging.getLogger("tamarack.updates")
 # Below this much free space on /var an update may fail to download.
 LOW_SPACE_BYTES = 10 * 1024**3
 
+LIVE_MESSAGE = (
+    "You are trying Tamarack OS from the live USB, which does not update. Updates start once Tamarack OS is installed."
+)
+
+
+def live_session(root: Path = Path("/")) -> bool:
+    """True when running from the live USB (its medium is mounted here at boot)."""
+    return (root / "run/initramfs/live").is_dir()
+
 
 @dataclass(frozen=True)
 class Deployment:
@@ -139,6 +148,8 @@ def parse_rpm_ostree_status(text: str) -> UpdateStatus:
 
 
 def status(runner: Runner, var_path: Path = Path("/var"), root: Path = Path("/")) -> UpdateStatus:
+    if live_session(root):
+        return UpdateStatus(errors=[LIVE_MESSAGE])
     result = runner.run(["rpm-ostree", "status", "--json"], timeout=60)
     if result.ok:
         try:

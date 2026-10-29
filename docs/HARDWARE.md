@@ -23,7 +23,7 @@ compositor; Plasma 6 exposes both under System Settings > Display when supported
 
 | Device | Status |
 |---|---|
-| ASUS TUF Gaming F17 FX706LI (i5-10300H, Intel UHD + GTX 1650 Ti, 8 GB) | **Not yet tested.** Target machine for the first hardware validation pass ([TESTING.md](../TESTING.md#physical-hardware-checklist)). |
+| ASUS TUF Gaming F17 FX706LI (i5-10300H, Intel UHD + GTX 1650 Ti, 8 GB; MediaTek MT7921 Wi-Fi 6, Realtek Ethernet, Micron 2210 NVMe) | **Not yet tested under Linux.** Target machine for the first hardware validation pass ([TESTING.md](../TESTING.md#physical-hardware-checklist)). The Windows readiness check runs on it and picks the NVIDIA edition (2026-10-29). Expected drivers: `i915` + `nvidia` (open modules), `mt7921e` (Wi-Fi and Bluetooth), `r8169` (Ethernet), `nvme`, `asus-nb-wmi` (keyboard light, fan modes). |
 | Any other physical PC | **Not yet tested.** |
 
 Results will be recorded here, with date and image version, as people run the checklist. Please contribute results.
