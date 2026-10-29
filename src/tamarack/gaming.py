@@ -148,7 +148,9 @@ def set_feature(
 # --- Game Mode -------------------------------------------------------------------
 
 PPD = ("net.hadess.PowerProfiles", "/net/hadess/PowerProfiles", "net.hadess.PowerProfiles")
-DND_FOREVER = "2099-12-31T23:59:59"
+# Plasma's Do Not Disturb end time. KConfig reads a date only as "Y,M,D,h,m,s";
+# any other form (an ISO date) is ignored and notifications keep coming.
+DND_FOREVER = "2099,12,31,23,59,59"
 
 
 def _busctl_string(output: str) -> str:

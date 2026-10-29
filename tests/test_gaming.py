@@ -121,6 +121,8 @@ def test_game_mode_on_and_off_restores_previous_state(tmp_path: Path) -> None:
     calls = [list(c) for c in runner.calls]
     assert ["busctl", "set-property", *gaming.PPD, "ActiveProfile", "s", "performance"] in calls
     assert any(c[0] == "kwriteconfig6" and gaming.DND_FOREVER in c for c in calls)
+    # KConfig's date format: at least six comma-separated numbers, or Plasma ignores it.
+    assert [int(x) for x in gaming.DND_FOREVER.split(",")][:6] == [2099, 12, 31, 23, 59, 59]
     runner.calls.clear()
     gaming.set_game_mode(runner, tmp_path, False)
     calls = [list(c) for c in runner.calls]

@@ -232,11 +232,10 @@ center game-mode-on 0 gaming "expect:Game Mode=off" "click:Game Mode" "expect:Ga
 if [[ ",$(state power_profiles)," == *,performance,* ]]; then
     settings expect power_profile performance "'Game Mode: power profile'"
 fi
-settings expect dnd on "'Game Mode: Do Not Disturb'"
-echo "INFO: notifications held back (Plasma): $(state inhibited)" | tee -a "${out}/settings-checks.txt"
+settings expect dnd on "'Game Mode: Do Not Disturb (Plasma holds notifications back)'"
 center game-mode-off 0 gaming "expect:Game Mode=on" "click:Game Mode" "expect:Game Mode=off"
 settings expect power_profile "${profile}" "'Game Mode off: previous power profile'"
-settings expect dnd off "'Game Mode off: Do Not Disturb'"
+settings expect dnd off "'Game Mode off: Do Not Disturb (Plasma shows notifications again)'"
 # The performance overlay stays on until Steam has been opened below.
 overlay="Performance overlay in all Steam games"
 center overlay-on 0 gaming "expect:${overlay}=off" "click:${overlay}" "expect:${overlay}=on"

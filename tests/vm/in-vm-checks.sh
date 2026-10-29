@@ -36,6 +36,20 @@ info() {
     "$@" 2>&1 | sed 's/^/    /' | head -n 60
 }
 as_root() { echo "${password}" | sudo -S -p '' "$@"; }
+# The IDs KRunner knows its plugins by (krunnerrc's "<ID>Enabled" keys): the
+# ID in a compiled plugin's metadata (else its file name), or a D-Bus plugin's name.
+krunner_plugin_ids() {
+    python3 -I -c '
+import glob, pathlib
+from PySide6.QtCore import QPluginLoader
+for so in sorted(glob.glob("/usr/lib64/qt6/plugins/kf6/krunner/*.so")):
+    meta = QPluginLoader(so).metaData().get("MetaData", {})
+    print(meta.get("KPlugin", {}).get("Id") or pathlib.Path(so).stem)
+'
+    sed -n 's/^X-KDE-PluginInfo-Name=//p' /usr/share/krunner/dbusplugins/*.desktop \
+        /var/lib/flatpak/exports/share/krunner/dbusplugins/*.desktop 2>/dev/null
+}
+export -f krunner_plugin_ids
 # The desktop session's environment, for commands that talk to Plasma.
 session_env() {
     XDG_RUNTIME_DIR="/run/user/$(id -u)"
@@ -102,11 +116,10 @@ if [[ "${phase}" == "system" ]]; then
     check "tamarack doctor runs" tamarack doctor --quick
     info "tamarack doctor" tamarack doctor
     check "privacy dashboard data" tamarack privacy --json
-    # "Show app store results in search" turns KRunner's plugin "bazaarrunner" on and off.
-    runners="/usr/share/krunner/dbusplugins /var/lib/flatpak/exports/share/krunner/dbusplugins"
-    info "search (KRunner) plugins from apps" bash -c "grep -Hs -m1 '^X-KDE-PluginInfo-Name=' ${runners// //*.desktop }/*.desktop; find /usr/lib64/qt6/plugins/kf6/krunner -name '*.so' -printf '%f\n'"
-    check "the app store search switch's plugin (bazaarrunner) exists" bash -c \
-        "grep -qsx 'X-KDE-PluginInfo-Name=bazaarrunner' ${runners// //*.desktop }/*.desktop || ls ${runners// //bazaarrunner.desktop }/bazaarrunner.desktop 2>/dev/null | grep -q . || find /usr/lib64/qt6/plugins/kf6/krunner -name 'bazaarrunner*' | grep -q ."
+    # "Show app store results in search" turns KRunner's plugin "bazaarrunner" on and off:
+    # krunnerrc's key is the plugin's ID, which need not be its file name.
+    info "search (KRunner) plugin IDs" krunner_plugin_ids
+    check "the app store search switch's plugin (ID bazaarrunner) exists" bash -c "krunner_plugin_ids | grep -qx bazaarrunner"
     check "anti-cheat check" tamarack games check "Apex Legends"
     # Default apps install from Flathub on first boot; allow time for the download.
     for _ in $(seq 1 60); do
@@ -233,8 +246,9 @@ setting_on() {
             [[ "$(kreadconfig6 --file kactivitymanagerd-pluginsrc --group Plugin-org.kde.ActivityManager.Resources.Scoring \
                 --key what-to-remember --default 0)" != 2 ]]
             ;;
-        dnd) [[ -n "$(kreadconfig6 --file plasmanotifyrc --group DoNotDisturb --key Until)" ]] ;;
-        inhibited)
+        # Whether Plasma holds notifications back (the tray's notifications
+        # widget announces it), not only what the settings file says.
+        dnd)
             busctl --user get-property org.freedesktop.Notifications /org/freedesktop/Notifications \
                 org.freedesktop.Notifications Inhibited | grep -q true
             ;;
@@ -272,7 +286,12 @@ fi
 if [[ "${phase}" == "expect" ]]; then
     session_env
     key="$1" want="$2" description="${3:-$1}"
-    have="$(setting_state "${key}")"
+    # Some take effect a moment later (Plasma re-reads a changed settings file).
+    for _ in 1 2 3 4 5; do
+        have="$(setting_state "${key}")"
+        [[ "${have}" == "${want}" ]] && break
+        sleep 2
+    done
     check "${description}: ${want} (the system says ${have})" test "${have}" = "${want}"
 fi
 
