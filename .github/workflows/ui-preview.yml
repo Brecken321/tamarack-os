@@ -112,7 +112,8 @@ jobs:
           PYTHONPATH: src
         run: |
           set -euo pipefail
-          pgrep -x Xvfb >/dev/null || { Xvfb :99 -screen 0 1280x900x24 -nolisten tcp & sleep 3; }
+          # The screenshot step started it (the container has no pgrep).
+          [[ -e /tmp/.X99-lock ]] || { Xvfb :99 -screen 0 1280x900x24 -nolisten tcp & sleep 3; }
           config="$(mktemp -d)"
           cp output/branding/usr/share/color-schemes/TamarackLight.colors "${config}/kdeglobals"
           output="$(mktemp)"

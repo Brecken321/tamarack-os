@@ -182,7 +182,9 @@ class ButtonCheck:
                 continue
             if (_prop(child, "text") or "") in IGNORED:
                 continue
-            if _prop(child, "children"):  # a submenu: its entries are the actions
+            # A submenu: its entries are the actions. (QObject's children(): reading
+            # the QML "children" list property aborts PySide.)
+            if any(c.inherits("QQuickAction") for c in child.children()):
                 continue
             result.append(child)
         return result
