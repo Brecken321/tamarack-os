@@ -100,12 +100,14 @@ jobs:
           ls -R preview
 
       # Click every button, switch, card and action on every page and Welcome
-      # step; fails if one does nothing or raises a QML error.
+      # step; fails if one does nothing or raises a QML error, also one raised
+      # while the app closes (after the check's own report).
       - name: Every button does something
         shell: bash
         env:
           QT_QPA_PLATFORM: xcb
           QT_QPA_PLATFORMTHEME: kde
+          QT_FORCE_STDERR_LOGGING: "1"
           DISPLAY: ":99"
           PYTHONPATH: src
         run: |
@@ -113,12 +115,17 @@ jobs:
           pgrep -x Xvfb >/dev/null || { Xvfb :99 -screen 0 1280x900x24 -nolisten tcp & sleep 3; }
           config="$(mktemp -d)"
           cp output/branding/usr/share/color-schemes/TamarackLight.colors "${config}/kdeglobals"
+          output="$(mktemp)"
           status=0
           for flag in "" --welcome; do
             XDG_CONFIG_HOME="${config}" XDG_DATA_DIRS="${PWD}/output/branding/usr/share:/usr/share" HOME="$(mktemp -d)" \
               python3 -m tamarack.ui.app --check-buttons preview/buttons.md --data-root output/branding \
-              --appstream "${APPSTREAM}" ${flag} || status=1
+              --appstream "${APPSTREAM}" ${flag} 2>&1 | tee -a "${output}" || status=1
           done
+          if grep -E 'qml:[0-9]+: (TypeError|ReferenceError)' "${output}"; then
+            echo "::error::Tamarack Center printed QML errors (above)"
+            status=1
+          fi
           exit "${status}"
 
       - name: Upload previews

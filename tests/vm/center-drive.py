@@ -136,6 +136,7 @@ def main() -> int:
         QQuickStyle.setFallbackStyle("Fusion")
     backend = Backend(brand, SubprocessRunner(), welcome=args.welcome)
     engine = QQmlApplicationEngine()
+    backend.setParent(engine)
     engine.rootContext().setContextProperty("backend", backend)
     engine.rootContext().setContextProperty("initialPage", "welcome" if args.welcome else args.page)
     warnings: list[str] = []

@@ -315,6 +315,17 @@ center update-now 1 updates "click:Update now"
 settings expect update_runs "$((runs + 1))" "'Update now starts the update service'"
 ssh_vm "echo '${password}' | sudo -S -p '' timeout 1800 bash -c 'while [[ \$(systemctl show -p ActiveState --value uupd.service) == activating ]]; do sleep 10; done'; systemctl show -p Result uupd.service" |
     sed 's/^/INFO: update service after Update now: /' | tee -a "${out}/settings-checks.txt" || true
+# QML errors in any of those Tamarack Center runs, also while it closed
+# (after each run's own report).
+qml_errors="$(ssh_vm "journalctl --user -b --no-pager -o cat -u 'tamarack-drive-*'; cat /tmp/drive-*.log" |
+    grep -E 'qml:[0-9]+: (TypeError|ReferenceError)' | sort | uniq -c | sort -rn || true)"
+if [[ -z "${qml_errors}" ]]; then
+    echo "PASS: Tamarack Center logged no QML errors, also while closing" | tee -a "${out}/settings-checks.txt"
+else
+    { echo "FAIL: Tamarack Center logged QML errors:"; head -n 20 <<<"${qml_errors}" | sed 's/^/    /'; } |
+        tee -a "${out}/settings-checks.txt"
+    status=1
+fi
 
 # Steam Gaming Mode itself: sign in to it automatically and see what happens.
 # gamescope needs a real GPU, so in a VM this is recorded, not required.

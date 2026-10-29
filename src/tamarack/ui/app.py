@@ -169,6 +169,9 @@ def main(argv: list[str] | None = None) -> int:
     else:
         backend = Backend(brand, SubprocessRunner(), welcome=args.welcome, dry_run=args.self_test)
     engine = QQmlApplicationEngine()
+    # The engine owns the backend, so the QML is torn down first when the app
+    # ends; otherwise its bindings re-run with `backend` already gone (TypeErrors).
+    backend.setParent(engine)
     engine.rootContext().setContextProperty("backend", backend)
     engine.rootContext().setContextProperty("initialPage", "welcome" if args.welcome else args.page)
 
