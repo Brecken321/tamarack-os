@@ -271,21 +271,27 @@ class ButtonCheck:
 
     def check_page(self, page: str) -> list[Result]:
         results: list[Result] = []
-        self._reload(page)
-        count = len(self.buttons())
-        for index in range(count):
+        # Walk the buttons as they are after each click: one can enable another
+        # (Undo after Apply) and shift those after it. Each is clicked once.
+        done: set[tuple[str, int]] = set()
+        index = 0
+        while True:
             self._reload(page)
             current = self.buttons()
             if index >= len(current):
                 break
             item = current[index]
-            if not item.isEnabled():
-                continue
+            index += 1
             label = _label(item)
+            # Which of the page's buttons with this label (e.g. one "Customize…" per card).
+            nth = [_label(b) for b in current[: index - 1]].count(label)
+            if (label, nth) in done:
+                continue
+            done.add((label, nth))
             result = self._press(page, label, functools.partial(self._click, item), item)
             results.append(result)
             if "opens a dialog or menu" in result.effects:
-                results.extend(self._check_popup(page, index, label))
+                results.extend(self._check_popup(page, label, nth))
         self._reload(page)
         names = [_prop(a, "text") or "(action)" for a in self.actions()]
         for index, name in enumerate(names):
@@ -298,13 +304,17 @@ class ButtonCheck:
             results.append(self._press(page, f"action: {name}", trigger, None))
         return results
 
-    def _opened_by(self, page: str, index: int) -> list[Any]:
-        """Reload PAGE, click its button INDEX, and return the controls in the
-        dialogs, sheets and menus that opened (not the sidebar, a drawer)."""
+    def _opened_by(self, page: str, label: str, nth: int) -> list[Any]:
+        """Reload PAGE, click its NTH button labeled LABEL, and return the controls
+        in the dialogs, sheets and menus that opened (not the sidebar, a drawer).
+        By label, not position: earlier clicks can enable buttons before it."""
         self._reload(page)
+        openers = [b for b in self.buttons() if _label(b) == label]
+        if nth >= len(openers):
+            return []
         # Held so each popup keeps one Python wrapper, compared by identity.
         already = self._items("QQuickPopupItem")
-        self._click(self.buttons()[index])
+        self._click(openers[nth])
         settle(400)
         inside = []
         for button in self.buttons():
@@ -313,14 +323,17 @@ class ButtonCheck:
                 inside.append(button)
         return inside
 
-    def _check_popup(self, page: str, index: int, opener: str) -> list[Result]:
-        """Each control in the dialog, sheet or menu that the page's button INDEX opens."""
+    def _check_popup(self, page: str, opener: str, nth: int) -> list[Result]:
+        """Each control in the dialog, sheet or menu that the page's NTH button OPENER opens."""
         results: list[Result] = []
-        count = len(self._opened_by(page, index))
+        count = len(self._opened_by(page, opener, nth))
         for inner in range(count):
-            current = self._opened_by(page, index)
+            current = self._opened_by(page, opener, nth)
             if inner >= len(current):
-                break
+                missing = Result(page, f"{opener} › control {inner + 1} of {count}")
+                missing.errors.append("could not open the dialog again to click it")
+                results.append(missing)
+                continue
             item = current[inner]
             results.append(self._press(page, f"{opener} › {_label(item)}", functools.partial(self._click, item), item))
         return results
