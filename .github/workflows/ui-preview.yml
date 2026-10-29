@@ -108,6 +108,8 @@ jobs:
           QT_QPA_PLATFORM: xcb
           QT_QPA_PLATFORMTHEME: kde
           QT_FORCE_STDERR_LOGGING: "1"
+          # A crash in Qt or PySide prints the Python stack.
+          PYTHONFAULTHANDLER: "1"
           DISPLAY: ":99"
           PYTHONPATH: src
         run: |

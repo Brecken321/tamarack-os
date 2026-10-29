@@ -360,6 +360,7 @@ def run(window: Any, backend: Any, warnings: list[str], welcome: bool, pages: li
     check = ButtonCheck(window, backend, warnings, welcome)
     results: list[Result] = []
     for page in ["welcome"] if welcome else pages:
+        print(f"checking {page}", flush=True)
         results.extend(check.check_page(page))
     # Each control once: the same action can be reached from several places.
     lines = ["| Page | Control | Result |", "|---|---|---|"]
