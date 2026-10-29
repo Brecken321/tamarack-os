@@ -62,20 +62,24 @@ common=(-machine "q35,accel=kvm" -cpu max -smp 4 -m 6144 -device virtio-vga -dis
         -append "${args} console=ttyS0,115200 systemd.journald.forward_to_console=1" \
         -drive "file=${iso},media=cdrom,readonly=on" \
         -serial "file:${out}/serial.log"
+    # systemd 258+ quotes the session and user names.
+    signed_in="New session '?[^ ]+'? of user '?liveuser'?"
     start=$(date +%s)
-    until grep -q 'New session .* of user liveuser' "${out}/serial.log" 2>/dev/null; do
+    until grep -q -E "${signed_in}" "${out}/serial.log" 2>/dev/null; do
         (($(date +%s) - start > 600)) && break
         sleep 10
     done
     echo "INFO: live user signed in after $(($(date +%s) - start)) s"
-    sleep 90
+    sleep 60
     shot "03-live-session"
     check "live medium found and mounted" grep -q -E 'dmsquash|LiveOS|live-rootfs|rootfs' "${out}/serial.log"
     check "live system set up (livesys)" grep -q -i 'livesys' "${out}/serial.log"
     check "graphical target reached" grep -q -E 'Reached target (graphical.target|Graphical Interface)' "${out}/serial.log"
-    check "live user signed in to the desktop automatically" grep -q 'New session .* of user liveuser' "${out}/serial.log"
+    check "live user signed in to the desktop automatically" grep -q -E "${signed_in}" "${out}/serial.log"
     check "Plasma started for the live user" grep -q -E 'plasmashell|plasma-plasmashell' "${out}/serial.log"
     check "Tamarack OS (os-release)" grep -q -i 'Tamarack OS' "${out}/serial.log"
+    check "default apps ready without downloading" grep -q 'flatpak-setup.*done: All default apps are set up' "${out}/serial.log"
+    check "Welcome to Tamarack OS opened" grep -q -E 'Started app-io\.github\.brecken321\.tamarack\.Welcome' "${out}/serial.log"
     echo "INFO: failed units"
     grep -E 'Failed to start|FAILED' "${out}/serial.log" | sed 's/^/    /' | head -n 20 || true
 

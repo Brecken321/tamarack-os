@@ -52,7 +52,9 @@ for unit in uupd.timer rpm-ostreed-automatic.timer rpm-ostree-countme.service \
         systemctl disable "${unit}" && log "off in the live session: ${unit}"
     fi
 done
-for unit in podman-auto-update.timer bazzite-user-setup.service ublue-user-setup.service; do
+# grub-boot-success marks a successful boot in GRUB's environment block, which
+# a live USB does not have.
+for unit in podman-auto-update.timer bazzite-user-setup.service ublue-user-setup.service grub-boot-success.timer; do
     if systemctl --global list-unit-files "${unit}" >/dev/null 2>&1; then
         systemctl --global disable "${unit}" && log "off in the live session: ${unit} (user)"
     fi
