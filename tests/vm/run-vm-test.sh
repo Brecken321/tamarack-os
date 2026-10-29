@@ -116,10 +116,11 @@ sleep 4
 shot "03-start-menu"
 qmp key esc
 sleep 2
-# Each look, then what Plasma and KWin really use compared with it.
+# Each look, then what Plasma and KWin really use compared with it (checked
+# inside the desktop session, which reads the same settings files Plasma does).
 # Productivity is always light: it shows the taskbar is readable in the light theme.
 desktop_is() { # PRESET_ID
-    ssh_vm "${session_env}; python3 -I /tmp/desktop-state.py $1" | tee -a "${out}/${LOG:-presets.txt}" || status=1
+    ssh_vm "${session_env}; systemd-run --user --quiet --wait --pipe --collect python3 -I /tmp/desktop-state.py $1" | tee -a "${out}/${LOG:-presets.txt}" || status=1
 }
 for preset in gaming classic-desktop minimalist productivity high-contrast; do
     ssh_vm "${session_env}; tamarack preset apply ${preset}" | tee -a "${out}/presets.txt" || status=1
@@ -208,14 +209,15 @@ center() { # NAME PASSWORD_PROMPTS PAGE STEP... (see center-drive.py)
     settings drive-finish "${name}" 600
     shot "10-${name}"
 }
+# ("setting", not "key": ssh_vm reads ${key}, the SSH key.)
 flip() { # SETTING PASSWORD_PROMPTS PAGE SWITCH: on/off, then back
-    local key="$1" prompts="$2" page="$3" control="$4" was now
-    was="$(state "${key}")"
+    local setting="$1" prompts="$2" page="$3" control="$4" was now
+    was="$(state "${setting}")"
     now="$([[ ${was} == on ]] && echo off || echo on)"
-    center "${key}-${now}" "${prompts}" "${page}" "expect:${control}=${was}" "click:${control}" "expect:${control}=${now}"
-    settings expect "${key}" "${now}" "$(printf %q "${control}")"
-    center "${key}-${was}" "${prompts}" "${page}" "expect:${control}=${now}" "click:${control}" "expect:${control}=${was}"
-    settings expect "${key}" "${was}" "$(printf %q "${control}")"
+    center "${setting}-${now}" "${prompts}" "${page}" "expect:${control}=${was}" "click:${control}" "expect:${control}=${now}"
+    settings expect "${setting}" "${now}" "$(printf %q "${control}")"
+    center "${setting}-${was}" "${prompts}" "${page}" "expect:${control}=${now}" "click:${control}" "expect:${control}=${was}"
+    settings expect "${setting}" "${was}" "$(printf %q "${control}")"
 }
 flip countme 1 privacy "Help Fedora count installations"
 flip connectivity 0 privacy "Detect Wi-Fi sign-in pages"

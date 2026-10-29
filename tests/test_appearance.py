@@ -58,6 +58,21 @@ def test_apply_runs_every_step_and_backs_up(home: Path, brand: Brand, presets: l
     assert appearance.current_preset(paths) == "productivity"
 
 
+@pytest.mark.parametrize(("preset_id", "method"), [("productivity", "loadEffect"), ("gaming", "unloadEffect")])
+def test_blur_is_switched_live(home: Path, brand: Brand, presets: list[p.Preset], preset_id: str, method: str) -> None:
+    runner = _kde_runner()
+    runner.add(["busctl", "--user", "call", *appearance.EFFECTS, "isEffectSupported"], "b true\n")
+    result = appearance.apply(_preset(presets, preset_id), brand, runner, appearance.Paths(home))
+    assert result.ok, result.to_dict()
+    assert ["busctl", "--user", "call", *appearance.EFFECTS, method, "s", "blur"] in [list(c) for c in runner.calls]
+
+
+def test_blur_is_left_alone_without_support(home: Path, brand: Brand, presets: list[p.Preset]) -> None:
+    runner = _kde_runner()
+    appearance.apply(_preset(presets, "productivity"), brand, runner, appearance.Paths(home))
+    assert not any("loadEffect" in c for c in runner.calls)
+
+
 def test_extra_virtual_desktops_are_removed(home: Path, brand: Brand, presets: list[p.Preset]) -> None:
     runner = _kde_runner()
     runner.add(["busctl", "--user", "get-property", *appearance.VDM, "count"], "u 3\n")
@@ -141,14 +156,17 @@ def test_undo_shows_the_previous_look_as_current(home: Path, brand: Brand, prese
 
 def test_undo_puts_back_the_virtual_desktops(home: Path, brand: Brand, presets: list[p.Preset]) -> None:
     paths = appearance.Paths(home)
-    kwinrc = "[Desktops]\nNumber=3\nRows=1\n\n[Plugins]\nblurEnabled=true\n"
+    kwinrc = "[Desktops]\nNumber=3\nRows=1\n\n[Plugins]\nblurEnabled=false\n"
     (paths.config / "kwinrc").write_text(kwinrc, encoding="utf-8")
-    appearance.apply(_preset(presets, "gaming"), brand, _kde_runner(), paths)
+    appearance.apply(_preset(presets, "productivity"), brand, _kde_runner(), paths)
     runner = _kde_runner()  # KWin now has 1 desktop
+    runner.add(["busctl", "--user", "call", *appearance.EFFECTS, "isEffectSupported"], "b true\n")
     result = appearance.restore(paths, runner)
     assert result.ok, result.to_dict()
-    assert len([c for c in runner.calls if "createDesktop" in c]) == 2
-    assert ["busctl", "--user", "set-property", *appearance.VDM, "rows", "u", "1"] in [list(c) for c in runner.calls]
+    calls = [list(c) for c in runner.calls]
+    assert len([c for c in calls if "createDesktop" in c]) == 2
+    assert ["busctl", "--user", "set-property", *appearance.VDM, "rows", "u", "1"] in calls
+    assert ["busctl", "--user", "call", *appearance.EFFECTS, "unloadEffect", "s", "blur"] in calls
 
 
 def test_undo_without_backup(home: Path) -> None:

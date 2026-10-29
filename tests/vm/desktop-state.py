@@ -16,6 +16,7 @@ from __future__ import annotations
 import json
 import subprocess
 import sys
+import time
 from pathlib import Path
 from typing import Any
 
@@ -124,10 +125,14 @@ def main() -> int:
     writes = p.config_writes(preset, ids)
     for w in writes:
         value = user_value(w.file, w.groups, w.key)
+        # KDE does not store a value equal to a system default in your file:
+        # then the value in effect is the default (read like Plasma does).
+        if value is None and w.value is not None:
+            value = kread(w.file, w.groups, w.key)
         if value != w.value:
             wrong.append(f"{w.file} {'/'.join(w.groups)} {w.key}={value!r}, not {w.value!r}")
     detail = ": " + "; ".join(wrong) if wrong else ""
-    check(not wrong, f"your settings files hold the preset's {len(writes)} values (None = KDE's default){detail}")
+    check(not wrong, f"settings in effect: the preset's {len(writes)} values (None = KDE's default){detail}")
 
     vdm = ("org.kde.KWin", "/VirtualDesktopManager", "org.kde.KWin.VirtualDesktopManager")
     count = busctl("get-property", *vdm, "count")
@@ -137,7 +142,11 @@ def main() -> int:
     check(rows == desk.virtual_desktop_rows, f"virtual desktop rows: {desk.virtual_desktop_rows} (KWin: {rows})")
     effects = ("org.kde.KWin", "/Effects", "org.kde.kwin.Effects")
     if busctl("call", *effects, "isEffectSupported", "s", "blur") == [True]:
-        loaded = busctl("call", *effects, "isEffectLoaded", "s", "blur") == [True]
+        for _ in range(10):  # KWin loads effects in the background
+            loaded = busctl("call", *effects, "isEffectLoaded", "s", "blur") == [True]
+            if loaded == preset.appearance.blur:
+                break
+            time.sleep(2)
         check(
             loaded == preset.appearance.blur,
             f"blur effect {'on' if preset.appearance.blur else 'off'} (KWin: {loaded})",

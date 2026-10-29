@@ -204,30 +204,33 @@ def restore(paths: Paths, runner: Runner, target: Path | None = None) -> ApplyRe
         )
     )
     # KWin does not re-read the number of desktops from kwinrc; set it live.
-    result.steps.append(_virtual_desktops(runner, *_desktops_in(paths.config / "kwinrc")))
+    kwinrc = paths.config / "kwinrc"
+    count = _int(_ini_value(kwinrc, "Desktops", "Number"), 1)
+    rows = min(_int(_ini_value(kwinrc, "Desktops", "Rows"), 1), count)
+    result.steps.append(_virtual_desktops(runner, count, rows))
     result.steps.append(_reconfigure_kwin(runner))
+    # Blur is on unless kwinrc turns it off (KWin's default).
+    result.steps.append(_blur(runner, _ini_value(kwinrc, "Plugins", "blurEnabled") != "false"))
     return result
 
 
-def _desktops_in(kwinrc: Path) -> tuple[int, int]:
-    """The virtual desktops (count, rows) a kwinrc asks for; one of each when unset."""
-    count, rows = 1, 1
+def _ini_value(path: Path, group: str, key: str) -> str | None:
+    """KEY in the top-level [GROUP] of a KDE settings file; None if unset."""
     try:
-        lines = kwinrc.read_text(encoding="utf-8").splitlines()
+        lines = path.read_text(encoding="utf-8").splitlines()
     except OSError:
-        return count, rows
-    group = ""
+        return None
+    current = ""
     for line in (raw.strip() for raw in lines):
         if line.startswith("["):
-            group = line
-            continue
-        key, _, value = (part.strip() for part in line.partition("="))
-        if group == "[Desktops]" and value.isdigit():
-            if key == "Number":
-                count = max(1, int(value))
-            elif key == "Rows":
-                rows = max(1, int(value))
-    return count, min(rows, count)
+            current = line
+        elif current == f"[{group}]" and line.partition("=")[0].strip() == key:
+            return line.partition("=")[2].strip()
+    return None
+
+
+def _int(value: str | None, default: int) -> int:
+    return max(1, int(value)) if value is not None and value.isdigit() else default
 
 
 # --- Applying -----------------------------------------------------------------
@@ -241,11 +244,22 @@ def _step(name: str, res: CommandResult) -> StepResult:
 # install has (Qt's qdbus tool is packaged under different names).
 KWIN = ("org.kde.KWin", "/KWin", "org.kde.KWin")
 VDM = ("org.kde.KWin", "/VirtualDesktopManager", "org.kde.KWin.VirtualDesktopManager")
+EFFECTS = ("org.kde.KWin", "/Effects", "org.kde.kwin.Effects")
 PLASMASHELL = ("org.kde.plasmashell", "/PlasmaShell", "org.kde.PlasmaShell")
 
 
 def _reconfigure_kwin(runner: Runner) -> StepResult:
     return _step("reload window manager", runner.run(["busctl", "--user", "call", *KWIN, "reconfigure"]))
+
+
+def _blur(runner: Runner, enabled: bool) -> StepResult:
+    """Switch KWin's blur effect now. After a look without blur, KWin's reload
+    alone left it off (seen in the VM test), although kwinrc turned it on."""
+    supported = runner.run(["busctl", "--user", "call", *EFFECTS, "isEffectSupported", "s", "blur"])
+    if not supported.ok or "true" not in supported.stdout:
+        return StepResult("blur effect", True, "not available with this graphics")
+    method = "loadEffect" if enabled else "unloadEffect"
+    return _step("blur effect", runner.run(["busctl", "--user", "call", *EFFECTS, method, "s", "blur"]))
 
 
 def evaluate_script(runner: Runner, script: str) -> CommandResult:
@@ -349,6 +363,7 @@ def apply(preset: p.Preset, brand: Brand, runner: Runner, paths: Paths) -> Apply
     except OSError as exc:
         result.steps.append(StepResult("Steam autostart", False, str(exc)))
     result.steps.append(_reconfigure_kwin(runner))
+    result.steps.append(_blur(runner, preset.appearance.blur))
     _record_current(paths, preset.id)
     log.info("preset applied", extra={"preset": preset.id, "ok": result.ok})
     return result
