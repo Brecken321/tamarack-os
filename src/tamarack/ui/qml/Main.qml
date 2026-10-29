@@ -49,6 +49,8 @@ Kirigami.ApplicationWindow {
         { text: qsTr("Undo a look change"), words: "undo restore previous appearance reset default", page: "appearance" },
         { text: qsTr("Install apps and games"), words: "install apps games software store flathub download search bundle program", page: "apps" },
         { text: qsTr("Remove apps"), words: "uninstall remove delete apps programs", page: "apps" },
+        { text: qsTr("Steam Gaming Mode"), words: "gaming mode console big picture steam deck controller tv couch session full screen", page: "gaming" },
+        { text: qsTr("Per-game launch options"), words: "launch options fps cap frame limit upscaling fsr mangohud gamemode per game profile", page: "gaming" },
         { text: qsTr("Game Mode and performance overlay"), words: "game mode gaming performance fps overlay mangohud steam big picture controller", page: "gaming" },
         { text: qsTr("Will this game work?"), words: "anti-cheat anticheat compatibility proton game works multiplayer online", page: "gaming" },
         { text: qsTr("Run games on the discrete GPU"), words: "nvidia gpu graphics card hybrid discrete battery dgpu", page: "gaming" },

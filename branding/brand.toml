@@ -28,6 +28,8 @@ registry = "ghcr.io/brecken321"
 # Image names per hardware variant. Keep in sync with .github/workflows/build.yml
 main = "tamarack-os"
 nvidia = "tamarack-os-nvidia"
+# NVIDIA's proprietary driver for cards the open modules do not support (GTX 900/1000 series).
+nvidia_legacy = "tamarack-os-nvidia-legacy"
 default_tag = "stable"
 
 [palette]

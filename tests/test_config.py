@@ -25,14 +25,20 @@ def test_image_names_match_branding(brand: Brand) -> None:
     env = _env()
     assert env["IMAGE_MAIN"] == brand.image_main
     assert env["IMAGE_NVIDIA"] == brand.image_nvidia
+    assert env["IMAGE_NVIDIA_LEGACY"] == brand.image_nvidia_legacy
     assert env["IMAGE_REGISTRY"] == brand.registry
     assert env["DEFAULT_TAG"] == brand.default_tag
     assert env["BASE_MAIN"].startswith("ghcr.io/ublue-os/bazzite:")
-    assert "nvidia" in env["BASE_NVIDIA"]
+    assert env["BASE_NVIDIA"].startswith("ghcr.io/ublue-os/bazzite-nvidia-open:")
+    assert env["BASE_NVIDIA_LEGACY"].startswith("ghcr.io/ublue-os/bazzite-nvidia:")
 
 
 def test_iso_configs_point_at_published_images(brand: Brand) -> None:
-    for flavor, image in (("main", brand.image_main), ("nvidia", brand.image_nvidia)):
+    for flavor, image in (
+        ("main", brand.image_main),
+        ("nvidia", brand.image_nvidia),
+        ("nvidia-legacy", brand.image_nvidia_legacy),
+    ):
         text = (ROOT / f"disk_config/iso-{flavor}.toml").read_text(encoding="utf-8")
         tomllib.loads(text)
         assert f"{brand.registry}/{image}:{brand.default_tag}" in text
@@ -72,7 +78,9 @@ def test_no_secrets_in_repository() -> None:
         assert not re.search(r"gh[pousr]_[A-Za-z0-9]{30,}", text), path
 
 
-def test_workflow_builds_both_flavors() -> None:
+def test_workflows_cover_every_flavor() -> None:
     workflow = (ROOT / ".github/workflows/build.yml").read_text(encoding="utf-8")
-    assert "flavor: [main, nvidia]" in workflow
+    assert "flavor: [main, nvidia, nvidia-legacy]" in workflow
+    disk = (ROOT / ".github/workflows/build-disk.yml").read_text(encoding="utf-8")
+    assert disk.count("flavor: [main, nvidia, nvidia-legacy]") == 3
     assert "github.event_name != 'pull_request'" in workflow  # PRs never publish

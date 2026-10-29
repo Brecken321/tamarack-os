@@ -52,7 +52,8 @@ def test_nvidia_open_support(description: str, expected: bool | None) -> None:
 
 def _system(tmp_path: Path, image: str) -> hardware.Environment:
     (tmp_path / "usr/share/ublue-os").mkdir(parents=True)
-    (tmp_path / "usr/share/ublue-os/image-info.json").write_text(json.dumps({"image-name": image}), encoding="utf-8")
+    info = {"image-name": image, "image-ref": f"ostree-image-signed:docker://ghcr.io/example/{image}"}
+    (tmp_path / "usr/share/ublue-os/image-info.json").write_text(json.dumps(info), encoding="utf-8")
     (tmp_path / "proc/bus/input").mkdir(parents=True)
     (tmp_path / "proc/bus/input/devices").write_text(
         (FIX / "input-devices.txt").read_text(encoding="utf-8"), encoding="utf-8"
@@ -129,6 +130,41 @@ def test_software_rendering_is_flagged() -> None:
         [],
         [{"deviceName": "llvmpipe (LLVM 19.1.0, 256 bits)", "driverName": "llvmpipe"}],
         hardware.Environment(),
-        nvidia_image=False,
+        image="",
     )
     assert any(i.status == hardware.ATTENTION and "software" in i.name for i in report.items)
+
+
+GTX_1060 = (
+    "01:00.0 VGA compatible controller [0300]: NVIDIA Corporation GP106 [GeForce GTX 1060 6GB] [10de:1c03] (rev a1)"
+)
+
+
+@pytest.mark.parametrize(
+    ("image", "driver", "expected"),
+    [
+        ("tamarack-os", "nouveau", "tamarack-os-nvidia-legacy:stable"),
+        ("tamarack-os-nvidia", "", "tamarack-os-nvidia-legacy:stable"),
+        ("tamarack-os-nvidia-legacy", "nvidia", ""),
+    ],
+)
+def test_older_nvidia_cards_point_to_the_legacy_edition(tmp_path: Path, image: str, driver: str, expected: str) -> None:
+    second = f"\tKernel driver in use: {driver}" if driver else "\tKernel modules: nouveau"
+    runner = FakeRunner()
+    runner.add(["lspci", "-nnk"], f"{GTX_1060}\n{second}\n")
+    report = hardware.collect(runner, _system(tmp_path, image))
+    nvidia = next(i for i in report.items if i.name == "NVIDIA GPU")
+    if expected:
+        assert nvidia.status == hardware.ATTENTION
+        assert nvidia.advice.endswith(f"sudo bootc switch ghcr.io/example/{expected}")
+    else:
+        assert nvidia.status == hardware.OK and not nvidia.advice
+
+
+def test_switch_command_uses_the_running_image_registry(tmp_path: Path) -> None:
+    env = _system(tmp_path, "tamarack-os-nvidia")
+    assert hardware.switch_command(env, "") == "sudo bootc switch ghcr.io/example/tamarack-os:stable"
+    assert (
+        hardware.switch_command(env, "nvidia-legacy")
+        == "sudo bootc switch ghcr.io/example/tamarack-os-nvidia-legacy:stable"
+    )

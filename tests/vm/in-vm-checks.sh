@@ -89,6 +89,12 @@ if [[ "${phase}" == "system" ]]; then
     check "firewall active" systemctl is-active firewalld.service
     check "countme timer is off" bash -c '! systemctl is-enabled rpm-ostree-countme.timer 2>/dev/null | grep -qx enabled'
     check "Steam available" command -v steam
+    check "boot screen is the Tamarack theme" bash -c '[[ "$(plymouth-set-default-theme)" == tamarack ]]'
+    info "kernel command line" cat /proc/cmdline
+    check "Steam Gaming Mode session on the sign-in screen" \
+        grep -qx 'Name=Steam Gaming Mode' /usr/share/wayland-sessions/gamescope-session-steam.desktop
+    check "Gaming Mode session command available" command -v gamescope-session-plus
+    check "Switch to Desktop in Steam is handled" command -v steamos-session-select
     # Every System Settings page a Tamarack Center button opens must exist.
     for kcm in $(grep -rhoE '"kcm_[A-Za-z0-9_-]+"' /usr/lib/tamarack/python/tamarack/ui/qml | tr -d '"' | sort -u); do
         check "System Settings page ${kcm} exists" bash -c "find /usr/lib64/qt6/plugins -name '${kcm}.so' | grep -q ."

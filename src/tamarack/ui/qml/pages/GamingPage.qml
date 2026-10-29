@@ -10,6 +10,10 @@ Kirigami.ScrollablePage {
 
     property string logText: ""
     property string logGame: ""
+    // The game the launch options dialog is for, and the options picked.
+    property var optionsGame: ({})
+    property var optionsChosen: []
+    readonly property string optionsText: backend.composeLaunchOptions(optionsChosen)
 
     actions: [
         Kirigami.Action {
@@ -34,7 +38,45 @@ Kirigami.ScrollablePage {
         spacing: Kirigami.Units.largeSpacing * 2
 
         SectionCard {
-            title: qsTr("Play mode")
+            visible: backend.gamingModeAvailable
+            title: qsTr("Steam Gaming Mode")
+            subtitle: qsTr("Full-screen Steam made for a controller and a TV, like a Steam Deck. Games, store, friends and settings, without the desktop.")
+            iconName: "input-gamepad"
+            tint: backend.brand.palette.section_gaming
+
+            Repeater {
+                model: [
+                    qsTr("Choose Sign out to switch below and confirm."),
+                    qsTr("On the sign-in screen, open the session menu and pick Steam Gaming Mode, then sign in."),
+                    qsTr("To come back, open Steam's power menu and choose Switch to Desktop, then pick Plasma on the sign-in screen.")
+                ]
+                delegate: RowLayout {
+                    required property int index
+                    required property string modelData
+                    Layout.fillWidth: true
+                    spacing: Kirigami.Units.largeSpacing
+                    Pill {
+                        text: index + 1
+                        tint: backend.brand.palette.section_gaming
+                        Layout.alignment: Qt.AlignTop
+                    }
+                    Controls.Label {
+                        text: modelData
+                        wrapMode: Text.WordWrap
+                        Layout.fillWidth: true
+                    }
+                }
+            }
+            PrimaryButton {
+                text: qsTr("Sign out to switch")
+                icon.name: "system-log-out"
+                onClicked: backend.signOut()
+            }
+        }
+
+        SectionCard {
+            title: qsTr("Game Mode on the desktop")
+            subtitle: qsTr("Stay on the desktop and get the same performance settings.")
             iconName: "input-gamepad"
             tint: Kirigami.Theme.neutralTextColor
 
@@ -255,6 +297,19 @@ Kirigami.ScrollablePage {
                         Controls.ToolTip.text: text
                         Controls.ToolTip.visible: hovered
                     }
+                    Controls.ToolButton {
+                        icon.name: "configure"
+                        text: qsTr("Launch options")
+                        display: Controls.AbstractButton.IconOnly
+                        onClicked: {
+                            page.optionsGame = gameRow.modelData;
+                            page.optionsChosen = [];
+                            optionsDialog.open();
+                        }
+                        Accessible.name: qsTr("Launch options for %1").arg(gameRow.modelData.name)
+                        Controls.ToolTip.text: qsTr("Performance overlay, frame cap, upscaling…")
+                        Controls.ToolTip.visible: hovered
+                    }
                     // Installed games start; the others open Steam's install dialog.
                     Controls.Button {
                         readonly property bool installed: gameRow.modelData.installed
@@ -312,6 +367,53 @@ Kirigami.ScrollablePage {
                     CategoryChip { category: modelData.c; title: modelData.t; Layout.preferredWidth: Kirigami.Units.gridUnit * 10 }
                     Controls.Label { text: modelData.d; wrapMode: Text.WordWrap; Layout.fillWidth: true }
                 }
+            }
+        }
+    }
+
+    // Builds a game's Steam launch options from plain choices.
+    Kirigami.Dialog {
+        id: optionsDialog
+        title: qsTr("Launch options: %1").arg(page.optionsGame.name || "")
+        preferredWidth: Kirigami.Units.gridUnit * 30
+        padding: Kirigami.Units.largeSpacing * 2
+        standardButtons: Kirigami.Dialog.Close
+
+        ColumnLayout {
+            spacing: Kirigami.Units.smallSpacing
+            Repeater {
+                model: backend.launchOptionChoices
+                delegate: Controls.CheckBox {
+                    required property var modelData
+                    text: modelData.text
+                    checked: page.optionsChosen.indexOf(modelData.id) !== -1
+                    onToggled: {
+                        var chosen = page.optionsChosen.filter(c => c !== modelData.id);
+                        if (checked) chosen.push(modelData.id);
+                        page.optionsChosen = chosen;
+                    }
+                }
+            }
+            Controls.TextField {
+                Layout.fillWidth: true
+                Layout.topMargin: Kirigami.Units.largeSpacing
+                readOnly: true
+                text: page.optionsText
+                placeholderText: qsTr("Pick options above")
+                font.family: "monospace"
+                Accessible.name: qsTr("Launch options to paste into Steam")
+            }
+            Controls.Label {
+                Layout.fillWidth: true
+                wrapMode: Text.WordWrap
+                opacity: 0.8
+                text: qsTr("Copy these, then in Steam right-click the game, choose Properties and paste them under Launch Options.")
+            }
+            PrimaryButton {
+                text: qsTr("Copy")
+                icon.name: "edit-copy"
+                enabled: page.optionsText.length > 0
+                onClicked: backend.copyText(page.optionsText)
             }
         }
     }

@@ -13,6 +13,7 @@ import itertools
 import json
 import logging
 import re
+import shutil
 import subprocess
 import traceback
 from collections.abc import Callable
@@ -138,6 +139,8 @@ class Backend(QObject):
         self._search_results: list[dict[str, Any]] = []
         self._db: games.AntiCheatDatabase | None = None
         self._cache = self._home / ".cache/tamarack"
+        # Steam Gaming Mode is a session on the sign-in screen.
+        self._gaming_session = (data_root / "usr/share/wayland-sessions/gamescope-session-steam.desktop").is_file()
 
     # -- task plumbing -----------------------------------------------------
     def _run(self, label: str, func: Callable[[], Any], on_done: Callback) -> None:
@@ -431,6 +434,52 @@ class Backend(QObject):
     @Slot(bool)
     def setSteamOverlay(self, enabled: bool) -> None:
         self._set_launcher_feature("overlay", enabled)
+
+    # -- Steam Gaming Mode and per-game launch options -------------------------
+    @Property(bool, constant=True)
+    def gamingModeAvailable(self) -> bool:
+        return self._gaming_session
+
+    @Slot()
+    def signOut(self) -> None:
+        """Show Plasma's own sign-out confirmation (to pick another session)."""
+        argv = ["busctl", "--user", "call", "org.kde.LogoutPrompt", "/LogoutPrompt", "org.kde.LogoutPrompt"]
+        try:
+            subprocess.Popen([*argv, "promptLogout"], start_new_session=True)
+        except OSError as exc:
+            self.notify.emit(f"Could not sign out: {exc}", "error")
+
+    def _has_tool(self, name: str) -> bool:
+        return shutil.which(name) is not None
+
+    @Property("QVariant", notify=gpuChanged)
+    def launchOptionChoices(self) -> list[dict[str, str]]:
+        """The per-game launch options this computer can use."""
+        offload = gaming.offload_env(self._hardware.get("gpus", []))
+        choices = []
+        for key, (text, tool) in gaming.LAUNCH_OPTIONS.items():
+            if (tool and not self._has_tool(tool)) or (key == "dgpu" and offload is None):
+                continue
+            choices.append({"id": key, "text": text})
+        return choices
+
+    @Slot("QVariant", result=str)
+    def composeLaunchOptions(self, choices: Any) -> str:
+        offload = gaming.offload_env(self._hardware.get("gpus", []))
+        try:
+            return gaming.launch_options([str(c) for c in _plain(choices)], offload)
+        except ValueError as exc:
+            log.warning("launch options", extra={"error": str(exc)})
+            return ""
+
+    @Slot(str)
+    def copyText(self, text: str) -> None:
+        from PySide6.QtGui import QGuiApplication
+
+        QGuiApplication.clipboard().setText(text)
+        self.notify.emit(
+            "Copied. In Steam: right-click the game > Properties > Launch Options, then paste.", "positive"
+        )
 
     @Slot(bool)
     def setGameMode(self, enabled: bool) -> None:

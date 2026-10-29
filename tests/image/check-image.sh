@@ -25,6 +25,11 @@ check() {
         sed 's/^/    /' /tmp/check.out | tail -n 20
     fi
 }
+info() {
+    # info "description" command...: prints the output, never fails
+    echo "INFO: $1"
+    "${@:2}" 2>&1 | sed 's/^/    /' | head -n 40
+}
 
 # shellcheck source=/dev/null
 source /usr/share/tamarack/branding.env
@@ -36,8 +41,11 @@ check "os-release NAME is ${BRAND_NAME}" test "${NAME}" = "${BRAND_NAME}"
 check "os-release ID is ${BRAND_ID}" test "${ID}" = "${BRAND_ID}"
 check "os-release ID_LIKE includes fedora" grep -q '^ID_LIKE=.*fedora' /usr/lib/os-release
 check "os-release has a unique IMAGE_ID" grep -q '^IMAGE_ID=' /usr/lib/os-release
-expected_image="${BRAND_IMAGE_MAIN}"
-[[ "${flavor}" == "nvidia" ]] && expected_image="${BRAND_IMAGE_NVIDIA}"
+case "${flavor}" in
+    nvidia) expected_image="${BRAND_IMAGE_NVIDIA}" ;;
+    nvidia-legacy) expected_image="${BRAND_IMAGE_NVIDIA_LEGACY}" ;;
+    *) expected_image="${BRAND_IMAGE_MAIN}" ;;
+esac
 check "image-info.json names ${expected_image}" \
     test "$(jq -r '."image-name"' /usr/share/ublue-os/image-info.json)" = "${expected_image}"
 check "image-info.json keeps base-image-name kinoite" \
@@ -65,6 +73,9 @@ check "logo icon (256px)" test -s "/usr/share/icons/hicolor/256x256/apps/${BRAND
 check "boot splash watermark is a PNG" bash -c 'file -b /usr/share/plymouth/themes/spinner/watermark.png | grep -q PNG'
 check "preset previews rendered" test "$(find /usr/share/tamarack/presets/previews -name '*.png' | wc -l)" -ge 7
 check "Tamarack Center banner artwork rendered" test -s /usr/share/tamarack/art/banner-light.jpg -a -s /usr/share/tamarack/art/banner-dark.jpg
+check "boot screen is the Tamarack theme" bash -c '[[ "$(plymouth-set-default-theme)" == tamarack ]]'
+check "Tamarack boot screen is in the initramfs" \
+    bash -c 'lsinitrd /usr/lib/modules/*/initramfs.img | grep -q "plymouth/themes/tamarack/watermark.png"'
 check "SVG sources stripped from image" test ! -d /usr/share/tamarack/art/src
 
 # --- Desktop defaults ---------------------------------------------------------
@@ -106,9 +117,14 @@ check "flatpak base list present" test -s /usr/share/tamarack/flatpaks/base.list
 for cmd in steam gamescope mangohud lutris; do
     check "gaming tool available: ${cmd}" bash -c "command -v ${cmd}"
 done
+check "Steam Gaming Mode session on the sign-in screen" \
+    grep -qx 'Name=Steam Gaming Mode' /usr/share/wayland-sessions/gamescope-session-steam.desktop
+check "Gaming Mode session command available" command -v gamescope-session-plus
+check "Switch to Desktop in Steam is handled" command -v steamos-session-select
 check "Vulkan loader present" bash -c 'ldconfig -p | grep -q libvulkan.so.1'
 check "32-bit Vulkan loader present (needed by Steam/Proton)" test -e /usr/lib/libvulkan.so.1
-if [[ "${flavor}" == "nvidia" ]]; then
+if [[ "${flavor}" == nvidia* ]]; then
+    info "NVIDIA driver packages" bash -c 'rpm -qa | grep -iE "^(nvidia|kmod-nvidia)" | sort'
     check "NVIDIA kernel module packaged" bash -c 'find /usr/lib/modules -name "nvidia*.ko*" | grep -q .'
     check "NVIDIA userspace driver present" bash -c 'rpm -qa | grep -qiE "^nvidia-driver|^xorg-x11-drv-nvidia"'
     check "CDI refresh skips cleanly without an NVIDIA GPU" \

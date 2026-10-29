@@ -225,6 +225,8 @@ class DemoBackend(Backend):
     def __init__(self, brand: Brand, data_root: Path, appstream: Path, welcome: bool = False) -> None:
         super().__init__(brand, FakeRunner(), welcome=welcome, data_root=data_root)
         self.requests: list[str] = []
+        # Show everything a Tamarack system offers.
+        self._gaming_session = True
         self._appstream = appstream
         hardware = _hardware()
         problems = [f"Memory: 7.6 GiB RAM. {hardware['items'][1]['advice']}"]
@@ -268,6 +270,9 @@ class DemoBackend(Backend):
         key = next((k for prefix, k in REFRESHES.items() if label.startswith(prefix)), None)
         if key is not None:
             on_done(self._fixture[key])
+
+    def _has_tool(self, name: str) -> bool:
+        return True
 
     def _database(self) -> games.AntiCheatDatabase:
         if self._db is None:

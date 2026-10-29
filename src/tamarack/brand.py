@@ -32,6 +32,7 @@ class Brand:
     registry: str
     image_main: str
     image_nvidia: str
+    image_nvidia_legacy: str
     default_tag: str
     palette: dict[str, str]
     wallpapers: tuple[str, ...]
@@ -121,6 +122,7 @@ def brand_from_mapping(data: dict[str, Any]) -> Brand:
         registry=_require(image, "registry", "image"),
         image_main=_require(image, "main", "image"),
         image_nvidia=_require(image, "nvidia", "image"),
+        image_nvidia_legacy=_require(image, "nvidia_legacy", "image"),
         default_tag=_require(image, "default_tag", "image"),
         palette=dict(palette),
         wallpapers=tuple(wallpapers),

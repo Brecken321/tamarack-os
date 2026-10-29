@@ -43,7 +43,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        flavor: [main, nvidia]
+        flavor: [main, nvidia, nvidia-legacy]
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -67,7 +67,9 @@ jobs:
         id: meta
         run: |
           set -a; source image.env; set +a
-          if [[ "${{ matrix.flavor }}" == "nvidia" ]]; then image="${IMAGE_NVIDIA}"; else image="${IMAGE_MAIN}"; fi
+          # main -> IMAGE_MAIN, nvidia-legacy -> IMAGE_NVIDIA_LEGACY, ...
+          var="IMAGE_$(tr 'a-z-' 'A-Z_' <<<"${{ matrix.flavor }}")"
+          image="${!var}"
           echo "ref=${IMAGE_REGISTRY}/${image}:${DEFAULT_TAG}" >> "$GITHUB_OUTPUT"
 
       - name: Prepare a throwaway test user
@@ -229,7 +231,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        flavor: [main, nvidia]
+        flavor: [main, nvidia, nvidia-legacy]
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -241,7 +243,9 @@ jobs:
         id: meta
         run: |
           set -a; source image.env; set +a
-          if [[ "${{ matrix.flavor }}" == "nvidia" ]]; then image="${IMAGE_NVIDIA}"; else image="${IMAGE_MAIN}"; fi
+          # main -> IMAGE_MAIN, nvidia-legacy -> IMAGE_NVIDIA_LEGACY, ...
+          var="IMAGE_$(tr 'a-z-' 'A-Z_' <<<"${{ matrix.flavor }}")"
+          image="${!var}"
           echo "ref=${IMAGE_REGISTRY}/${image}:${DEFAULT_TAG}" >> "$GITHUB_OUTPUT"
           echo "name=${image}" >> "$GITHUB_OUTPUT"
 
@@ -286,7 +290,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        flavor: [main, nvidia]
+        flavor: [main, nvidia, nvidia-legacy]
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -309,7 +313,9 @@ jobs:
         id: meta
         run: |
           set -a; source image.env; set +a
-          if [[ "${{ matrix.flavor }}" == "nvidia" ]]; then image="${IMAGE_NVIDIA}"; else image="${IMAGE_MAIN}"; fi
+          # main -> IMAGE_MAIN, nvidia-legacy -> IMAGE_NVIDIA_LEGACY, ...
+          var="IMAGE_$(tr 'a-z-' 'A-Z_' <<<"${{ matrix.flavor }}")"
+          image="${!var}"
           echo "ref=${IMAGE_REGISTRY}/${image}:${DEFAULT_TAG}" >> "$GITHUB_OUTPUT"
 
       - name: Write an unattended test kickstart

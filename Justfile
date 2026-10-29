@@ -41,7 +41,7 @@ branding out="output/branding":
 # Image builds (Linux with podman; CI runs these)
 # ---------------------------------------------------------------------------
 
-# Print "<image> <base image>" for a flavor (main | nvidia)
+# Print "<image> <base image>" for a flavor (main | nvidia | nvidia-legacy)
 [group('Build')]
 variant flavor="main":
     #!/usr/bin/env bash
@@ -49,10 +49,11 @@ variant flavor="main":
     case "{{ flavor }}" in
         main) echo "${IMAGE_MAIN} ${BASE_MAIN}" ;;
         nvidia) echo "${IMAGE_NVIDIA} ${BASE_NVIDIA}" ;;
-        *) echo "unknown flavor '{{ flavor }}' (expected main or nvidia)" >&2; exit 1 ;;
+        nvidia-legacy) echo "${IMAGE_NVIDIA_LEGACY} ${BASE_NVIDIA_LEGACY}" ;;
+        *) echo "unknown flavor '{{ flavor }}' (expected main, nvidia or nvidia-legacy)" >&2; exit 1 ;;
     esac
 
-# Build the OS image for a flavor (main | nvidia)
+# Build the OS image for a flavor (main | nvidia | nvidia-legacy)
 [group('Build')]
 build flavor="main" tag=default_tag:
     #!/usr/bin/env bash

@@ -20,6 +20,11 @@ packages=(
 
 dnf5 -y install --setopt=install_weak_deps=False "${packages[@]}"
 
+# Steam Gaming Mode: a full-screen Steam session (gamescope) on the sign-in
+# screen. Same packages Bazzite's handheld images use, from its Terra repo.
+dnf5 -y install --setopt=install_weak_deps=False --enable-repo=terra \
+    gamescope-session-plus gamescope-session-steam
+
 # Fail early if the UI stack cannot be imported.
 python3 -c 'import PySide6.QtQml, PySide6.QtGui; print("PySide6", PySide6.__version__)'
 

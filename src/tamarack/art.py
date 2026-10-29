@@ -321,23 +321,39 @@ def _logo_tree(stroke: str, top_stroke: str, width: float) -> str:
     return "\n".join(parts)
 
 
-def logo_svg(brand: Brand) -> str:
-    """Full-color app/OS logo on a 256 grid."""
+def _logo_body(brand: Brand) -> str:
+    """The full-color logo's elements, on a 256 grid."""
     accent = brand.color("accent")
     light = accent.mix(RGB(255, 255, 255), 0.18).hex
     dark = accent.mix(RGB(0, 0, 0), 0.30).hex
-    body = (
+    return (
         '<defs><linearGradient id="lg" x1="0" y1="0" x2="0" y2="1">'
         f'<stop offset="0" stop-color="{light}"/><stop offset="1" stop-color="{dark}"/>'
         "</linearGradient></defs>\n"
         '<circle cx="128" cy="128" r="122" fill="url(#lg)"/>\n' + _logo_tree("#FFFFFF", brand.palette["amber"], 20)
     )
-    return _wrap(body, 256, 256)
+
+
+def logo_svg(brand: Brand) -> str:
+    """Full-color app/OS logo on a 256 grid."""
+    return _wrap(_logo_body(brand), 256, 256)
 
 
 def logo_mono_svg(color: str = "#FFFFFF") -> str:
     """Single-color tree mark for dark backgrounds (boot splash, symbolic uses)."""
     return _wrap(_logo_tree(color, color, 20), 256, 256)
+
+
+def boot_logo_svg(brand: Brand) -> str:
+    """The boot screen's centerpiece: the full-color logo with the product name below."""
+    width, height = 480, 360
+    text = brand.palette["dark_text"]
+    body = (
+        f'<g transform="translate({(width - 256) // 2},0)">{_logo_body(brand)}</g>\n'
+        f'<text x="{width // 2}" y="336" text-anchor="middle" font-family="Noto Sans, sans-serif" font-size="44" '
+        f'font-weight="600" letter-spacing="1" fill="{text}">{escape(brand.name)}</text>'
+    )
+    return _wrap(body, width, height)
 
 
 def wordmark_svg(brand: Brand, color: str = "#FFFFFF") -> str:

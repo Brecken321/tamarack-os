@@ -66,6 +66,12 @@ qemu-system-x86_64 \
     -daemonize -pidfile "${out}/qemu.pid"
 trap 'kill "$(cat "${out}/qemu.pid")" 2>/dev/null || true' EXIT
 
+# The boot screen: a picture every 3 seconds while the system starts.
+for frame in $(seq -w 1 15); do
+    sleep 3
+    qmp screenshot "${out}/screens/00-boot-${frame}.png" >/dev/null 2>&1 || true
+done
+
 echo "Waiting for SSH (up to 15 minutes)…"
 start=$(date +%s)
 until ssh_vm true 2>/dev/null; do
@@ -148,6 +154,18 @@ sleep 2
 ssh_vm "grep -E 'Meta\+I|Ctrl\+Shift\+Esc|Meta\+Tab|Meta\+S' ~/.config/kglobalshortcutsrc" |
     sed 's/^/INFO: /' | tee -a "${out}/shortcut-checks.txt" || true
 
+# "Sign out to switch" (Gaming page) opens Plasma's sign-out confirmation.
+if ssh_vm "${session_env}; busctl --user call org.kde.LogoutPrompt /LogoutPrompt org.kde.LogoutPrompt promptLogout"; then
+    echo "PASS: Sign out to switch opens the sign-out confirmation" | tee -a "${out}/shortcut-checks.txt"
+else
+    echo "FAIL: Sign out to switch: no sign-out confirmation" | tee -a "${out}/shortcut-checks.txt"
+    status=1
+fi
+sleep 4
+shot "05-sign-out-prompt"
+qmp key esc
+sleep 2
+
 # Start the app as a user unit so it gets the Plasma session's environment
 # (theme, icons, style) exactly like launching it from the start menu.
 for page in home appearance apps gaming privacy hardware updates help; do
@@ -196,6 +214,18 @@ sleep 15
 shot "08-open-steam"
 in_vm close steam >/dev/null
 in_vm remove
+
+# Steam Gaming Mode itself: sign in to it automatically and see what happens.
+# gamescope needs a real GPU, so in a VM this is recorded, not required.
+ssh_vm "printf '[Autologin]\nUser=${user}\nSession=gamescope-session-steam.desktop\n' >/tmp/gaming-autologin.conf &&
+    echo '${password}' | sudo -S -p '' bash -c 'cat /tmp/gaming-autologin.conf >>/etc/plasmalogin.conf && systemctl restart plasmalogin'" ||
+    true
+sleep 90
+shot "09-steam-gaming-mode"
+{
+    echo "INFO: Steam Gaming Mode in the VM (needs a real GPU; not a test failure):"
+    ssh_vm "pgrep -a -u ${user} -f 'gamescope|steam' | cut -c1-160; loginctl list-sessions --no-legend" | sed 's/^/    /' || true
+} | tee -a "${out}/shortcut-checks.txt"
 
 # Logs for the report.
 ssh_vm "tamarack doctor --json" >"${out}/doctor.json" || true

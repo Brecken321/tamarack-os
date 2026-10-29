@@ -76,6 +76,50 @@ install -d /etc/anaconda/profile.d
 sed -e "s/@ID@/${BRAND_ID}/g" /usr/share/tamarack/templates/anaconda-profile.conf \
     >"/etc/anaconda/profile.d/${BRAND_ID}.conf"
 
+# --- Boot screen (Plymouth) ---------------------------------------------------
+# Plymouth's two-step engine with the system spinner's animation and its
+# password-prompt images (for encrypted disks), on Tamarack's background with
+# the Tamarack logo. The initramfs, which carries the theme, is regenerated in
+# 90-finalize.sh.
+theme_dir=/usr/share/plymouth/themes/tamarack
+spinner_dir=/usr/share/plymouth/themes/spinner
+require_file "${theme_dir}/watermark.png" "${spinner_dir}/spinner.plymouth"
+for image in "${spinner_dir}"/*.png; do
+    [[ "$(basename "${image}")" == watermark.png ]] || cp "${image}" "${theme_dir}/"
+done
+python3 - "${spinner_dir}/spinner.plymouth" "${theme_dir}/tamarack.plymouth" "${BRAND_NAME}" \
+    "$(jq -r .palette.dark_view /usr/share/tamarack/brand.json)" \
+    "$(jq -r .palette.accent /usr/share/tamarack/brand.json)" <<'EOF'
+import configparser
+import sys
+
+source, target, name, background, accent = sys.argv[1:]
+theme = configparser.ConfigParser(interpolation=None)
+theme.optionxform = str  # keys are case-sensitive
+theme.read(source)
+for section in ("Plymouth Theme", "two-step"):
+    if section not in theme:
+        theme[section] = {}
+theme["Plymouth Theme"].update(Name=name, Description=f"{name} boot screen", ModuleName="two-step")
+color = lambda value: "0x" + value.lstrip("#").lower()  # noqa: E731
+theme["two-step"].update(
+    ImageDir="/usr/share/plymouth/themes/tamarack",
+    UseFirmwareBackground="false",
+    BackgroundStartColor=color(background),
+    BackgroundEndColor=color(background),
+    ProgressBarForegroundColor=color(accent),
+    WatermarkHorizontalAlignment=".5",
+    WatermarkVerticalAlignment=".42",
+    HorizontalAlignment=".5",
+    VerticalAlignment=".75",
+)
+with open(target, "w", encoding="utf-8") as fh:
+    theme.write(fh, space_around_delimiters=False)
+EOF
+sed 's/^/    /' "${theme_dir}/tamarack.plymouth"
+plymouth-set-default-theme tamarack
+log "boot screen: $(plymouth-set-default-theme)"
+
 # --- Terminal fetch logo ------------------------------------------------------
 fastfetch_cfg=/usr/share/ublue-os/bazzite/fastfetch.jsonc
 if [[ -f "${fastfetch_cfg}" ]]; then

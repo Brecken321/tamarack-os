@@ -94,6 +94,7 @@ class Generator:
             "BRAND_REGISTRY": b.registry,
             "BRAND_IMAGE_MAIN": b.image_main,
             "BRAND_IMAGE_NVIDIA": b.image_nvidia,
+            "BRAND_IMAGE_NVIDIA_LEGACY": b.image_nvidia_legacy,
             "BRAND_DEFAULT_TAG": b.default_tag,
             "BRAND_LNF_LIGHT": self.lnf.light,
             "BRAND_LNF_DARK": self.lnf.dark,
@@ -128,6 +129,10 @@ class Generator:
     def boot_watermark(self) -> None:
         svg = self.write("usr/share/tamarack/art/wordmark.svg", art.wordmark_svg(self.brand))
         self.render(svg, self.out / "usr/share/plymouth/themes/spinner/watermark.png", 280, 64)
+        # The Tamarack boot screen's centerpiece (the theme itself is set up
+        # at build time from the system spinner theme; see 20-branding.sh).
+        logo = self.write("usr/share/tamarack/art/src/boot-logo.svg", art.boot_logo_svg(self.brand))
+        self.render(logo, self.out / "usr/share/plymouth/themes/tamarack/watermark.png", 320, 240)
 
     def wallpapers(self) -> None:
         for name in self.brand.wallpapers:

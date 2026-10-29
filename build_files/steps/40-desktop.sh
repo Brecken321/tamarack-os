@@ -43,6 +43,18 @@ kw "${skel_shortcuts}" --group plasmashell --key "next activity" "none,Meta+Tab,
 kw "${skel_shortcuts}" --group plasmashell --key "previous activity" "none,Meta+Shift+Tab,Walk backwards through activities"
 sed 's/^/    /' "${skel_shortcuts}"
 
+# Steam Gaming Mode on the sign-in screen's session menu. In Steam, "Switch to
+# Desktop" ends it (steamos-session-select) and returns to the sign-in screen.
+sessions=/usr/share/wayland-sessions
+require_file "${sessions}/gamescope-session-steam.desktop"
+sed -i \
+    -e 's/^Name=.*/Name=Steam Gaming Mode/' \
+    -e 's/^Comment=.*/Comment=Full-screen Steam, like a console. Use Switch to Desktop in Steam to come back./' \
+    "${sessions}/gamescope-session-steam.desktop"
+# A second, generic entry for the same session would only confuse the menu.
+rm -f "${sessions}/gamescope-session.desktop"
+grep -H -E '^(Name|Exec)=' "${sessions}"/*.desktop | sed 's/^/    /'
+
 # Quiet notifications while a game or video is fullscreen.
 kw /etc/xdg/plasmanotifyrc --group DoNotDisturb --key WhenFullscreen true
 

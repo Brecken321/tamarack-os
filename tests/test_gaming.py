@@ -135,3 +135,31 @@ def test_game_mode_without_power_profiles_still_silences_notifications(tmp_path:
     results = gaming.set_game_mode(runner, tmp_path, True)
     assert [r.argv[0] for r in results] == ["kwriteconfig6"]
     assert gaming.set_game_mode(runner, tmp_path, True) == []  # already on: no-op
+
+
+@pytest.mark.parametrize(
+    ("choices", "expected"),
+    [
+        ([], ""),
+        (["overlay"], "mangohud %command%"),
+        (["fps60"], "MANGOHUD_CONFIG=fps_limit=60,no_display mangohud %command%"),
+        (["overlay", "fps60"], "MANGOHUD_CONFIG=fps_limit=60 mangohud %command%"),
+        (["fsr"], "gamescope -f -F fsr -- %command%"),
+        (["fsr", "overlay"], "gamescope -f -F fsr --mangoapp -- %command%"),
+        (["gamemode", "protonlog"], "PROTON_LOG=1 gamemoderun %command%"),
+    ],
+)
+def test_launch_options(choices: list[str], expected: str) -> None:
+    assert gaming.launch_options(choices) == expected
+
+
+def test_launch_options_discrete_gpu_uses_the_offload_variables() -> None:
+    options = gaming.launch_options(["dgpu", "overlay"], gaming.NVIDIA_OFFLOAD)
+    assert options.startswith("__NV_PRIME_RENDER_OFFLOAD=1 ") and options.endswith(" mangohud %command%")
+    # Without a hybrid setup there is nothing to add.
+    assert gaming.launch_options(["dgpu"], None) == "%command%"
+
+
+def test_launch_options_reject_unknown_choices() -> None:
+    with pytest.raises(ValueError, match="unknown launch options"):
+        gaming.launch_options(["turbo"])

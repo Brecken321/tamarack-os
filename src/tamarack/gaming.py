@@ -234,3 +234,48 @@ def set_game_mode(runner: Runner, state_dir: Path, enabled: bool) -> list[Comman
     )
     state_file.unlink(missing_ok=True)
     return results
+
+
+# --- Per-game launch options --------------------------------------------------
+
+# Options people can combine for one game, with the tool each one needs.
+LAUNCH_OPTIONS: dict[str, tuple[str, str | None]] = {
+    "overlay": ("Show the performance overlay (MangoHud)", "mangohud"),
+    "fps60": ("Cap the frame rate at 60 FPS", "mangohud"),
+    "fsr": ("Upscale with AMD FSR, full screen (gamescope)", "gamescope"),
+    "gamemode": ("Boost the CPU while playing (GameMode)", "gamemoderun"),
+    "dgpu": ("Run on the discrete GPU", None),
+    "protonlog": ("Write a Proton log for troubleshooting", None),
+}
+
+
+def launch_options(choices: Iterable[str], offload: Mapping[str, str] | None = None) -> str:
+    """Steam launch options for one game (paste into Properties > Launch options).
+
+    ``offload`` is the GPU offload environment for "dgpu" (see offload_env).
+    Returns "" when nothing is chosen.
+    """
+    chosen = set(choices)
+    unknown = chosen - LAUNCH_OPTIONS.keys()
+    if unknown:
+        raise ValueError(f"unknown launch options: {sorted(unknown)}")
+    if not chosen:
+        return ""
+    env: list[str] = []
+    if "protonlog" in chosen:
+        env.append("PROTON_LOG=1")
+    if "dgpu" in chosen and offload:
+        env.extend(f"{key}={value}" for key, value in offload.items())
+    hud = bool({"overlay", "fps60"} & chosen)
+    if "fps60" in chosen:
+        # A frame cap without the overlay: MangoHud limits but draws nothing.
+        env.append("MANGOHUD_CONFIG=fps_limit=60" + ("" if "overlay" in chosen else ",no_display"))
+    command: list[str] = []
+    if "gamemode" in chosen:
+        command.append("gamemoderun")
+    if "fsr" in chosen:
+        # Inside gamescope, its built-in MangoHud (--mangoapp) replaces the wrapper.
+        command += ["gamescope", "-f", "-F", "fsr", *(["--mangoapp"] if hud else []), "--"]
+    elif hud:
+        command.append("mangohud")
+    return " ".join([*env, *command, "%command%"])

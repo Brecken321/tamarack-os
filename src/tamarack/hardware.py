@@ -237,9 +237,24 @@ class Environment:
         return self.root / rel.lstrip("/")
 
 
+def switch_command(env: Environment, edition: str) -> str:
+    """The command that moves this computer to another edition ("", "nvidia" or "nvidia-legacy")."""
+    image = _image_name(env) or "tamarack-os"
+    base = image.removesuffix("-nvidia-legacy").removesuffix("-nvidia")
+    try:
+        ref = str(json.loads(_read(env.path("/usr/share/ublue-os/image-info.json")) or "{}").get("image-ref", ""))
+    except json.JSONDecodeError:
+        ref = ""
+    registry = ref.split("://", 1)[-1].rsplit("/", 1)[0] if "/" in ref else "ghcr.io/brecken321"
+    target = f"{base}-{edition}" if edition else base
+    return f"sudo bootc switch {registry}/{target}:stable"
+
+
 def gpu_items(
-    report: Report, devices: list[PciDevice], vulkan: list[dict[str, str]], env: Environment, nvidia_image: bool
+    report: Report, devices: list[PciDevice], vulkan: list[dict[str, str]], env: Environment, image: str
 ) -> None:
+    nvidia_image = "nvidia" in image
+    legacy_image = image.endswith("-nvidia-legacy")
     gpus = [d for d in devices if d.class_code in GPU_CLASSES]
     if not gpus:
         report.add("Graphics", "No graphics card detected", MISSING, "lspci reported no display controller.")
@@ -252,19 +267,18 @@ def gpu_items(
             if driver == "nvidia":
                 version = _read(env.path("/sys/module/nvidia/version")).strip()
                 detail = f"{gpu.description}; NVIDIA driver {version}".strip("; ") if version else gpu.description
+            elif supported is False and not legacy_image:
+                status = ATTENTION
+                advice = (
+                    "This NVIDIA GPU is older than Turing (GTX 16 series) and needs NVIDIA's driver for older "
+                    "cards, in the NVIDIA (older cards) edition. Switch with: " + switch_command(env, "nvidia-legacy")
+                )
             elif not nvidia_image:
                 status = ATTENTION
-                if supported is False:
-                    advice = (
-                        "This NVIDIA GPU is older than Turing (GTX 16 series) and needs NVIDIA's legacy "
-                        "driver, which Tamarack OS does not build yet. It runs on the open-source "
-                        "nouveau driver with limited performance; see Help > Troubleshooting."
-                    )
-                else:
-                    advice = (
-                        "You are on the AMD/Intel edition. Switch to the NVIDIA edition for full "
-                        "performance: sudo bootc switch ghcr.io/brecken321/tamarack-os-nvidia:stable"
-                    )
+                advice = (
+                    "You are on the AMD/Intel edition. Switch to the NVIDIA edition for full performance: "
+                    + switch_command(env, "nvidia")
+                )
             elif not driver:
                 status = ATTENTION
                 advice = (
@@ -468,14 +482,14 @@ def cpu_memory_items(report: Report, env: Environment) -> None:
 def collect(runner: Runner, env: Environment | None = None) -> Report:
     env = env or Environment(image_flavor=os.environ.get("TAMARACK_IMAGE_FLAVOR", ""))
     report = Report()
-    nvidia_image = "nvidia" in _image_name(env)
+    image = _image_name(env)
     lspci = runner.run(["lspci", "-nnk"])
     devices = parse_lspci(lspci.stdout) if lspci.ok else []
     vk = runner.run(["vulkaninfo", "--summary"], timeout=20)
     vulkan = parse_vulkaninfo_summary(vk.stdout) if vk.ok else []
     steps: list[Callable[[], None]] = [
         lambda: cpu_memory_items(report, env),
-        lambda: gpu_items(report, devices, vulkan, env, nvidia_image),
+        lambda: gpu_items(report, devices, vulkan, env, image),
         lambda: display_items(report, runner),
         lambda: storage_items(report, runner),
         lambda: device_items(report, devices),
