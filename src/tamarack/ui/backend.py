@@ -256,7 +256,7 @@ class Backend(QObject):
         self.presetsChanged.emit()
 
     def _preset_rows(self) -> list[dict[str, Any]]:
-        found = appearance.all_presets(self._paths)
+        found = self._all_presets()
         current = appearance.current_preset(self._paths)
         builtin_dir = appearance.SYSTEM_PRESETS / "previews"
         result = []
@@ -276,8 +276,11 @@ class Backend(QObject):
             target.write_text(svg, encoding="utf-8")
         return QUrl.fromLocalFile(str(target)).toString()
 
+    def _all_presets(self) -> list[preset_lib.Preset]:
+        return appearance.all_presets(self._paths)
+
     def _find(self, preset_id: str) -> preset_lib.Preset:
-        return appearance.find_preset(appearance.all_presets(self._paths), preset_id)
+        return appearance.find_preset(self._all_presets(), preset_id)
 
     @Slot(str)
     def applyPreset(self, preset_id: str) -> None:
@@ -306,7 +309,7 @@ class Backend(QObject):
 
     @Slot()
     def resetAppearance(self) -> None:
-        default = preset_lib.default_preset(appearance.all_presets(self._paths))
+        default = preset_lib.default_preset(self._all_presets())
         self.applyPreset(default.id)
 
     def _preset_from_form(self, form: dict[str, Any]) -> preset_lib.Preset:

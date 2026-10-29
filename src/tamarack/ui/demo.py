@@ -279,8 +279,8 @@ class DemoBackend(Backend):
             self._db = games.AntiCheatDatabase.load(REPO / "data/awacy/games.json", REPO / "data/awacy/source.json")
         return self._db
 
-    def _find(self, preset_id: str) -> preset_lib.Preset:
-        return appearance.find_preset(preset_lib.load_presets(REPO / "branding/presets"), preset_id)
+    def _all_presets(self) -> list[preset_lib.Preset]:
+        return appearance.all_presets(self._paths, REPO / "branding/presets")
 
     def _preset_rows(self) -> list[dict[str, Any]]:
         found = preset_lib.load_presets(REPO / "branding/presets")
