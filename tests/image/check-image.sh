@@ -41,6 +41,7 @@ check "os-release NAME is ${BRAND_NAME}" test "${NAME}" = "${BRAND_NAME}"
 check "os-release ID is ${BRAND_ID}" test "${ID}" = "${BRAND_ID}"
 check "os-release ID_LIKE includes fedora" grep -q '^ID_LIKE=.*fedora' /usr/lib/os-release
 check "os-release has a unique IMAGE_ID" grep -q '^IMAGE_ID=' /usr/lib/os-release
+check "os-release VERSION is this build's (${VERSION})" test "${VERSION}" = "${IMAGE_VERSION}"
 case "${flavor}" in
     nvidia) expected_image="${BRAND_IMAGE_NVIDIA}" ;;
     nvidia-legacy) expected_image="${BRAND_IMAGE_NVIDIA_LEGACY}" ;;

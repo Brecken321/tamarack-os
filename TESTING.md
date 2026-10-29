@@ -47,7 +47,7 @@ Newest first. "CI" entries link to the workflow run that produced them.
 
 <!-- results:start -->
 
-### 2026-10-29: boot screen, Steam Gaming Mode, older-NVIDIA edition, live USB (CI [run 40800886139](https://github.com/Brecken321/tamarack-os/actions/runs/40800886139) and [run 40801940564](https://github.com/Brecken321/tamarack-os/actions/runs/40801940564), images 44.20261029)
+### 2026-10-29: boot screen, Steam Gaming Mode, older-NVIDIA edition, live USB (CI [run 40800886139](https://github.com/Brecken321/tamarack-os/actions/runs/40800886139), [run 40801940564](https://github.com/Brecken321/tamarack-os/actions/runs/40801940564) and [run 40807543348](https://github.com/Brecken321/tamarack-os/actions/runs/40807543348), images 44.20261029)
 
 | | Standard | NVIDIA | NVIDIA (older cards) |
 |---|---|---|---|
@@ -55,7 +55,8 @@ Newest first. "CI" entries link to the workflow run that produced them.
 | Downloads: Filelight, SuperTux, Heroic | ✅ 3 s, 52 s, 26 s | ✅ 4 s, 52 s, 30 s | ✅ 3 s, 42 s, 27 s |
 | Steam reaches **Sign in to Steam** | ✅ 106 s | ✅ 116 s | ✅ 112 s |
 | Memory in use with Plasma open (6 GB VM) | 1.9 GB | 2.2 GB | 2.2 GB |
-| Live USB: UEFI boot menu, boot screen, signed-in desktop with Welcome (8 checks) | ✅ signed in 30 s after boot | ✅ 40 s | not built (use the installer) |
+| Unattended install from ISO, then the same 131 checks | ✅ 0 failures, installed in 8.0 min | ✅ 0 failures, 8.4 min | ✅ 0 failures, 7.9 min |
+| Live USB: UEFI boot menu, boot screen, signed-in desktop with Welcome (8 checks) | ✅ signed in 30 s after boot | ✅ 30 s | ✅ 40 s |
 
 **Older-NVIDIA edition** (new): built on `bazzite-nvidia` with NVIDIA's closed 580 driver (the build refuses a base with
 the open modules), and the VM test passes like the other editions. The driver itself needs a real GTX 750/900/1000-series
@@ -69,11 +70,23 @@ instead of leaving a black screen. Playing in Gaming Mode needs real hardware.
 boots with a text console, so the screen itself is seen in the live USB's boot screenshots: firmware logo, spinner and the
 Tamarack OS logo.
 
-**Live USB** (new): `tamarack-os-live-20261029-x86_64.iso`, 6.05 GB, SHA-256
-`a83291f1c7ee4ac630bb09f5dcf2c4fcb32bfea987c9c909acbc1cdc1aa94ce8`; `tamarack-os-nvidia-live-20261029-x86_64.iso`,
-6.54 GB, SHA-256 `0b2c88611aec7c3921c6ffefc298aa92d7a22e44dfe85baec97941ec8fffa839`. The first run failed one check
-because systemd 258 quotes names in its sign-in log line; the test was fixed, and a GRUB "boot success" timer that cannot
-work on a live medium was turned off.
+**Live USB** (new): the first run failed one check because systemd 258 quotes names in its sign-in log line; the test
+was fixed, and a GRUB "boot success" timer that cannot work on a live medium was turned off. The older-NVIDIA live USB
+was added afterwards and passes the same checks.
+
+ISOs from run 40807543348 (SHA-256):
+
+| File | Size | SHA-256 |
+|---|---|---|
+| `tamarack-os-20261029-x86_64.iso` | 5.8 GB | `ccd4e38ff6e67e1c9968a66939052eb17f7040a78049aebdb8bb22cdc8961575` |
+| `tamarack-os-nvidia-20261029-x86_64.iso` | 6.3 GB | `0367abe063da5949aa20a7a141152ce9cfed21c85edf9dc5b83e6d45302b22b0` |
+| `tamarack-os-nvidia-legacy-20261029-x86_64.iso` | 6.4 GB | `aa039e76df32639a50ccae915d6b32700c9be5775118f500b916aaa1a29044c5` |
+| `tamarack-os-live-20261029-x86_64.iso` | 6.1 GB | `7b7a3bae76c4348f298a2c0f48911f0ab700c7b86c3035b82696b8d445f2aa7c` |
+| `tamarack-os-nvidia-live-20261029-x86_64.iso` | 6.5 GB | `9b560e5f6e563e6c60b1cf45e120d04a42a6b480f007be7a5a95e11b4877d6e6` |
+| `tamarack-os-nvidia-legacy-live-20261029-x86_64.iso` | 6.6 GB | `8cd50df5adb560e8990e2f2b8558eddf1d6bad62ab88c8033f07defee1b45e4f` |
+
+**Found in the logs:** apps that print the system version showed the base image's `44.20261026.0 (Kinoite)`, because
+os-release `VERSION` was never set. It is now this build's version, with an image check.
 
 **Update and rollback**: 44.20261028 → current `:stable` in 173 s, restart, all checks, `uupd` clean, rollback: ✅.
 

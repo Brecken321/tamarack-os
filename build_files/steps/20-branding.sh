@@ -18,6 +18,9 @@ set_os_release ID "${BRAND_ID}"
 # Tools that look for Fedora/Bazzite compatibility keep working.
 set_os_release ID_LIKE "bazzite fedora"
 set_os_release VARIANT_ID "${IMAGE_NAME}"
+# VERSION is what apps print as the system version (bug reports, system info);
+# otherwise it keeps the base image's, e.g. "44.20261026.0 (Kinoite)".
+set_os_release VERSION "${version}"
 set_os_release VERSION_ID "${fedora_version}"
 set_os_release HOME_URL "${BRAND_HOME_URL}"
 set_os_release DOCUMENTATION_URL "${BRAND_DOCUMENTATION_URL}"
