@@ -707,6 +707,11 @@ class Backend(QObject):
         )
 
     @Slot()
+    def stayOnCurrent(self) -> None:
+        """Undo a pending switch to another version (bootc rollback switches back)."""
+        self._update_action("Staying on this version", updates.rollback, "This version will keep starting.")
+
+    @Slot()
     def pinCurrent(self) -> None:
         self._update_action("Pinning this version", updates.pin_current, "This version will be kept.")
 

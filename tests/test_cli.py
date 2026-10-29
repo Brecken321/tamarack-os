@@ -48,7 +48,7 @@ def test_doctor_quick_json(capsys: pytest.CaptureFixture[str]) -> None:
 
 def test_doctor_problems_are_plain_language() -> None:
     data = {
-        "updates": {"restart_needed": True, "low_space": True, "errors": []},
+        "updates": {"restart_needed": True, "staged": {"version": "44.20261030"}, "low_space": True, "errors": []},
         "gaming": {"Steam": False, "Lutris (game launcher)": False},
         "hardware": {
             "items": [
@@ -69,3 +69,9 @@ def test_doctor_problems_are_plain_language() -> None:
     assert not any("Lutris" in p for p in problems)  # optional tools are not "problems"
     assert any("Switch to the NVIDIA edition" in p for p in problems)
     assert any("could not be installed" in p for p in problems)
+
+
+def test_doctor_names_the_version_that_starts_next() -> None:
+    problems = doctor.problems({"updates": {"restart_needed": True, "next_boot": {"version": "44.20261020"}}})
+    assert "44.20261020 starts at the next restart (instead of the running version)." in problems
+    assert not any("update is ready" in p for p in problems)

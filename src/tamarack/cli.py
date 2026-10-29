@@ -42,7 +42,9 @@ def cmd_doctor(args: argparse.Namespace, runner: Runner) -> int:
     print(f"\nRunning version: {booted.get('version', 'unknown')} ({booted.get('date', '')})")
     if upd.get("staged"):
         print(f"Update ready: {upd['staged']['version']} (restart to finish)")
-    if upd.get("rollback"):
+    if upd.get("next_boot"):
+        print(f"Starts at the next restart: {upd['next_boot']['version']}")
+    elif upd.get("rollback"):
         print(f"Rollback available: {upd['rollback']['version']}")
     auto = upd.get("auto_updates")
     print(f"Automatic updates: {'on' if auto else 'off' if auto is False else 'unknown'}")

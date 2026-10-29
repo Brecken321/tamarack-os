@@ -65,7 +65,8 @@ Kirigami.ScrollablePage {
             Layout.fillWidth: true
             visible: !!page.upd.restart_needed
             type: Kirigami.MessageType.Information
-            text: qsTr("An update is ready. Restart whenever it suits you to finish installing it.")
+            text: page.upd.staged ? qsTr("An update is ready. Restart whenever it suits you to finish installing it.")
+                                  : qsTr("%1 starts at the next restart.").arg(page.upd.next_boot ? page.upd.next_boot.version : "")
             actions: [
                 Kirigami.Action {
                     text: qsTr("Restart now…")

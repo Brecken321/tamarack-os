@@ -12,6 +12,7 @@ Kirigami.ScrollablePage {
     readonly property var booted: st.booted || null
     readonly property var staged: st.staged || null
     readonly property var previous: st.rollback || null
+    readonly property var nextBoot: st.next_boot || null
 
     actions: [
         Kirigami.Action {
@@ -94,6 +95,28 @@ Kirigami.ScrollablePage {
             }
         }
 
+        // After "Roll back", or after starting an older version from the boot menu.
+        SectionCard {
+            visible: page.staged === null && page.nextBoot !== null
+            title: qsTr("%1 starts at the next restart").arg(page.nextBoot && page.nextBoot.version ? page.nextBoot.version : qsTr("Another version"))
+            iconName: "system-reboot"
+            tint: Kirigami.Theme.neutralTextColor
+            subtitle: page.booted && page.booted.version ? qsTr("You're running %1 now.").arg(page.booted.version) : ""
+            RowLayout {
+                Controls.Button {
+                    text: qsTr("Restart now…")
+                    icon.name: "system-reboot"
+                    onClicked: restartDialog.open()
+                }
+                Controls.Button {
+                    text: page.booted && page.booted.version ? qsTr("Stay on %1").arg(page.booted.version) : qsTr("Stay on the running version")
+                    icon.name: "window-pin"
+                    enabled: !backend.busy
+                    onClicked: backend.stayOnCurrent()
+                }
+            }
+        }
+
         SectionCard {
             title: qsTr("Go back to the previous version")
             iconName: "edit-undo"
@@ -110,7 +133,8 @@ Kirigami.ScrollablePage {
                 Controls.Button {
                     text: qsTr("Roll back…")
                     icon.name: "edit-undo"
-                    enabled: page.previous !== null && !backend.busy
+                    // Rolling back again would switch back (see the card above).
+                    enabled: page.previous !== null && page.nextBoot === null && !backend.busy
                     onClicked: rollbackDialog.open()
                 }
                 Controls.Button {
@@ -132,7 +156,7 @@ Kirigami.ScrollablePage {
                 Layout.fillWidth: true
                 wrapMode: Text.WordWrap
                 textFormat: Text.StyledText
-                text: qsTr("Turn the computer on and keep tapping <b>Esc</b> (or hold <b>Shift</b>) to show the boot menu. Choose the second entry to start the previous version, then use “Roll back” here to keep it. Full steps are in the troubleshooting guide.")
+                text: qsTr("Turn the computer on and keep tapping <b>Esc</b> (or hold <b>Shift</b>) to show the boot menu. Choose the second entry to start the previous version, then use “Stay on” here to keep it. Full steps are in the troubleshooting guide.")
             }
             Kirigami.UrlButton {
                 text: qsTr("Troubleshooting guide")

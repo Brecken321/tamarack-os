@@ -58,6 +58,9 @@ class UpdateStatus:
     booted: Deployment | None = None
     staged: Deployment | None = None
     rollback: Deployment | None = None
+    # An installed version other than the running one that starts at the next
+    # restart: after a rollback, or after starting an older one from the boot menu.
+    next_boot: Deployment | None = None
     auto_updates: bool | None = None
     free_bytes: int | None = None
     transaction: str | None = None
@@ -65,7 +68,7 @@ class UpdateStatus:
 
     @property
     def restart_needed(self) -> bool:
-        return self.staged is not None
+        return self.staged is not None or self.next_boot is not None
 
     @property
     def low_space(self) -> bool:
@@ -79,6 +82,7 @@ class UpdateStatus:
             "booted": dep(self.booted),
             "staged": dep(self.staged),
             "rollback": dep(self.rollback),
+            "next_boot": dep(self.next_boot),
             "auto_updates": self.auto_updates,
             "free_bytes": self.free_bytes,
             "low_space": self.low_space,
@@ -127,7 +131,8 @@ def parse_rpm_ostree_status(text: str) -> UpdateStatus:
     txn = data.get("transaction")
     if txn:
         status.transaction = " ".join(str(x) for x in txn) if isinstance(txn, list) else str(txn)
-    for raw in data.get("deployments", []):
+    deployments = data.get("deployments", [])
+    for raw in deployments:
         role = "booted" if raw.get("booted") else "staged" if raw.get("staged") else "rollback"
         deployment = Deployment(
             role=role,
@@ -144,6 +149,10 @@ def parse_rpm_ostree_status(text: str) -> UpdateStatus:
         elif status.rollback is None:
             # Only the newest non-booted deployment is the rollback target.
             status.rollback = deployment
+    # Deployments are listed in boot order: the first one starts next.
+    first = deployments[0] if deployments else {}
+    if status.rollback is not None and not first.get("booted") and not first.get("staged"):
+        status.next_boot = status.rollback
     return status
 
 
@@ -212,7 +221,11 @@ def set_auto_updates(runner: Runner, enabled: bool) -> CommandResult:
 
 
 def rollback(runner: Runner) -> CommandResult:
-    """Make the previous OS version the default for the next boot. Does not restart."""
+    """Make the previous OS version the default for the next boot. Does not restart.
+
+    When another version is already set to start next (``next_boot``), this
+    switches back: the running version keeps starting.
+    """
     return runner.run(["pkexec", "bootc", "rollback"], timeout=600)
 
 

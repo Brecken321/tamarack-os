@@ -71,8 +71,11 @@ def problems(data: dict[str, Any]) -> list[str]:
     """Plain-language list of things that need attention."""
     out = []
     upd = data.get("updates", {})
-    if upd.get("restart_needed"):
+    if upd.get("staged"):
         out.append("An update is ready. Restart when convenient to finish installing it.")
+    elif upd.get("next_boot"):
+        version = upd["next_boot"].get("version") or "another installed version"
+        out.append(f"{version} starts at the next restart (instead of the running version).")
     if upd.get("low_space"):
         out.append("Less than 10 GB free on the system drive; updates may fail to download.")
     for err in upd.get("errors", []):

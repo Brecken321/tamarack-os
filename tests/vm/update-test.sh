@@ -2,9 +2,9 @@
 # Update and rollback test: boot an older Tamarack build, move it to the
 # current :stable (download, signature check, staged for the next restart),
 # reboot into the new version and check it, including that the update service
-# automatic updates and "Update now" use runs cleanly there; then roll back
-# with Tamarack Center's "Roll back" (clicked in the desktop) and check that the
-# old version boots again.
+# automatic updates and "Update now" use runs cleanly there; then, clicking in
+# Tamarack Center on the desktop: "Roll back", "Stay on" (undoes it), "Roll
+# back" again and "Restart now", and check that the old version boots again.
 #
 # Usage: update-test.sh OLD_DISK.qcow2 SSH_KEY PASSWORD OUTPUT_DIR NEW_REF NEW_DIGEST
 set -euo pipefail
@@ -135,16 +135,41 @@ trap 'kill "$(cat "${out}/qemu.pid")" 2>/dev/null || true' EXIT
     sleep 75
     shot "updated-desktop"
     in_vm() { ssh_vm "bash /tmp/in-vm-checks.sh '${password}' $*" || failures=$((failures + 1)); }
-    in_vm drive-start rollback updates "$(printf '%q ' 'click:Roll back…' 'click:OK')"
-    in_vm password rollback 90
-    shot "rollback-password"
-    qmp type "${password}"
-    qmp key ret
-    in_vm drive-finish rollback 600
-    shot "rollback-clicked"
-    check "the previous version starts at the next restart" \
-        test "$(as_root bootc status --json | jq -r '.status.rollbackQueued')" = true
-    reboot_vm "rollback"
+    updates_page() { # NAME STEP...: one click needs the password
+        local name="$1"
+        shift
+        in_vm drive-start "${name}" updates "$(printf '%q ' "$@")"
+        in_vm password "${name}" 90
+        shot "${name}-password"
+        qmp type "${password}"
+        qmp key ret
+        in_vm drive-finish "${name}" 600
+        shot "${name}-clicked"
+    }
+    queued() { as_root bootc status --json | jq -r '.status.rollbackQueued'; }
+    running="$(as_root bootc status --json | jq -r '.status.booted.image.version')"
+    updates_page rollback "click:Roll back…" "click:OK"
+    check "the previous version starts at the next restart" test "$(queued)" = true
+    # The page now offers to stay on the running version instead; then roll back again.
+    updates_page stay "click:Stay on ${running}"
+    check "Stay on ${running}: the running version starts next again" test "$(queued)" = false
+    updates_page rollback-again "click:Roll back…" "click:OK"
+    check "rolled back again" test "$(queued)" = true
+    # Restart from the Updates page, as a person would.
+    in_vm drive-start restart updates "$(printf '%q ' 'click:Restart now…' 'click:OK')"
+    gone=no
+    for _ in $(seq 1 36); do
+        ssh_vm true 2>/dev/null || { gone=yes; break; }
+        sleep 5
+    done
+    check "Restart now… restarts the computer" test "${gone}" = yes
+    if [[ "${gone}" == yes ]]; then
+        wait_ssh "rollback"
+    else
+        shot "restart-not-restarting"
+        in_vm drive-finish restart 30
+        reboot_vm "rollback"
+    fi
     check "booted the previous version again" test "$(booted_digest)" = "${old_digest}"
     check "system finished booting after rollback" \
         as_root bash -c "'state=\$(timeout 600 systemctl is-system-running --wait); [[ \$state == running || \$state == degraded ]]'"

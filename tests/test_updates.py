@@ -44,8 +44,20 @@ def test_parse_status_roles() -> None:
     assert st.staged and st.staged.version == "44.20261027"
     assert st.rollback and st.rollback.version == "44.20261020"  # newest non-booted only
     assert st.restart_needed
+    assert st.next_boot is None  # the staged update starts next, not the rollback
     data = st.to_dict()
     assert data["restart_needed"] and data["rollback"]["date"]
+
+
+def test_rolled_back_or_older_version_started_from_boot_menu() -> None:
+    """Either way the first (next boot) entry is not the running one."""
+    booted, previous = STATUS["deployments"][1], STATUS["deployments"][2]
+    st = updates.parse_rpm_ostree_status(json.dumps({"deployments": [previous, booted]}))
+    assert st.next_boot is not None and st.next_boot.version == "44.20261020"
+    assert st.rollback == st.next_boot and st.restart_needed
+    assert st.to_dict()["next_boot"]["version"] == "44.20261020"
+    st = updates.parse_rpm_ostree_status(json.dumps({"deployments": [booted, previous]}))
+    assert st.next_boot is None and not st.restart_needed
 
 
 def test_status_with_failures_reports_errors(tmp_path: Path) -> None:
