@@ -267,7 +267,7 @@ center look-custom 0 appearance "click:Customize…@Gaming" "click:Floating:" \
 settings expect custom_look "floating,blur,steam" "'Customize: the saved look has the three changes'"
 sleep 10
 desktop_is custom-my-gaming
-center look-delete 0 appearance "click:Delete@My Gaming"
+center look-delete 0 appearance "click:More Actions@My Gaming" "click:Delete"
 settings expect custom_look missing "'Delete removes the custom look'"
 # The first-run Welcome, start to finish, picking a look on the way.
 ssh_vm "rm -f ~/.local/state/tamarack/welcome-done"

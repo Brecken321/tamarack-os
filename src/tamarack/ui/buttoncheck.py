@@ -6,12 +6,16 @@ and URLs that a button would open are recorded instead.
 
 For every page (and every Welcome step) it clicks each visible, enabled
 button, switch and clickable card, and each one inside the dialogs, sheets
-and menus those open, and triggers every action (including those only
-reachable through "⋮" overflow menus). A control passes when
+and menus those open: page actions are toolbar buttons, and actions shown
+only in "⋮" overflow menus are entries of those menus. A control passes when
 the click has a visible effect: another page, a dialog or menu, a request
 to the system (install, apply, refresh…), an app or link being opened, a
-message, its own on/off state changing, or its dialog closing. A control fails when it has no
-effect or raises a QML error.
+message, its own on/off state changing, or its dialog closing. A control
+fails when it has no effect or raises a QML error.
+
+Controls are found by walking the visible items only: listing every object
+under a page (findChildren) makes PySide wrap objects it cannot handle, and
+it aborts.
 """
 
 from __future__ import annotations
@@ -169,26 +173,6 @@ class ButtonCheck:
             result.append(item)
         return result
 
-    def actions(self) -> list[Any]:
-        """The current page's actions, including ones only in overflow menus."""
-        page = _prop(self.window, "currentPageItem")
-        if page is None:
-            raise RuntimeError("cannot read the current page (Main.qml currentPageItem)")
-        result = []
-        for child in [page, *page.findChildren(QObject)]:
-            if not child.inherits("QQuickAction"):
-                continue
-            if _prop(child, "enabled") is False or _prop(child, "visible") is False:
-                continue
-            if (_prop(child, "text") or "") in IGNORED:
-                continue
-            # A submenu: its entries are the actions. (QObject's children(): reading
-            # the QML "children" list property aborts PySide.)
-            if any(c.inherits("QQuickAction") for c in child.children()):
-                continue
-            result.append(child)
-        return result
-
     def _state(self) -> dict[str, Any]:
         popups = len(self._items("QQuickPopupItem"))
         windows = sum(1 for w in QGuiApplication.topLevelWindows() if w.isVisible())
@@ -289,22 +273,6 @@ class ButtonCheck:
             results.append(result)
             if "opens a dialog or menu" in result.effects:
                 results.extend(self._check_popup(page, label, nth))
-        done.clear()
-        index = 0
-        while True:
-            self._reload(page)
-            current = self.actions()
-            if index >= len(current):
-                break
-            action = current[index]
-            index += 1
-            name = _prop(action, "text") or "(action)"
-            nth = [_prop(a, "text") or "(action)" for a in current[: index - 1]].count(name)
-            if (name, nth) in done:
-                continue
-            done.add((name, nth))
-            trigger = functools.partial(QMetaObject.invokeMethod, action, "trigger", Qt.ConnectionType.DirectConnection)
-            results.append(self._press(page, f"action: {name}", trigger, None))
         return results
 
     def _opened_by(self, page: str, label: str, nth: int) -> list[Any]:

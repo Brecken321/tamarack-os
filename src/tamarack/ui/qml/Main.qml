@@ -29,9 +29,7 @@ Kirigami.ApplicationWindow {
     property string currentPage: ""
     // Counts page loads (choosing the current page again reloads it).
     property int pageLoads: 0
-    // The page stack's state as plain types, for the button check and VM test
-    // (PySide cannot convert Kirigami's own PageRow type).
-    readonly property QtObject currentPageItem: pageStack.currentItem
+    // For the button check (PySide cannot convert Kirigami's own PageRow type).
     readonly property int pageDepth: pageStack.depth
 
     readonly property var colors: backend.brand.palette

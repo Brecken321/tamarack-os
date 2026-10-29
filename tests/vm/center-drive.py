@@ -11,7 +11,9 @@ each STEP in order:
 
   click:NAME             click the control NAME, then wait until the work it
                          starts (and the page's refresh after it) is done
-  click:NAME@CONTAINER   the control NAME inside CONTAINER (e.g. a preset card)
+  click:NAME@CONTAINER   the control NAME inside CONTAINER (e.g. a preset card);
+                         menu entries are clicked after the button opening the
+                         menu ("click:More Actions@My Gaming" "click:Delete")
   expect:NAME=on|off     check that the switch NAME is on or off
 
 Controls are found by their accessible name, which is what a screen reader
@@ -30,7 +32,7 @@ from typing import Any
 
 sys.path.insert(0, "/usr/lib/tamarack/python")
 
-from PySide6.QtCore import QMetaObject, QObject, Qt, QUrl, Slot
+from PySide6.QtCore import QObject, QUrl, Slot
 from PySide6.QtGui import QAccessible, QDesktopServices, QIcon
 from PySide6.QtQml import QQmlApplicationEngine
 from PySide6.QtQuickControls2 import QQuickStyle
@@ -85,23 +87,6 @@ def find_control(window: Any, name: str) -> Any | None:
         for item in items(root):
             if item.inherits("QQuickAbstractButton") and accessible_name(item) == control:
                 return item
-    return None
-
-
-def find_action(window: Any, name: str) -> Any | None:
-    """A visible page action named NAME (or NAME@CONTAINER) that is not shown
-    as a button: an overflow menu entry."""
-    action, _, container = name.partition("@")
-    page = window.property("currentPageItem")
-    if page is None:
-        raise RuntimeError("cannot read the current page (Main.qml currentPageItem)")
-    roots = [page]
-    if container:
-        roots = [i for i in items(window.contentItem()) if accessible_name(i) == container]
-    for root in roots:
-        for child in root.findChildren(QObject):
-            if child.inherits("QQuickAction") and child.property("text") == action and child.property("visible"):
-                return child
     return None
 
 
@@ -193,23 +178,19 @@ def main() -> int:
             report(False, f"unknown step {step!r}")
             continue
         item = find_control(window, target)
-        action = find_action(window, target) if item is None else None
-        if item is None and action is None:
+        if item is None:
             report(False, f'"{target}" is on the page')
             info("controls on the page: " + ", ".join(names(window)))
             continue
-        if item is not None and not item.isEnabled():
+        if not item.isEnabled():
             report(False, f'"{target}" can be clicked (it is disabled)')
             continue
-        before = state(item) if item is not None else ""
+        before = state(item)
         seen = len(messages)
         start = time.monotonic()
-        if item is not None:
-            ButtonCheck._click(item)
-        else:
-            QMetaObject.invokeMethod(action, "trigger", Qt.ConnectionType.DirectConnection)
+        ButtonCheck._click(item)
         done = idle(args.timeout)
-        after = state(item) if item is not None else ""
+        after = state(item)
         change = f" ({before} -> {after})" if before else ""
         report(done, f'clicked "{target}"{change}, work finished after {time.monotonic() - start:.0f} s')
         bad = [m for kind, m in messages[seen:] if kind in ("error", "warning")]
