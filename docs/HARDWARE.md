@@ -11,7 +11,7 @@ Windows, will not work.
 | AMD Radeon GCN 1.2+ / RDNA 1–4 | Standard | amdgpu (Mesa RADV/radeonsi) | Best-supported option on Linux. Very old GCN 1.0/1.1 cards may use the `radeon` driver; Tamarack Center flags this. |
 | Intel HD/UHD/Iris Xe, Arc | Standard | i915 / xe (Mesa ANV/iris) | Arc support depends on the kernel version shipped by Bazzite. |
 | NVIDIA GTX 16xx, RTX 20/30/40/50 (Turing+) | NVIDIA | NVIDIA open kernel modules + proprietary userspace | Secure Boot: enroll Universal Blue's key (both editions need it). |
-| NVIDIA GTX 9xx/10xx (Maxwell/Pascal) | — | Not built yet | Use upstream `bazzite-nvidia` (legacy driver) for now. |
+| NVIDIA GTX 9xx/10xx (Maxwell/Pascal) | NVIDIA (older cards) | NVIDIA proprietary driver (from `bazzite-nvidia`) | Tamarack Center's Hardware page suggests this edition when it finds such a card. Secure Boot: same key enrollment. |
 | Hybrid laptops (Intel/AMD + NVIDIA) | NVIDIA | Both | Desktop on the integrated GPU; Steam can be switched to the NVIDIA GPU (Gaming page). |
 | Virtual machines | Either | virtio-gpu / llvmpipe | Desktop works; games will be slow (no GPU acceleration). |
 

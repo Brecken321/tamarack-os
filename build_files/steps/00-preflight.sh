@@ -18,7 +18,11 @@ log "upstream image: ${upstream_name} (base ${base_name}), building ${IMAGE_NAME
 
 case "${IMAGE_FLAVOR}" in
     main) [[ "${upstream_name}" != *nvidia* ]] || die "flavor 'main' must not use an NVIDIA base" ;;
-    nvidia) [[ "${upstream_name}" == *nvidia* ]] || die "flavor 'nvidia' requires an NVIDIA base" ;;
+    nvidia) [[ "${upstream_name}" == *nvidia-open* ]] || die "flavor 'nvidia' requires Bazzite's nvidia-open base" ;;
+    nvidia-legacy)
+        [[ "${upstream_name}" == *nvidia* && "${upstream_name}" != *nvidia-open* ]] ||
+            die "flavor 'nvidia-legacy' requires Bazzite's proprietary-driver NVIDIA base"
+        ;;
     *) die "unknown IMAGE_FLAVOR '${IMAGE_FLAVOR}'" ;;
 esac
 

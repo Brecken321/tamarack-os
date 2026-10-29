@@ -10,7 +10,7 @@
 |---|---|---|
 | AMD Radeon, Intel (integrated or Arc) | Standard | `ghcr.io/brecken321/tamarack-os:stable` |
 | NVIDIA GTX 16-series, RTX 20/30/40/50 (Turing or newer), including laptops with Intel/AMD + NVIDIA | NVIDIA | `ghcr.io/brecken321/tamarack-os-nvidia:stable` |
-| NVIDIA GTX 10-series or older | Not supported yet. Use upstream `bazzite-nvidia` for now | — |
+| NVIDIA GTX 900 or 1000 series (Maxwell, Pascal) | NVIDIA (older cards) | `ghcr.io/brecken321/tamarack-os-nvidia-legacy:stable` |
 
 Not sure? On Windows, open Device Manager > Display adapters. A laptop that lists both Intel/AMD and NVIDIA
 needs the NVIDIA edition.

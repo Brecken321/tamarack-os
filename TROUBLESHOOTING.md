@@ -53,6 +53,16 @@ in System Settings > Power Management, provided the firmware exposes them to Lin
 4. Look up the game on [ProtonDB](https://www.protondb.com/) for community fixes.
 5. Not enough disk space and missing Vulkan are common causes: `tamarack doctor` checks both.
 
+## Steam Gaming Mode
+
+- **Starting it:** sign out (Tamarack Center > Gaming > *Sign out to switch*), choose *Steam Gaming Mode* in the
+  sign-in screen's session menu, then sign in.
+- **Getting back to the desktop:** in Steam's power menu choose *Switch to Desktop*; on the sign-in screen pick
+  *Plasma* and sign in. The sign-in screen remembers the session you used last.
+- **Black screen or it returns straight to the sign-in screen:** Gaming Mode runs on gamescope, which needs a working
+  GPU driver (on NVIDIA, the NVIDIA edition with its driver loaded; check Tamarack Center > Hardware). Use the desktop
+  and Steam's Big Picture mode meanwhile, and include `journalctl --user -b | grep -i gamescope` in a bug report.
+
 ## Games from Epic, GOG, EA, Ubisoft, Battle.net
 
 Install **Heroic** (Epic, GOG, Amazon) or use **Lutris** (preinstalled) from the Gaming page or app store. Bottles runs

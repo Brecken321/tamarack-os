@@ -46,13 +46,16 @@ dark), not mock-ups.
 - **Gaming built in.** Steam, Proton, Gamescope, MangoHud and Lutris come with the system (from Bazzite).
   The Gaming page in Tamarack Center checks whether a game's anti-cheat works on Linux before you buy it
   (sourced data, never guesses), lists your Steam library with compatibility ratings, shows Proton launch
-  logs, and on hybrid laptops can run Steam on the discrete GPU.
+  logs, builds per-game launch options (performance overlay, frame cap, FSR upscaling, discrete GPU) and on
+  hybrid laptops can run Steam on the discrete GPU. **Steam Gaming Mode**, a full-screen, controller-first
+  Steam session like a Steam Deck's, is one choice away on the sign-in screen.
 - **Familiar if you come from Windows.** The Start button and your apps sit centered on the taskbar, the
   Windows shortcuts work (Win to open Start, Win+E files, Win+I settings, Win+Tab task view, Win+S search,
   Win+arrows to snap, Ctrl+Shift+Esc for the task manager), and Tamarack Center has a sidebar and a
   "Find a setting" search like Windows Settings.
-- **Two editions.** `tamarack-os` for AMD and Intel graphics, `tamarack-os-nvidia` for NVIDIA GTX 16-series
-  and RTX cards (open kernel modules, signed for Secure Boot).
+- **Three editions.** `tamarack-os` for AMD and Intel graphics, `tamarack-os-nvidia` for NVIDIA GTX 16-series
+  and RTX cards (open kernel modules, signed for Secure Boot), and `tamarack-os-nvidia-legacy` for older NVIDIA
+  cards (GTX 900/1000 series, NVIDIA's proprietary driver).
 - **Presets that change the real desktop.** Clean Modern (default), Classic Desktop, Minimalist, Gaming,
   Creator, Productivity and High Contrast each set the theme, taskbar position and style, start menu,
   animations, fonts, window buttons, virtual desktops and more. Build your own with a live preview,
