@@ -106,14 +106,14 @@ def _label(item: Any) -> str:
     return f"{type(item).__name__} ({name or item.metaObject().className()})"
 
 
-def _in_popup(item: Any) -> bool:
-    """Whether the control is inside a dialog, sheet or menu."""
+def _popup_of(item: Any) -> Any | None:
+    """The dialog, sheet, menu or drawer the control is in (None if none)."""
     parent = item.parentItem()
     while parent is not None:
         if parent.inherits("QQuickPopupItem"):
-            return True
+            return parent
         parent = parent.parentItem()
-    return False
+    return None
 
 
 class ButtonCheck:
@@ -298,15 +298,27 @@ class ButtonCheck:
             results.append(self._press(page, f"action: {name}", trigger, None))
         return results
 
+    def _opened_by(self, page: str, index: int) -> list[Any]:
+        """Reload PAGE, click its button INDEX, and return the controls in the
+        dialogs, sheets and menus that opened (not the sidebar, a drawer)."""
+        self._reload(page)
+        # Held so each popup keeps one Python wrapper, compared by identity.
+        already = self._items("QQuickPopupItem")
+        self._click(self.buttons()[index])
+        settle(400)
+        inside = []
+        for button in self.buttons():
+            popup = _popup_of(button)
+            if popup is not None and not any(popup is p for p in already):
+                inside.append(button)
+        return inside
+
     def _check_popup(self, page: str, index: int, opener: str) -> list[Result]:
         """Each control in the dialog, sheet or menu that the page's button INDEX opens."""
         results: list[Result] = []
-        count = len([b for b in self.buttons() if _in_popup(b)])
+        count = len(self._opened_by(page, index))
         for inner in range(count):
-            self._reload(page)
-            self._click(self.buttons()[index])
-            settle(400)
-            current = [b for b in self.buttons() if _in_popup(b)]
+            current = self._opened_by(page, index)
             if inner >= len(current):
                 break
             item = current[inner]
