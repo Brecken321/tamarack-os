@@ -73,7 +73,7 @@ dark), not mock-ups.
 
 ## Get it
 
-There are three ways to try Tamarack OS. Back up your data first: see [docs/INSTALL.md](docs/INSTALL.md)
+There are four ways to try Tamarack OS. Back up your data first: see [docs/INSTALL.md](docs/INSTALL.md)
 for dual-boot and Secure Boot guidance.
 
 1. **Switch from an existing Bazzite / Universal Blue / Fedora Atomic install** (keeps your files):
@@ -87,7 +87,10 @@ for dual-boot and Secure Boot guidance.
    [Disk images and VM test](https://github.com/Brecken321/tamarack-os/actions/workflows/build-disk.yml)
    run (artifacts `tamarack-os-iso` / `tamarack-os-nvidia-iso`), verify the `.sha256` checksum, and write it
    to a USB stick (8 GB or larger) with Fedora Media Writer, balenaEtcher or Rufus (DD mode).
-3. **Virtual machine**: build a qcow2 disk with `just disk main qcow2` (Linux) and boot it in
+3. **Live USB** (try it without installing): artifacts `tamarack-os-live-iso` / `tamarack-os-nvidia-live-iso`
+   from the same run. It starts signed in to the desktop and changes nothing on your disks; it needs Secure
+   Boot turned off while you use it (see [docs/INSTALL.md](docs/INSTALL.md#optional-try-it-first-with-the-live-usb)).
+4. **Virtual machine**: build a qcow2 disk with `just disk main qcow2` (Linux) and boot it in
    virt-manager/GNOME Boxes with UEFI.
 
 ## Build it yourself
