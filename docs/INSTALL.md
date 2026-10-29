@@ -40,7 +40,7 @@ needs the NVIDIA edition.
 ## 3. Get the installer
 
 1. Open the latest successful [Disk images and VM test](https://github.com/Brecken321/tamarack-os/actions/workflows/build-disk.yml)
-   run and download the `tamarack-os-iso` or `tamarack-os-nvidia-iso` artifact (about 6–6.5 GB; you need that much free space
+   run and download the `tamarack-os-iso`, `tamarack-os-nvidia-iso` or `tamarack-os-nvidia-legacy-iso` artifact (about 6–6.5 GB; you need that much free space
    on the PC you download to). You must be signed in to GitHub to download workflow artifacts.
 2. Verify the download. In a terminal on Linux/macOS: `sha256sum -c tamarack-os-*.iso.sha256`. On Windows PowerShell:
    `Get-FileHash .\tamarack-os-*.iso -Algorithm SHA256` and compare with the `.sha256` file.
@@ -54,9 +54,10 @@ to check that the screen, Wi-Fi, sound, keyboard and touchpad work before you in
 memory and is gone when you shut down.
 
 1. From the same [Disk images and VM test](https://github.com/Brecken321/tamarack-os/actions/workflows/build-disk.yml)
-   run, download `tamarack-os-live-iso` or `tamarack-os-nvidia-live-iso` (the NVIDIA one for any PC with an NVIDIA
-   card, including Intel + NVIDIA laptops). Verify it and write it to a USB stick as in step 3. It is a different stick
-   from the installer, or the same stick rewritten later.
+   run, download the live ISO of your edition: `tamarack-os-live-iso`, `tamarack-os-nvidia-live-iso` (any PC with a
+   GTX 16 / RTX card, including Intel + NVIDIA laptops) or `tamarack-os-nvidia-legacy-live-iso` (GTX 750/900/1000).
+   Verify it and write it to a USB stick as in step 3. It is a different stick from the installer, or the same stick
+   rewritten later.
 2. **Turn Secure Boot off for now.** The live USB runs Tamarack's own kernel and NVIDIA driver (so you can test the
    real driver), and your PC does not trust their signing key until you install and enroll it. On ASUS laptops: press
    F2 at power-on, F7 for *Advanced Mode*, *Security* > *Secure Boot* > *Secure Boot Control*: **Disabled**, then F10
