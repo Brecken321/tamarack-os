@@ -102,6 +102,11 @@ if [[ "${phase}" == "system" ]]; then
     check "tamarack doctor runs" tamarack doctor --quick
     info "tamarack doctor" tamarack doctor
     check "privacy dashboard data" tamarack privacy --json
+    # "Show app store results in search" turns KRunner's plugin "bazaarrunner" on and off.
+    runners="/usr/share/krunner/dbusplugins /var/lib/flatpak/exports/share/krunner/dbusplugins"
+    info "search (KRunner) plugins from apps" bash -c "grep -Hs -m1 '^X-KDE-PluginInfo-Name=' ${runners// //*.desktop }/*.desktop; find /usr/lib64/qt6/plugins/kf6/krunner -name '*.so' -printf '%f\n'"
+    check "the app store search switch's plugin (bazaarrunner) exists" bash -c \
+        "grep -qsx 'X-KDE-PluginInfo-Name=bazaarrunner' ${runners// //*.desktop }/*.desktop || ls ${runners// //bazaarrunner.desktop }/bazaarrunner.desktop 2>/dev/null | grep -q . || find /usr/lib64/qt6/plugins/kf6/krunner -name 'bazaarrunner*' | grep -q ."
     check "anti-cheat check" tamarack games check "Apex Legends"
     # Default apps install from Flathub on first boot; allow time for the download.
     for _ in $(seq 1 60); do
@@ -211,6 +216,108 @@ if [[ "${phase}" == "close" ]]; then
     fi
     sleep 2
     pass "closed $1"
+fi
+
+# --- Settings, changed in Tamarack Center (center-drive.py) and read back here.
+# Whether an on/off setting is on, where it takes effect.
+setting_on() {
+    case "$1" in
+        countme) [[ "$(systemctl is-enabled rpm-ostree-countme.timer 2>/dev/null)" == enabled ]] ;;
+        connectivity)
+            busctl get-property org.freedesktop.NetworkManager /org/freedesktop/NetworkManager \
+                org.freedesktop.NetworkManager ConnectivityCheckEnabled | grep -q true
+            ;;
+        store_search)
+            [[ "$(kreadconfig6 --file krunnerrc --group Plugins --key bazaarrunnerEnabled --default true)" != false ]] ;;
+        recent_files)
+            [[ "$(kreadconfig6 --file kactivitymanagerd-pluginsrc --group Plugin-org.kde.ActivityManager.Resources.Scoring \
+                --key what-to-remember --default 0)" != 2 ]]
+            ;;
+        dnd) [[ -n "$(kreadconfig6 --file plasmanotifyrc --group DoNotDisturb --key Until)" ]] ;;
+        inhibited)
+            busctl --user get-property org.freedesktop.Notifications /org/freedesktop/Notifications \
+                org.freedesktop.Notifications Inhibited | grep -q true
+            ;;
+        steam_overlay) grep -qs 'MANGOHUD=1' "${HOME}/.local/share/applications/steam.desktop" ;;
+        auto_updates) [[ "$(systemctl is-enabled uupd.timer 2>/dev/null)" == enabled ]] ;;
+        # The running version's entry in `ostree admin status` (marked "*").
+        pinned) ostree admin status 2>/dev/null | awk '/^\*/ {b = 1; next} /^  [^ ]/ {b = 0} b' | grep -q 'Pinned: yes' ;;
+        welcome_done) test -e "${HOME}/.local/state/tamarack/welcome-done" ;;
+        *) return 2 ;;
+    esac
+}
+# The real state of a setting: on/off, or its value.
+setting_state() {
+    case "$1" in
+        power_profile)
+            busctl get-property net.hadess.PowerProfiles /net/hadess/PowerProfiles net.hadess.PowerProfiles \
+                ActiveProfile | cut -d'"' -f2
+            ;;
+        power_profiles)
+            busctl --json=short get-property net.hadess.PowerProfiles /net/hadess/PowerProfiles \
+                net.hadess.PowerProfiles Profiles | jq -r '[.data[].Profile.data] | join(",")'
+            ;;
+        update_runs) journalctl -b -u uupd.service -o cat 2>/dev/null | grep -c '^Starting ' ;;
+        *) if setting_on "$1"; then echo on; else echo off; fi ;;
+    esac
+}
+
+if [[ "${phase}" == "state" ]]; then
+    # Only the value: callers capture it.
+    session_env
+    setting_state "$1"
+    exit 0
+fi
+
+if [[ "${phase}" == "expect" ]]; then
+    session_env
+    key="$1" want="$2" description="${3:-$1}"
+    have="$(setting_state "${key}")"
+    check "${description}: ${want} (the system says ${have})" test "${have}" = "${want}"
+fi
+
+if [[ "${phase}" == "drive-start" ]]; then
+    session_env
+    name="$1"
+    shift
+    rm -f "/tmp/drive-${name}.log" "/tmp/drive-${name}.rc"
+    # As a user service of the desktop session, like an app from the start menu.
+    check "Tamarack Center opened for \"${name}\"" systemd-run --user --quiet --collect --unit="tamarack-drive-${name}" \
+        -- bash -c "python3 -I /tmp/center-drive.py $(printf '%q ' "$@") >/tmp/drive-${name}.log 2>&1; echo \$? >/tmp/drive-${name}.rc"
+fi
+
+if [[ "${phase}" == "password" ]]; then
+    # polkit's password dialog, as a person sees it after clicking.
+    session_env
+    name="$1" timeout="$2"
+    start=$(date +%s)
+    caption=""
+    while (($(date +%s) - start < timeout)) && [[ ! -e "/tmp/drive-${name}.rc" ]]; do
+        caption="$( (windows_matching Authentication; windows_matching polkit) 2>/dev/null | head -n 1)"
+        [[ -n "${caption}" ]] && break
+        sleep 2
+    done
+    check "\"${name}\" asks for the password (after $(($(date +%s) - start)) s: ${caption:-no dialog})" test -n "${caption}"
+    if [[ -n "${caption}" ]]; then
+        # Give it the keyboard, as a click on it would.
+        script="/tmp/activate-${name}.js"
+        printf 'for (const w of workspace.windowList()) { if (w.caption === %s) workspace.activeWindow = w; }\n' \
+            "$(jq -Rn --arg c "${caption}" '$c')" >"${script}"
+        id="$(busctl --user call org.kde.KWin /Scripting org.kde.kwin.Scripting loadScript ss "${script}" "activate-${name}" | awk '{print $2}')"
+        busctl --user call org.kde.KWin "/Scripting/Script${id}" org.kde.kwin.Script run >/dev/null 2>&1
+        sleep 1
+        busctl --user call org.kde.KWin /Scripting org.kde.kwin.Scripting unloadScript s "activate-${name}" >/dev/null 2>&1
+    fi
+fi
+
+if [[ "${phase}" == "drive-finish" ]]; then
+    session_env
+    name="$1" timeout="$2"
+    start=$(date +%s)
+    while [[ ! -e "/tmp/drive-${name}.rc" ]] && (($(date +%s) - start < timeout)); do sleep 3; done
+    cat "/tmp/drive-${name}.log" 2>/dev/null
+    check "Tamarack Center did \"${name}\" without problems" test "$(cat "/tmp/drive-${name}.rc" 2>/dev/null)" = 0
+    systemctl --user stop "tamarack-drive-${name}" 2>/dev/null
 fi
 
 if [[ "${phase}" == "remove" ]]; then

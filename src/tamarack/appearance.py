@@ -143,10 +143,15 @@ def backup(paths: Paths, label: str) -> Path:
     if kdedefaults.is_dir():
         shutil.copytree(kdedefaults, target / "kdedefaults")
     autostart = paths.autostart / "steam.desktop"
-    (target / "manifest.json").write_text(
-        json.dumps({"label": label, "created": stamp, "files": saved, "steam_autostart": autostart.exists()}, indent=2),
-        encoding="utf-8",
-    )
+    manifest = {
+        "label": label,
+        "created": stamp,
+        "files": saved,
+        "steam_autostart": autostart.exists(),
+        # The look that was current, so undo can show it as current again.
+        "previous_preset": current_preset(paths),
+    }
+    (target / "manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
     _prune_backups(paths)
     return target
 
@@ -185,6 +190,12 @@ def restore(paths: Paths, runner: Runner, target: Path | None = None) -> ApplyRe
         shutil.rmtree(paths.config / "kdedefaults", ignore_errors=True)
         shutil.copytree(target / "kdedefaults", paths.config / "kdedefaults")
     set_steam_autostart(paths, bool(manifest.get("steam_autostart")))
+    if "previous_preset" in manifest:  # backups from older versions do not say
+        previous = manifest["previous_preset"]
+        if previous:
+            _record_current(paths, str(previous))
+        else:
+            (paths.state / "appearance.json").unlink(missing_ok=True)
     result.steps.append(StepResult("restore files", True, f"restored from {target.name}"))
     result.steps.append(
         _step(
@@ -192,8 +203,31 @@ def restore(paths: Paths, runner: Runner, target: Path | None = None) -> ApplyRe
             runner.run(["systemctl", "--user", "restart", "plasma-plasmashell.service"], timeout=60),
         )
     )
+    # KWin does not re-read the number of desktops from kwinrc; set it live.
+    result.steps.append(_virtual_desktops(runner, *_desktops_in(paths.config / "kwinrc")))
     result.steps.append(_reconfigure_kwin(runner))
     return result
+
+
+def _desktops_in(kwinrc: Path) -> tuple[int, int]:
+    """The virtual desktops (count, rows) a kwinrc asks for; one of each when unset."""
+    count, rows = 1, 1
+    try:
+        lines = kwinrc.read_text(encoding="utf-8").splitlines()
+    except OSError:
+        return count, rows
+    group = ""
+    for line in (raw.strip() for raw in lines):
+        if line.startswith("["):
+            group = line
+            continue
+        key, _, value = (part.strip() for part in line.partition("="))
+        if group == "[Desktops]" and value.isdigit():
+            if key == "Number":
+                count = max(1, int(value))
+            elif key == "Rows":
+                rows = max(1, int(value))
+    return count, min(rows, count)
 
 
 # --- Applying -----------------------------------------------------------------

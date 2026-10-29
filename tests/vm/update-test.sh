@@ -3,7 +3,8 @@
 # current :stable (download, signature check, staged for the next restart),
 # reboot into the new version and check it, including that the update service
 # automatic updates and "Update now" use runs cleanly there; then roll back
-# (Tamarack Center's "Roll back") and check that the old version boots again.
+# with Tamarack Center's "Roll back" (clicked in the desktop) and check that the
+# old version boots again.
 #
 # Usage: update-test.sh OLD_DISK.qcow2 SSH_KEY PASSWORD OUTPUT_DIR NEW_REF NEW_DIGEST
 set -euo pipefail
@@ -106,8 +107,10 @@ trap 'kill "$(cat "${out}/qemu.pid")" 2>/dev/null || true' EXIT
     check "booted the new version" test "$(booted_digest)" = "${new_digest}"
     check "the old version is kept for rollback" \
         test "$(as_root bootc status --json | jq -r '.status.rollback.image.imageDigest')" = "${old_digest}"
-    scp -i "${key}" -P "${port}" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR \
-        "${here}/in-vm-checks.sh" "${user}@127.0.0.1:/tmp/in-vm-checks.sh"
+    for helper in in-vm-checks.sh center-drive.py; do
+        scp -i "${key}" -P "${port}" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR \
+            "${here}/${helper}" "${user}@127.0.0.1:/tmp/${helper}"
+    done
     if ssh_vm "bash /tmp/in-vm-checks.sh '${password}' system" >"${out}/updated-system-checks.txt"; then
         echo "PASS: all system checks on the updated system"
     else
@@ -125,8 +128,22 @@ trap 'kill "$(cat "${out}/qemu.pid")" 2>/dev/null || true' EXIT
     sleep 30
     shot "updated-login-screen"
 
-    # Tamarack Center's "Roll back".
-    check "roll back" as_root bootc rollback
+    # Roll back the way a person would: sign in, Tamarack Center > Updates >
+    # "Roll back…" > OK, and the password in polkit's dialog.
+    qmp type "${password}"
+    qmp key ret
+    sleep 75
+    shot "updated-desktop"
+    in_vm() { ssh_vm "bash /tmp/in-vm-checks.sh '${password}' $*" || failures=$((failures + 1)); }
+    in_vm drive-start rollback updates "$(printf '%q ' 'click:Roll back…' 'click:OK')"
+    in_vm password rollback 90
+    shot "rollback-password"
+    qmp type "${password}"
+    qmp key ret
+    in_vm drive-finish rollback 600
+    shot "rollback-clicked"
+    check "the previous version starts at the next restart" \
+        test "$(as_root bootc status --json | jq -r '.status.rollbackQueued')" = true
     reboot_vm "rollback"
     check "booted the previous version again" test "$(booted_digest)" = "${old_digest}"
     check "system finished booting after rollback" \

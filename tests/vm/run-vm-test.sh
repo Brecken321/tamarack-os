@@ -87,7 +87,9 @@ echo "SSH up after $(($(date +%s) - start)) s"
 echo "boot_seconds=$(($(date +%s) - start))" >"${out}/timings.txt"
 
 status=0
-scp_to_vm "${here}/in-vm-checks.sh" /tmp/in-vm-checks.sh
+for helper in in-vm-checks.sh center-drive.py desktop-state.py; do
+    scp_to_vm "${here}/${helper}" "/tmp/${helper}"
+done
 ssh_vm "bash /tmp/in-vm-checks.sh '${password}' system" | tee "${out}/system-checks.txt" || status=1
 
 # Desktop: the login screen, then log in through the virtual keyboard.
@@ -114,15 +116,21 @@ sleep 4
 shot "03-start-menu"
 qmp key esc
 sleep 2
+# Each look, then what Plasma and KWin really use compared with it.
 # Productivity is always light: it shows the taskbar is readable in the light theme.
+desktop_is() { # PRESET_ID
+    ssh_vm "${session_env}; python3 -I /tmp/desktop-state.py $1" | tee -a "${out}/${LOG:-presets.txt}" || status=1
+}
 for preset in gaming classic-desktop minimalist productivity high-contrast; do
     ssh_vm "${session_env}; tamarack preset apply ${preset}" | tee -a "${out}/presets.txt" || status=1
     sleep 12
     shot "04-preset-${preset}"
+    desktop_is "${preset}"
 done
 ssh_vm "${session_env}; tamarack preset reset" | tee -a "${out}/presets.txt" || status=1
 sleep 12
 shot "05-preset-reset"
+desktop_is clean-modern
 
 # Windows-style shortcuts open what they say (pressed on the virtual keyboard).
 shortcut() { # NAME WINDOW_TEXT PROCESS KEYS...
@@ -180,6 +188,78 @@ sleep 15
 shot "07-welcome"
 ssh_vm "${session_env}; systemctl --user stop tamarack-welcome" || true
 
+# Settings change the real system. Each one is switched in Tamarack Center by
+# clicking its control (and typing the password when polkit asks, like a
+# person would), checked where it takes effect, then switched back. Every run
+# opens a fresh Center, which must show the state the system is in.
+settings() { LOG=settings-checks.txt in_vm "$@"; }
+state() { ssh_vm "bash /tmp/in-vm-checks.sh '${password}' state $1"; }
+center() { # NAME PASSWORD_PROMPTS PAGE STEP... (see center-drive.py)
+    local name="$1" prompts="$2"
+    shift 2
+    settings drive-start "${name}" "$(printf '%q ' "$@")"
+    for _ in $(seq 1 "${prompts}"); do
+        # Typed only into the dialog, never into whatever else has the keyboard.
+        settings password "${name}" 90 | grep -q '^PASS' || { status=1; continue; }
+        shot "10-${name}-password"
+        qmp type "${password}"
+        qmp key ret
+    done
+    settings drive-finish "${name}" 600
+    shot "10-${name}"
+}
+flip() { # SETTING PASSWORD_PROMPTS PAGE SWITCH: on/off, then back
+    local key="$1" prompts="$2" page="$3" control="$4" was now
+    was="$(state "${key}")"
+    now="$([[ ${was} == on ]] && echo off || echo on)"
+    center "${key}-${now}" "${prompts}" "${page}" "expect:${control}=${was}" "click:${control}" "expect:${control}=${now}"
+    settings expect "${key}" "${now}" "$(printf %q "${control}")"
+    center "${key}-${was}" "${prompts}" "${page}" "expect:${control}=${now}" "click:${control}" "expect:${control}=${was}"
+    settings expect "${key}" "${was}" "$(printf %q "${control}")"
+}
+flip countme 1 privacy "Help Fedora count installations"
+flip connectivity 0 privacy "Detect Wi-Fi sign-in pages"
+flip store_search 0 privacy "Show app store results in search"
+flip recent_files 0 privacy "Remember recently opened files"
+
+# Game Mode: the performance power profile and Do Not Disturb (it also opens
+# Steam Big Picture, which the test records instead of starting).
+profile="$(state power_profile)"
+echo "INFO: power profile ${profile:-none} (offered: $(state power_profiles))" | tee -a "${out}/settings-checks.txt"
+center game-mode-on 0 gaming "expect:Game Mode=off" "click:Game Mode" "expect:Game Mode=on"
+if [[ ",$(state power_profiles)," == *,performance,* ]]; then
+    settings expect power_profile performance "'Game Mode: power profile'"
+fi
+settings expect dnd on "'Game Mode: Do Not Disturb'"
+echo "INFO: notifications held back (Plasma): $(state inhibited)" | tee -a "${out}/settings-checks.txt"
+center game-mode-off 0 gaming "expect:Game Mode=on" "click:Game Mode" "expect:Game Mode=off"
+settings expect power_profile "${profile}" "'Game Mode off: previous power profile'"
+settings expect dnd off "'Game Mode off: Do Not Disturb'"
+# The performance overlay stays on until Steam has been opened below.
+overlay="Performance overlay in all Steam games"
+center overlay-on 0 gaming "expect:${overlay}=off" "click:${overlay}" "expect:${overlay}=on"
+settings expect steam_overlay on "'Steam starts with the performance overlay'"
+
+# Looks, from the Appearance page: apply one, reset to the default, undo.
+LOG=settings-checks.txt
+center look-gaming 0 appearance "click:Apply@Gaming"
+sleep 10
+desktop_is gaming
+center look-reset 0 appearance "click:Reset to default" "click:OK"
+sleep 10
+desktop_is clean-modern
+center look-undo 0 appearance "click:Undo last change"
+sleep 15
+desktop_is gaming
+# The first-run Welcome, start to finish, picking a look on the way.
+ssh_vm "rm -f ~/.local/state/tamarack/welcome-done"
+center welcome 0 --welcome welcome "click:Get started" "click:Use this@Classic Desktop" \
+    "click:Next" "click:Next" "click:Next" "click:Next" "click:Finish"
+sleep 10
+desktop_is classic-desktop
+settings expect welcome_done on "'Welcome remembers it was completed'"
+unset LOG
+
 # Downloads, for real and without accounts: an app, a game and a game
 # launcher from Flathub through Tamarack's installer (what the Install
 # buttons run), each opened on the desktop; the Bazaar app store; and Steam's
@@ -212,8 +292,28 @@ ssh_vm "pkill -x kdialog && echo 'INFO: closed the first-run notice directly (En
 in_vm wait steam Steam 1200 steamwebhelper
 sleep 15
 shot "08-open-steam"
+# Steam was started from its start menu entry with the overlay switch on.
+if ssh_vm 'tr "\0" "\n" </proc/"$(pgrep -u "$(id -u)" -x steam | head -n 1)"/environ | grep -qx MANGOHUD=1'; then
+    echo "PASS: Steam runs with the performance overlay (MANGOHUD=1)" | tee -a "${out}/settings-checks.txt"
+else
+    echo "FAIL: Steam runs with the performance overlay (MANGOHUD=1)" | tee -a "${out}/settings-checks.txt"
+    status=1
+fi
 in_vm close steam >/dev/null
 in_vm remove
+center overlay-off 0 gaming "expect:${overlay}=on" "click:${overlay}" "expect:${overlay}=off"
+settings expect steam_overlay off "'Steam starts without the performance overlay'"
+
+# Updates page: automatic updates, keeping this version, and Update now.
+flip auto_updates 1 updates "Automatic updates"
+center keep-version 1 updates "click:Keep this version"
+settings expect pinned on "'Keep this version: the running version is pinned'"
+ssh_vm "echo '${password}' | sudo -S -p '' ostree admin pin --unpin 0" >/dev/null || true
+runs="$(state update_runs)"
+center update-now 1 updates "click:Update now"
+settings expect update_runs "$((runs + 1))" "'Update now starts the update service'"
+ssh_vm "echo '${password}' | sudo -S -p '' timeout 1800 bash -c 'while [[ \$(systemctl show -p ActiveState --value uupd.service) == activating ]]; do sleep 10; done'; systemctl show -p Result uupd.service" |
+    sed 's/^/INFO: update service after Update now: /' | tee -a "${out}/settings-checks.txt" || true
 
 # Steam Gaming Mode itself: sign in to it automatically and see what happens.
 # gamescope needs a real GPU, so in a VM this is recorded, not required.

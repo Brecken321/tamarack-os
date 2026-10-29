@@ -128,6 +128,29 @@ def test_undo_restores_previous_files(home: Path, brand: Brand, presets: list[p.
     assert ["systemctl", "--user", "restart", "plasma-plasmashell.service"] in [list(c) for c in runner.calls]
 
 
+def test_undo_shows_the_previous_look_as_current(home: Path, brand: Brand, presets: list[p.Preset]) -> None:
+    paths = appearance.Paths(home)
+    first = appearance.apply(_preset(presets, "productivity"), brand, _kde_runner(), paths)
+    second = appearance.apply(_preset(presets, "gaming"), brand, _kde_runner(), paths)
+    appearance.restore(paths, _kde_runner(), Path(second.backup))
+    assert appearance.current_preset(paths) == "productivity"
+    # Undoing the first change: no look had been chosen before it.
+    appearance.restore(paths, _kde_runner(), Path(first.backup))
+    assert appearance.current_preset(paths) is None
+
+
+def test_undo_puts_back_the_virtual_desktops(home: Path, brand: Brand, presets: list[p.Preset]) -> None:
+    paths = appearance.Paths(home)
+    kwinrc = "[Desktops]\nNumber=3\nRows=1\n\n[Plugins]\nblurEnabled=true\n"
+    (paths.config / "kwinrc").write_text(kwinrc, encoding="utf-8")
+    appearance.apply(_preset(presets, "gaming"), brand, _kde_runner(), paths)
+    runner = _kde_runner()  # KWin now has 1 desktop
+    result = appearance.restore(paths, runner)
+    assert result.ok, result.to_dict()
+    assert len([c for c in runner.calls if "createDesktop" in c]) == 2
+    assert ["busctl", "--user", "set-property", *appearance.VDM, "rows", "u", "1"] in [list(c) for c in runner.calls]
+
+
 def test_undo_without_backup(home: Path) -> None:
     with pytest.raises(FileNotFoundError):
         appearance.restore(appearance.Paths(home), FakeRunner())
