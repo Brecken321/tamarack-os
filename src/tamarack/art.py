@@ -198,8 +198,12 @@ def _tree_path(x: float, ground: float, height: float, rng: random.Random) -> st
     return "".join(path)
 
 
-def scene_svg_body(name: str, variant: str, width: int, height: int, seed: int) -> str:
-    """The landscape as SVG elements (no <svg> wrapper), for reuse in previews."""
+def scene_svg_body(name: str, variant: str, width: int, height: int, seed: int, grain: bool = True) -> str:
+    """The landscape as SVG elements (no <svg> wrapper), for reuse in previews.
+
+    ``grain`` adds film grain with SVG filters, which Qt's SVG renderer (the
+    Center's previews) does not support: it warns and leaves it out.
+    """
     style = _SCENES[name][variant]
     # Seed by wallpaper name (not variant) so light and dark share terrain.
     rng = random.Random(f"{seed}:{name}")
@@ -219,10 +223,15 @@ def scene_svg_body(name: str, variant: str, width: int, height: int, seed: int) 
         f'<stop offset="0" stop-color="{style.mist}" stop-opacity="0"/>'
         f'<stop offset="0.6" stop-color="{style.mist}" stop-opacity="{style.mist_opacity}"/>'
         f'<stop offset="1" stop-color="{style.mist}" stop-opacity="0"/></linearGradient>',
-        f'<filter id="grain-{uid}" x="0" y="0" width="100%" height="100%">'
-        f'<feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="{seed % 997}"/>'
-        f'<feColorMatrix type="saturate" values="0"/>'
-        f'<feComponentTransfer><feFuncA type="linear" slope="0.05"/></feComponentTransfer></filter>',
+    ]
+    if grain:
+        out.append(
+            f'<filter id="grain-{uid}" x="0" y="0" width="100%" height="100%">'
+            f'<feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="{seed % 997}"/>'
+            f'<feColorMatrix type="saturate" values="0"/>'
+            f'<feComponentTransfer><feFuncA type="linear" slope="0.05"/></feComponentTransfer></filter>'
+        )
+    out += [
         "</defs>",
         f'<rect width="{_fmt(w)}" height="{_fmt(h)}" fill="url(#sky-{uid})"/>',
         f'<rect width="{_fmt(w)}" height="{_fmt(h)}" fill="url(#glow-{uid})"/>',
@@ -270,7 +279,8 @@ def scene_svg_body(name: str, variant: str, width: int, height: int, seed: int) 
                 f'<rect y="{_fmt(base - amplitude * 1.6)}" width="{_fmt(w)}" '
                 f'height="{_fmt(amplitude * 3.2)}" fill="url(#mist-{uid})"/>'
             )
-    out.append(f'<rect width="{_fmt(w)}" height="{_fmt(h)}" filter="url(#grain-{uid})"/>')
+    if grain:
+        out.append(f'<rect width="{_fmt(w)}" height="{_fmt(h)}" filter="url(#grain-{uid})"/>')
     return "\n".join(out)
 
 
@@ -405,7 +415,7 @@ def preview_svg(brand: Brand, preset: Preset, width: int = 480, height: int = 27
     mode = mode or preset.appearance.mode
     colors = preview_colors(brand, mode)
     s = height / 270  # layout designed at 480x270
-    body = [scene_svg_body(preset.appearance.wallpaper, colors.variant, width, height, brand.art_seed)]
+    body = [scene_svg_body(preset.appearance.wallpaper, colors.variant, width, height, brand.art_seed, grain=False)]
     panel = preset.panel
     thick = panel.thickness * 0.42 * s
     margin = (6 * s) if panel.floating else 0.0

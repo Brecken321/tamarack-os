@@ -6,7 +6,9 @@ from typing import Any
 
 import pytest
 
+from tamarack import art
 from tamarack import presets as p
+from tamarack.brand import Brand
 from tamarack.presets import ConfigWrite, LookAndFeelIds, PresetError, parse_preset
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -177,3 +179,9 @@ def test_look_and_feel_defaults_format() -> None:
     text = p.look_and_feel_defaults("TamarackDark", "breeze-dark", "Tamarack-Ridge")
     assert "[kdeglobals][General]\nColorScheme=TamarackDark" in text
     assert "[Wallpaper]\nImage=Tamarack-Ridge" in text
+
+
+def test_center_previews_use_only_what_qt_can_draw(brand: Brand, presets: list[p.Preset]) -> None:
+    """Qt's SVG renderer has no filter effects: it warns and skips them."""
+    for preset in presets:
+        assert "<filter" not in art.preview_svg(brand, preset), preset.id
