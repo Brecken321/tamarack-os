@@ -14,9 +14,19 @@ out="$(realpath -m "$4")"
 builder="${BIB_IMAGE:-quay.io/centos-bootc/bootc-image-builder:latest}"
 mkdir -p "${out}"
 
+# Registries sometimes answer "503 The server is busy" for a while.
+pull() {
+    for wait in 30 90 0; do
+        sudo podman pull "$1" && return 0
+        ((wait)) || return 1
+        echo "pull of $1 failed; trying again in ${wait} s" >&2
+        sleep "${wait}"
+    done
+}
 # bootc-image-builder reads the image from the host's (root) container storage.
-sudo podman pull "${ref}"
-sudo podman run --rm --privileged --pull=newer \
+pull "${ref}"
+pull "${builder}"
+sudo podman run --rm --privileged --pull=never \
     --security-opt label=type:unconfined_t \
     -v "${config}:/config.toml:ro" \
     -v "${out}:/output" \

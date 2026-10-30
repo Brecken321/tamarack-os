@@ -103,6 +103,7 @@ jobs:
       - name: Build VM disk image (qcow2)
         id: build
         run: |
+          set -o pipefail  # a failed build fails the step (not tee)
           bash tests/vm/build-disk.sh qcow2 disk_config/ci-vm.toml "${{ steps.meta.outputs.ref }}" "${RUNNER_TEMP}/disk" | tee build.log
           echo "path=$(tail -n 1 build.log)" >> "$GITHUB_OUTPUT"
 
@@ -201,6 +202,7 @@ jobs:
         if: steps.refs.outputs.old != ''
         id: build
         run: |
+          set -o pipefail  # a failed build fails the step (not tee)
           bash tests/vm/build-disk.sh qcow2 disk_config/ci-vm.toml "${{ steps.refs.outputs.old }}" "${RUNNER_TEMP}/disk" | tee build.log
           echo "path=$(tail -n 1 build.log)" >> "$GITHUB_OUTPUT"
 
@@ -256,6 +258,7 @@ jobs:
       - name: Build installer ISO
         id: build
         run: |
+          set -o pipefail  # a failed build fails the step (not tee)
           bash tests/vm/build-disk.sh anaconda-iso "disk_config/iso-${{ matrix.flavor }}.toml" "${{ steps.meta.outputs.ref }}" "${RUNNER_TEMP}/iso" | tee build.log
           echo "path=$(tail -n 1 build.log)" >> "$GITHUB_OUTPUT"
 
@@ -369,6 +372,7 @@ jobs:
       - name: Build test installer ISO
         id: build
         run: |
+          set -o pipefail  # a failed build fails the step (not tee)
           bash tests/vm/build-disk.sh anaconda-iso disk_config/ci-install.toml "${{ steps.meta.outputs.ref }}" "${RUNNER_TEMP}/iso" | tee build.log
           echo "path=$(tail -n 1 build.log)" >> "$GITHUB_OUTPUT"
 
