@@ -27,7 +27,7 @@ from typing import Any
 
 from . import presets as p
 from .brand import Brand
-from .system import CommandResult, Runner
+from .system import CommandResult, Runner, write_kde_config
 
 log = logging.getLogger("tamarack.appearance")
 
@@ -344,7 +344,8 @@ def apply(preset: p.Preset, brand: Brand, runner: Runner, paths: Paths) -> Apply
         args.append("-k")  # keep automatic light/dark switching on
     result.steps.append(_step(f"apply global theme {lnf}", runner.run(args, timeout=120)))
 
-    failures = [w for w in p.config_writes(preset, ids) if not runner.run(w.argv()).ok]
+    writes = p.config_writes(preset, ids)
+    failures = [w for w in writes if not write_kde_config(runner, w.file, w.groups, w.key, w.value).ok]
     result.steps.append(
         StepResult(
             "write settings",

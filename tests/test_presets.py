@@ -6,10 +6,11 @@ from typing import Any
 
 import pytest
 
-from tamarack import art
+from tamarack import art, system
 from tamarack import presets as p
 from tamarack.brand import Brand
 from tamarack.presets import ConfigWrite, LookAndFeelIds, PresetError, parse_preset
+from tamarack.system import FakeRunner
 
 ROOT = Path(__file__).resolve().parents[1]
 REQUIRED_PRESETS = {
@@ -152,6 +153,27 @@ def test_config_write_argv() -> None:
         "Image",
         "--delete",
     ]
+
+
+def test_change_notice_reaches_kconfig_watchers() -> None:
+    """The signal KConfigWatcher listens for: path "/" + sanitized file name,
+    {group: [key]} with nested groups joined by , keys as bytes."""
+    assert system.kconfig_notice_argv("plasmanotifyrc", ("DoNotDisturb",), "Until") == [
+        "busctl", "--user", "emit", "/plasmanotifyrc", "org.kde.kconfig.notify", "ConfigChanged", "a{saay}",
+        "1", "DoNotDisturb", "1", "5", "85", "110", "116", "105", "108",
+    ]  # fmt: skip
+    nested = system.kconfig_notice_argv("kactivitymanagerd-pluginsrc", ("A", "B"), "k")
+    assert nested[3] == "/kactivitymanagerd_pluginsrc" and nested[8] == "AB"
+
+
+def test_kde_settings_are_announced_after_writing() -> None:
+    runner = FakeRunner()
+    runner.add(["kwriteconfig6"])
+    system.write_kde_config(runner, "krunnerrc", ("Plugins",), "bazaarrunnerEnabled", "false")
+    assert [c[0] for c in runner.calls] == ["kwriteconfig6", "busctl"]
+    failing = FakeRunner()  # no kwriteconfig6: nothing was written, so nothing is announced
+    assert not system.write_kde_config(failing, "krunnerrc", ("Plugins",), "x", "1").ok
+    assert [c[0] for c in failing.calls] == ["kwriteconfig6"]
 
 
 def test_layout_scripts_are_valid_javascript(presets: list[p.Preset], tmp_path: Path, node: str) -> None:

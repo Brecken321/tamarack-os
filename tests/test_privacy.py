@@ -142,7 +142,9 @@ def test_set_toggle_commands(name: str, enabled: bool, expected: list[str]) -> N
     runner = FakeRunner()
     runner.add([expected[0]])
     privacy.set_toggle(runner, name, enabled)
-    assert list(runner.calls[-1]) == expected
+    assert list(runner.calls[0]) == expected
+    if expected[0] == "kwriteconfig6":  # then the change notice running apps re-read on
+        assert runner.calls[1][:3] == ("busctl", "--user", "emit")
 
 
 def test_unknown_toggle_is_rejected() -> None:

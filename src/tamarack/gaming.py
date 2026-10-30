@@ -24,7 +24,7 @@ from collections.abc import Iterable, Mapping, Sequence
 from pathlib import Path
 from typing import Any
 
-from .system import CommandResult, Runner
+from .system import CommandResult, Runner, write_kde_config
 
 SYSTEM_STEAM_DESKTOP = Path("/usr/share/applications/steam.desktop")
 OWNER_KEY = "X-Tamarack-Launcher"
@@ -195,21 +195,7 @@ def set_game_mode(runner: Runner, state_dir: Path, enabled: bool) -> list[Comman
         state_file.write_text(json.dumps({"previous_profile": active}), encoding="utf-8")
         if "performance" in available and active != "performance":
             results.append(runner.run(["busctl", "set-property", *PPD, "ActiveProfile", "s", "performance"]))
-        results.append(
-            runner.run(
-                [
-                    "kwriteconfig6",
-                    "--file",
-                    "plasmanotifyrc",
-                    "--group",
-                    "DoNotDisturb",
-                    "--key",
-                    "Until",
-                    "--notify",
-                    DND_FOREVER,
-                ]
-            )
-        )
+        results.append(write_kde_config(runner, "plasmanotifyrc", ("DoNotDisturb",), "Until", DND_FOREVER))
         return results
     if not state_file.exists():
         return results
@@ -219,21 +205,7 @@ def set_game_mode(runner: Runner, state_dir: Path, enabled: bool) -> list[Comman
         previous = ""
     if previous:
         results.append(runner.run(["busctl", "set-property", *PPD, "ActiveProfile", "s", previous]))
-    results.append(
-        runner.run(
-            [
-                "kwriteconfig6",
-                "--file",
-                "plasmanotifyrc",
-                "--group",
-                "DoNotDisturb",
-                "--key",
-                "Until",
-                "--notify",
-                "--delete",
-            ]
-        )
-    )
+    results.append(write_kde_config(runner, "plasmanotifyrc", ("DoNotDisturb",), "Until", None))
     state_file.unlink(missing_ok=True)
     return results
 

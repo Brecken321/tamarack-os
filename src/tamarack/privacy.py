@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import Any
 
 from .apps import installed_names
-from .system import CommandResult, Runner
+from .system import CommandResult, Runner, write_kde_config
 
 log = logging.getLogger("tamarack.privacy")
 
@@ -322,33 +322,13 @@ def set_toggle(runner: Runner, name: str, enabled: bool) -> CommandResult:
             timeout=60,
         )
     if name == "store_search":
-        return runner.run(
-            [
-                "kwriteconfig6",
-                "--file",
-                "krunnerrc",
-                "--group",
-                "Plugins",
-                "--key",
-                "bazaarrunnerEnabled",
-                "--notify",
-                "true" if enabled else "false",
-            ]
-        )
+        value = "true" if enabled else "false"
+        return write_kde_config(runner, "krunnerrc", ("Plugins",), "bazaarrunnerEnabled", value)
     if name == "recent_files":
         # 0 = remember all, 2 = remember nothing (KDE's own Recent Files setting).
-        return runner.run(
-            [
-                "kwriteconfig6",
-                "--file",
-                "kactivitymanagerd-pluginsrc",
-                "--group",
-                "Plugin-org.kde.ActivityManager.Resources.Scoring",
-                "--key",
-                "what-to-remember",
-                "--notify",
-                "0" if enabled else "2",
-            ]
+        group = ("Plugin-org.kde.ActivityManager.Resources.Scoring",)
+        return write_kde_config(
+            runner, "kactivitymanagerd-pluginsrc", group, "what-to-remember", "0" if enabled else "2"
         )
     raise ValueError(f"unknown privacy toggle {name!r}; known: {', '.join(TOGGLES)}")
 

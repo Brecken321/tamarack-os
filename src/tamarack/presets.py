@@ -21,6 +21,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+from .system import kwriteconfig_argv
+
 MODES = ("light", "dark", "auto", "high-contrast")
 LOCATIONS = ("top", "bottom", "left", "right")
 LENGTH_MODES = ("fill", "fit")
@@ -122,17 +124,7 @@ class ConfigWrite:
     value: str | None
 
     def argv(self, notify: bool = True) -> list[str]:
-        args = ["kwriteconfig6", "--file", self.file]
-        for group in self.groups:
-            args += ["--group", group]
-        args += ["--key", self.key]
-        if notify:
-            args.append("--notify")
-        if self.value is None:
-            args.append("--delete")
-        else:
-            args.append(self.value)
-        return args
+        return kwriteconfig_argv(self.file, self.groups, self.key, self.value, notify)
 
 
 @dataclass(frozen=True)

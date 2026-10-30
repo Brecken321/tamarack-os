@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import logging
 import os
+import re
 import shutil
 import subprocess
 import time
@@ -140,3 +141,45 @@ class FakeRunner:
 
     def which(self, name: str) -> bool:
         return name in self.available
+
+
+# --- KDE settings ---------------------------------------------------------------
+
+
+def kwriteconfig_argv(file: str, groups: Sequence[str], key: str, value: str | None, notify: bool = True) -> list[str]:
+    """``kwriteconfig6`` writing KEY (value None deletes it)."""
+    args = ["kwriteconfig6", "--file", file]
+    for group in groups:
+        args += ["--group", group]
+    args += ["--key", key]
+    if notify:
+        args.append("--notify")
+    args += ["--delete"] if value is None else [value]
+    return args
+
+
+def kconfig_notice_argv(file: str, groups: Sequence[str], key: str) -> list[str]:
+    """``busctl`` sending KConfig's change notice for KEY, which running KDE
+    apps (KConfigWatcher) re-read their settings on: ``ConfigChanged`` with
+    {group: [key]} on the path "/" + file name (other than letters, digits
+    and "_" as "_"); nested groups are joined with "\x1d"."""
+    path = "/" + re.sub(r"[^A-Za-z0-9_]", "_", file)
+    name = key.encode()
+    return [
+        "busctl", "--user", "emit", path, "org.kde.kconfig.notify", "ConfigChanged", "a{saay}",
+        "1", "\x1d".join(groups), "1", str(len(name)), *(str(b) for b in name),
+    ]  # fmt: skip
+
+
+def write_kde_config(runner: Runner, file: str, groups: Sequence[str], key: str, value: str | None) -> CommandResult:
+    """Write (value None: delete) a KDE setting and tell running apps.
+
+    kwriteconfig6 --notify sends the change notice and exits without waiting
+    for it to leave, so it is sometimes lost: in the VM test Plasma kept Do
+    Not Disturb on after Game Mode removed it. busctl sends it again and waits;
+    a second notice only makes an app re-read its settings once more.
+    """
+    result = runner.run(kwriteconfig_argv(file, groups, key, value))
+    if result.ok:
+        runner.run(kconfig_notice_argv(file, groups, key))  # best effort: the setting is written
+    return result
