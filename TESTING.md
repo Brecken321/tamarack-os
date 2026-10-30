@@ -5,10 +5,10 @@ real hardware and is done by hand with the checklist below.
 
 | Layer | What | Where | Command |
 |---|---|---|---|
-| 1. Static + unit | ruff, mypy `--strict`, shellcheck, `just --fmt`; 170 pytest tests, including a check that every button, switch, card and action in the QML has a handler; generated JS syntax (`node --check`); desktop-file validation; QML self-test (every page compiled and instantiated against real Kirigami) | Fedora 44 container | `just lint`, `just test` |
-| 1b. Center preview and button check | Renders every Tamarack Center page and Welcome step in both themes with example data (KDE platform theme, Breeze, OpenGL), then **clicks every visible button, switch and clickable card and triggers every action** (including overflow-menu ones) and fails if one has no visible effect or raises a QML error | Fedora 44 container with Xvfb | `tamarack-center --screenshots DIR`, `--check-buttons REPORT` |
+| 1. Static + unit | ruff, mypy `--strict`, shellcheck, `just --fmt`; 197 pytest tests, including a check that every button, switch, card and action in the QML has a handler; generated JS syntax (`node --check`); desktop-file validation; QML self-test (every page compiled and instantiated against real Kirigami) | Fedora 44 container | `just lint`, `just test` |
+| 1b. Center preview and button check | Renders every Tamarack Center page and Welcome step in both themes with example data (KDE platform theme, Breeze, OpenGL), then **clicks every visible button, switch and clickable card, and every control inside the dialogs, sheets and menus they open** (page actions are toolbar buttons; overflow-menu entries are clicked in their menus) and fails if one has no visible effect or raises a QML error, also one printed while the app closes | Fedora 44 container with Xvfb | `tamarack-center --screenshots DIR`, `--check-buttons REPORT` |
 | 2. Image content | ~75 checks run *inside* each built image: branding, themes, wallpapers, KDE defaults, privacy defaults, signature policy, services, gaming stack, NVIDIA driver presence, CLI, Tamarack Center QML load | Each image (both editions) | `just check-image main` |
-| 3. VM boot and install | bootc-image-builder makes a qcow2; QEMU/KVM boots it (UEFI); checks over SSH; logs into Plasma via the virtual keyboard; opens the start menu; presses the Windows-style shortcuts and checks the right windows open; applies presets; opens every Tamarack Center page; **downloads an app (Filelight), a game (SuperTux) and a launcher (Heroic) from Flathub as the desktop user and opens each one; opens Bazaar, Firefox and the Center from their menu entries; lets Steam download its client up to its window; removes an app**; checks that every pinned app and every System Settings page a Center button opens exists; screenshots. Then: installer ISOs, and an unattended Anaconda install onto a blank virtual disk followed by the same checks. Also: an older build updated to the current one, restarted, checked and rolled back | GitHub-hosted runner with KVM | `tests/vm/run-vm-test.sh`, `tests/vm/install-test.sh`, `tests/vm/update-test.sh` |
+| 3. VM boot and install | bootc-image-builder makes a qcow2; QEMU/KVM boots it (UEFI); checks over SSH; logs into Plasma via the virtual keyboard; opens the start menu; presses the Windows-style shortcuts and checks the right windows open; applies presets; opens every Tamarack Center page; **drives Tamarack Center itself, clicking its switches and buttons (privacy, Game Mode, performance overlay, looks, a custom look, Welcome, automatic updates, Keep this version, Update now) and checking each change in the running system (systemd, NetworkManager, KRunner, Plasma's notifications, power profiles, Plasma's panels and KWin, ostree)**; **downloads an app (Filelight), a game (SuperTux) and a launcher (Heroic) from Flathub as the desktop user and opens each one; opens Bazaar, Firefox and the Center from their menu entries; lets Steam download its client up to its window; removes an app**; checks that every pinned app and every System Settings page a Center button opens exists; screenshots. Then: installer ISOs, and an unattended Anaconda install onto a blank virtual disk followed by the same checks. Also: an older build updated to the current one, restarted, checked, then rolled back from Tamarack Center (Roll back, Stay on, Roll back, Restart now, with the password typed into polkit's dialog) | GitHub-hosted runner with KVM | `tests/vm/run-vm-test.sh`, `tests/vm/install-test.sh`, `tests/vm/update-test.sh` |
 | 3b. Live USB | Builds the live ISO from each published image (Titanoboa), boots it in QEMU with UEFI (screenshots of the boot menu, boot screen and desktop), then boots its kernel with a serial console and checks the live system: medium found, live user set up and signed in automatically, Plasma, Welcome, default apps ready without downloading | GitHub-hosted runner with KVM | `tests/vm/live-test.sh` |
 | 3c. Windows readiness check | Edition picks for 20 graphics cards and a full read-only run in Windows PowerShell 5.1 | `windows-latest` runner | `tests/windows/test-check-ready.ps1` |
 | 4. Physical hardware | GPU drivers, real games, Wi-Fi/Bluetooth/audio, sleep, displays, controllers, install/dual-boot | A real PC | [Checklist](#physical-hardware-checklist) |
@@ -23,11 +23,17 @@ real hardware and is done by hand with the checklist below.
 - **The button check** proves every control in Tamarack Center reacts when used: a page opens, a dialog appears, a
   request reaches the system layer (install, apply, refresh…), an app or link is started, or a switch flips. It runs
   against example data, so it does **not** prove the request then succeeds on a real system; the VM test covers the
-  important ones (installing apps, presets, updates check) for real.
+  ones that change the system for real (see below). "Undo last change" is never enabled with the example data, so only
+  the VM test clicks it.
 - **Image checks** prove the image contains and enables what we claim. They run with no network and no hardware.
 - **The VM test** proves the image boots, reaches the desktop, verifies its update signature against the registry, installs
   default apps from Flathub, that presets, the Windows-style shortcuts and Tamarack Center work in a real Plasma session,
-  and that apps and games really download from Flathub and open, and Steam downloads its client and reaches sign-in. A VM
+  and that apps and games really download from Flathub and open, and Steam downloads its client and reaches sign-in.
+  Tamarack Center's settings are changed by clicking them in the running app (found by their accessible names, like a
+  screen reader), and each one is checked in the system it changes, not in a settings file: for example Do Not Disturb
+  by asking Plasma whether it holds notifications back, blur by asking KWin whether the effect is loaded. Not covered:
+  "Steam on the discrete GPU" (needs hybrid graphics), "Sign out", and exporting or importing a look (the system file
+  dialog; unit tests cover the file format). A VM
   has no real GPU (software rendering), so it says **nothing** about game performance, NVIDIA drivers, Wi-Fi, Bluetooth,
   audio hardware, sleep or battery, and nothing about downloading games through Steam (that needs an account).
 - **The unattended install test** builds an installer ISO with the same builder and image as the release ISOs (plus a
@@ -38,14 +44,65 @@ real hardware and is done by hand with the checklist below.
   desktop with nothing written to a disk. It runs without Secure Boot and without a GPU, so it does **not** prove the
   NVIDIA driver works in the live session, or that a particular PC's firmware boots the stick.
 - **The update and rollback test** moves a disk of an older build to the current `:stable` (download, signature check,
-  staging), restarts into it, runs the system checks and the update service, then rolls back and restarts into the old
-  version. It covers one update step on the standard edition, not months of updates.
+  staging), restarts into it, runs the system checks and the update service, then, in Tamarack Center: Roll back,
+  Stay on (undoes it), Roll back again and Restart now, checking bootc's state after each, and boots the old version. It covers one update step on the standard edition, not months of updates.
 
 ## Results log
 
 Newest first. "CI" entries link to the workflow run that produced them.
 
 <!-- results:start -->
+
+### 2026-10-29: every Tamarack Center setting clicked and checked in the running system (CI [run 40983747229](https://github.com/Brecken321/tamarack-os/actions/runs/40983747229) and [run 40985807096](https://github.com/Brecken321/tamarack-os/actions/runs/40985807096), button check [run 40976164677](https://github.com/Brecken321/tamarack-os/actions/runs/40976164677), images 44.20261030)
+
+| | Standard | NVIDIA | NVIDIA (older cards) |
+|---|---|---|---|
+| VM test (532 checks, 298 of them clicking through Tamarack Center) | ✅ 0 failures, 12.4 s to graphical | ✅ 0 failures, 15.0 s | ✅ 0 failures, 18.8 s |
+| Steam reaches **Sign in to Steam** | ✅ 102 s | ✅ 98 s | ✅ 112 s |
+| Memory in use with Plasma open (6 GB VM) | 2.0 GB | 2.0 GB | 2.1 GB |
+| Update 44.20261029 → 44.20261030, then rollback from Tamarack Center (43 checks) | ✅ 0 failures | not run | not run |
+
+What the VM test clicked in Tamarack Center on each edition, and where it checked the result:
+
+| Clicked | Checked in |
+|---|---|
+| Help Fedora count installations, on and off (polkit asks for the password) | the `rpm-ostree-countme` timer |
+| Detect Wi-Fi sign-in pages, off and on | NetworkManager's connectivity check |
+| Show app store results in search, off and on | the plugins KRunner has loaded |
+| Remember recently opened files, off and on | the activity manager's settings file |
+| Game Mode on, then off | the active power profile (performance, then balanced again); Plasma's notification server, which holds notifications back and then shows them again |
+| Performance overlay in all Steam games, on and off | Steam's launcher, and the environment of a running Steam (`MANGOHUD=1`) |
+| Apply a look, Reset to default, Undo last change | the desktop: theme, panels, KWin effects, compared with each look |
+| Customize… on Gaming: floating panel, blur, start Steam at login, Save and apply | the saved look has those three changes, and the desktop matches it |
+| More Actions → Delete on that look | the look's file is gone |
+| Welcome, from the first step to Finish | the desktop matches the chosen look; Welcome is marked as completed |
+| Automatic updates, off and on | the `uupd` timer |
+| Keep this version | the running version is pinned in ostree |
+| Update now | the update service ran |
+| Roll back, Stay on, Roll back, Restart now (update test) | bootc's queued rollback after each click; the computer restarted into the old version |
+
+Tamarack Center logged no QML errors on any edition, including while closing.
+
+The button check now also clicks every control inside the dialogs, sheets and menus that buttons open: 301 controls in
+Tamarack Center and 30 in Welcome, 0 failures (232 before).
+
+Found and fixed:
+- **Game Mode never turned on Do Not Disturb.** It wrote the end time as an ISO date; KConfig reads dates only as
+  `Y,M,D,h,m,s` and ignored it. Reading the settings file would have passed; asking Plasma caught it.
+- **KDE settings sometimes took effect only after a restart of the app.** `kwriteconfig6 --notify` can exit before
+  its D-Bus change notice is sent. It showed as Do Not Disturb staying on after Game Mode was turned off, in two runs
+  and on different editions each time. Every KDE setting Tamarack writes (looks, the two search and history switches, Game Mode) now
+  sends the notice again with `busctl`, which waits until it is delivered.
+- **After Roll back there was no way back without restarting.** bootc only queues a rollback, and nothing said so.
+  The Updates page now says "*version* starts at the next restart", with **Restart now…** and **Stay on *version***
+  (which cancels it), and disables Roll back meanwhile. Home, `tamarack doctor` and `tamarack updates status` say it too.
+- **Closing Tamarack Center printed hundreds of QML errors** (361 in one run): Python freed the backend while pages
+  still used it. The backend now belongs to the QML engine, so it is freed last.
+- The 17 fields of the Customize sheet had no accessible names, so screen readers said nothing about them.
+- Look previews used an SVG filter (film grain) that Qt cannot draw; previews leave it out.
+- Test fixes: the button check had skipped controls inside dialogs and controls that moved when an earlier click added
+  one above them. The check for "Automatic" looks now accepts KDE's switch to dark at night. A busy container registry
+  (503) no longer breaks the VM run, and a failed disk build now fails its step instead of the test that follows.
 
 ### 2026-10-29: boot screen, Steam Gaming Mode, older-NVIDIA edition, live USB (CI [run 40800886139](https://github.com/Brecken321/tamarack-os/actions/runs/40800886139), [run 40801940564](https://github.com/Brecken321/tamarack-os/actions/runs/40801940564) and [run 40807543348](https://github.com/Brecken321/tamarack-os/actions/runs/40807543348), images 44.20261029)
 
