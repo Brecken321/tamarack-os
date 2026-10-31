@@ -9,7 +9,7 @@ real hardware and is done by hand with the checklist below.
 | 1b. Center preview and button check | Renders every Tamarack Center page and Welcome step in both themes with example data (KDE platform theme, Breeze, OpenGL), then **clicks every visible button, switch and clickable card, and every control inside the dialogs, sheets and menus they open** (page actions are toolbar buttons; overflow-menu entries are clicked in their menus) and fails if one has no visible effect or raises a QML error, also one printed while the app closes | Fedora 44 container with Xvfb | `tamarack-center --screenshots DIR`, `--check-buttons REPORT` |
 | 2. Image content | ~75 checks run *inside* each built image: branding, themes, wallpapers, KDE defaults, privacy defaults, signature policy, services, gaming stack, NVIDIA driver presence, CLI, Tamarack Center QML load | Each image (both editions) | `just check-image main` |
 | 3. VM boot and install | bootc-image-builder makes a qcow2; QEMU/KVM boots it (UEFI); checks over SSH; logs into Plasma via the virtual keyboard; opens the start menu; presses the Windows-style shortcuts and checks the right windows open; applies presets; opens every Tamarack Center page; **drives Tamarack Center itself, clicking its switches and buttons (privacy, Game Mode, performance overlay, looks, a custom look, Welcome, automatic updates, Keep this version, Update now) and checking each change in the running system (systemd, NetworkManager, KRunner, Plasma's notifications, power profiles, Plasma's panels and KWin, ostree)**; **downloads an app (Filelight), a game (SuperTux) and a launcher (Heroic) from Flathub as the desktop user and opens each one; opens Bazaar, Firefox and the Center from their menu entries; lets Steam download its client up to its window; removes an app**; checks that every pinned app and every System Settings page a Center button opens exists; screenshots. Then: installer ISOs, and an unattended Anaconda install onto a blank virtual disk followed by the same checks. Also: an older build updated to the current one, restarted, checked, then rolled back from Tamarack Center (Roll back, Stay on, Roll back, Restart now, with the password typed into polkit's dialog) | GitHub-hosted runner with KVM | `tests/vm/run-vm-test.sh`, `tests/vm/install-test.sh`, `tests/vm/update-test.sh` |
-| 3b. Live USB | Builds the live ISO from each published image (Titanoboa), boots it in QEMU with UEFI (screenshots of the boot menu, boot screen and desktop), then boots its kernel with a serial console and checks the live system: medium found, live user set up and signed in automatically, Plasma, Welcome, default apps ready without downloading | GitHub-hosted runner with KVM | `tests/vm/live-test.sh` |
+| 3b. Live USB | Builds the live ISO from each published image (Titanoboa), boots it in QEMU with UEFI (screenshots of the boot menu, boot screen and desktop), then boots its kernel with a serial console and checks the live system: medium found, live user set up and signed in automatically, Plasma, Welcome, default apps ready without downloading, half the memory as room for changes, Flathub's app list loads; then opens the app store (screenshot) | GitHub-hosted runner with KVM | `tests/vm/live-test.sh` |
 | 3c. Windows readiness check | Edition picks for 20 graphics cards and a full read-only run in Windows PowerShell 5.1 | `windows-latest` runner | `tests/windows/test-check-ready.ps1` |
 | 4. Physical hardware | GPU drivers, real games, Wi-Fi/Bluetooth/audio, sleep, displays, controllers, install/dual-boot | A real PC | [Checklist](#physical-hardware-checklist) |
 
@@ -52,6 +52,34 @@ real hardware and is done by hand with the checklist below.
 Newest first. "CI" entries link to the workflow run that produced them.
 
 <!-- results:start -->
+
+### 2026-10-30: live USB in VirtualBox on the ASUS laptop; app store fixed in the live session (CI [run 41166974289](https://github.com/Brecken321/tamarack-os/actions/runs/41166974289))
+
+The NVIDIA live ISO of 2026-10-29 (SHA-256 checked) was started in VirtualBox 7.2.22 on the ASUS TUF F17 under
+Windows 11: 3 GB of memory and 4 cores for the VM, UEFI, no virtual disk. It reached the signed-in desktop with Welcome
+in about 2 minutes. With only 8 GB in the laptop it was slow, and the VM can't use the GPU. Claude Code (2.1.314)
+installed with its official installer and ran in the live session.
+
+Problems found there, and fixed:
+- **The app store showed no apps.** The live session keeps every change in memory, in /run, which systemd sizes at
+  20% of the memory: 588 MB in that VM. Steam's first-run download (485 MB) filled it, and Flathub's app list could no
+  longer be written. The live session now gives half the memory to changes.
+- **The screen locked** after a few idle minutes, and nothing said that the live user's password is empty. The live
+  session no longer locks (an empty password with Enter unlocks older live USBs; INSTALL.md says so).
+- **The terminal banner said "Welcome to Bazzite".** It now names Tamarack OS, and an image check covers it.
+
+The live USB test now checks both and opens the store:
+
+| | Standard | NVIDIA | NVIDIA (older cards) |
+|---|---|---|---|
+| Live USB checks (10) | ✅ 0 failures | ✅ 0 failures | ✅ 0 failures |
+| Room for changes in a 6 GB VM (was about 1.2 GB) | 2.9 GB | 2.9 GB | 2.9 GB |
+| Flathub's app list in the live session | 3,528 apps | 3,528 apps | 3,528 apps |
+| App store (Bazaar) opens with Flathub's apps (screenshot) | ✅ | ✅ | ✅ |
+
+In the 3 GB VirtualBox VM the store still showed only empty sections, even right after a fresh start. It said it was
+showing "a cached version of Flathub": with the laptop out of free memory, its requests to Flathub did not complete.
+In the CI VM, on the same live system, the store works.
 
 ### 2026-10-29: every Tamarack Center setting clicked and checked in the running system (CI [run 40983747229](https://github.com/Brecken321/tamarack-os/actions/runs/40983747229) and [run 40985807096](https://github.com/Brecken321/tamarack-os/actions/runs/40985807096), button check [run 40976164677](https://github.com/Brecken321/tamarack-os/actions/runs/40976164677), images 44.20261030)
 
