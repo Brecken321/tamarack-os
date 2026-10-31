@@ -71,7 +71,9 @@ Stay on, Roll back and Restart now in Tamarack Center, which booted the old vers
 
 The app store screenshots of the freshly installed systems showed "Refreshing": the test closed the store about 17 s
 after opening it, before its first load of Flathub's catalog had finished. The VM test now waits for the store to finish
-loading (a check) before its screenshot.
+loading (a check) before its screenshot. Rechecked in [run 41176087531](https://github.com/Brecken321/tamarack-os/actions/runs/41176087531):
+the store loaded Flathub's apps within 15–20 s of opening on all three editions (screenshots show Explore with apps),
+535 checks per edition, 0 failures.
 
 ISOs from this run (SHA-256):
 
