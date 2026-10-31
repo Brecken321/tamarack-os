@@ -176,6 +176,12 @@ if [[ "${phase}" == "downloads" ]]; then
         check "${app} is installed" flatpak info "${app}"
         check "${app} is in the start menu" test -f "/var/lib/flatpak/exports/share/applications/${app}.desktop"
     done
+    # Claude Code the way its docs install it: into the home folder, which
+    # works with Tamarack's read-only system files.
+    check "Claude Code installs with its official installer" bash -c \
+        'curl -fsSL https://claude.ai/install.sh | bash >/dev/null 2>&1'
+    check "Claude Code runs" bash -c '"${HOME}/.local/bin/claude" --version | grep -q "Claude Code"'
+    info "Claude Code version" "${HOME}/.local/bin/claude" --version
     info "installed apps" flatpak list --app --columns=application,name,size
     info "disk use" df -h /var
 fi
