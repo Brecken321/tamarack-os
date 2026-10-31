@@ -186,6 +186,16 @@ if [[ "${phase}" == "downloads" ]]; then
     info "disk use" df -h /var
 fi
 
+# The app store finished loading Flathub's catalog: Bazaar writes its search
+# index once it has. The first load takes a while (about 1 GB of memory).
+if [[ "${phase}" == "store_loaded" ]]; then
+    index="${HOME}/.cache/io.github.kolunmi.Bazaar/core/search-index"
+    start=$(date +%s)
+    until [[ -e "${index}" ]] || (($(date +%s) - start > 240)); do sleep 5; done
+    check "the app store loaded Flathub's apps (after $(($(date +%s) - start)) s)" test -e "${index}"
+    info "app store cache" ls -la "$(dirname "${index}")"
+fi
+
 if [[ "${phase}" == "start" ]]; then
     session_env
     name="$1" desktop_id="$2"

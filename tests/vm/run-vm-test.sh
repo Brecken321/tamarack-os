@@ -283,10 +283,10 @@ unset LOG
 # buttons run), each opened on the desktop; the Bazaar app store; and Steam's
 # own first-run download up to its sign-in window.
 ssh_vm "bash /tmp/in-vm-checks.sh '${password}' downloads" | tee "${out}/download-checks.txt" || status=1
-open_app() { # NAME WINDOW_TEXT TIMEOUT DESKTOP_ID
+open_app() { # NAME WINDOW_TEXT TIMEOUT DESKTOP_ID [PHASE to wait for before the screenshot]
     in_vm start "$1" "$4"
     in_vm wait "$1" "'$2'" "$3"
-    sleep 10
+    if [[ -n "${5:-}" ]]; then in_vm "$5"; else sleep 10; fi
     shot "08-open-$1"
     in_vm close "$1" "$4" >/dev/null
     sleep 3
@@ -294,7 +294,7 @@ open_app() { # NAME WINDOW_TEXT TIMEOUT DESKTOP_ID
 open_app filelight Filelight 180 org.kde.filelight.desktop
 open_app supertux SuperTux 240 org.supertuxproject.SuperTux.desktop
 open_app heroic Heroic 300 com.heroicgameslauncher.hgl.desktop
-open_app bazaar Bazaar 240 io.github.kolunmi.Bazaar.desktop
+open_app bazaar Bazaar 240 io.github.kolunmi.Bazaar.desktop store_loaded
 open_app firefox Firefox 120 org.mozilla.firefox.desktop
 open_app center "Tamarack Center" 60 io.github.brecken321.tamarack.Center.desktop
 # Steam: Bazzite's launcher first shows a "Steam is opening for the first
