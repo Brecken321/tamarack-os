@@ -8,7 +8,7 @@ real hardware and is done by hand with the checklist below.
 | 1. Static + unit | ruff, mypy `--strict`, shellcheck, `just --fmt`; 197 pytest tests, including a check that every button, switch, card and action in the QML has a handler; generated JS syntax (`node --check`); desktop-file validation; QML self-test (every page compiled and instantiated against real Kirigami) | Fedora 44 container | `just lint`, `just test` |
 | 1b. Center preview and button check | Renders every Tamarack Center page and Welcome step in both themes with example data (KDE platform theme, Breeze, OpenGL), then **clicks every visible button, switch and clickable card, and every control inside the dialogs, sheets and menus they open** (page actions are toolbar buttons; overflow-menu entries are clicked in their menus) and fails if one has no visible effect or raises a QML error, also one printed while the app closes | Fedora 44 container with Xvfb | `tamarack-center --screenshots DIR`, `--check-buttons REPORT` |
 | 2. Image content | ~75 checks run *inside* each built image: branding, themes, wallpapers, KDE defaults, privacy defaults, signature policy, services, gaming stack, NVIDIA driver presence, CLI, Tamarack Center QML load | Each image (both editions) | `just check-image main` |
-| 3. VM boot and install | bootc-image-builder makes a qcow2; QEMU/KVM boots it (UEFI); checks over SSH; logs into Plasma via the virtual keyboard; opens the start menu; presses the Windows-style shortcuts and checks the right windows open; applies presets; opens every Tamarack Center page; **drives Tamarack Center itself, clicking its switches and buttons (privacy, Game Mode, performance overlay, looks, a custom look, Welcome, automatic updates, Keep this version, Update now) and checking each change in the running system (systemd, NetworkManager, KRunner, Plasma's notifications, power profiles, Plasma's panels and KWin, ostree)**; **downloads an app (Filelight), a game (SuperTux) and a launcher (Heroic) from Flathub as the desktop user and opens each one; opens Bazaar, Firefox and the Center from their menu entries; lets Steam download its client up to its window; removes an app**; checks that every pinned app and every System Settings page a Center button opens exists; screenshots. Then: installer ISOs, and an unattended Anaconda install onto a blank virtual disk followed by the same checks. Also: an older build updated to the current one, restarted, checked, then rolled back from Tamarack Center (Roll back, Stay on, Roll back, Restart now, with the password typed into polkit's dialog) | GitHub-hosted runner with KVM | `tests/vm/run-vm-test.sh`, `tests/vm/install-test.sh`, `tests/vm/update-test.sh` |
+| 3. VM boot and install | bootc-image-builder makes a qcow2; QEMU/KVM boots it (UEFI); checks over SSH; logs into Plasma via the virtual keyboard; opens the start menu; presses the Windows-style shortcuts and checks the right windows open; applies presets; opens every Tamarack Center page; **drives Tamarack Center itself, clicking its switches and buttons (privacy, Game Mode, performance overlay, looks, a custom look, Welcome, automatic updates, Keep this version, Update now) and checking each change in the running system (systemd, NetworkManager, KRunner, Plasma's notifications, power profiles, Plasma's panels and KWin, ostree)**; **downloads an app (Filelight), a game (SuperTux) and a launcher (Heroic) from Flathub as the desktop user and opens each one; installs Claude Code with its official installer and runs it; opens Bazaar (waiting until it has loaded Flathub's apps), Firefox and the Center from their menu entries; lets Steam download its client up to its window; removes an app**; checks that every pinned app and every System Settings page a Center button opens exists; screenshots. Then: installer ISOs, and an unattended Anaconda install onto a blank virtual disk followed by the same checks. Also: an older build updated to the current one, restarted, checked, then rolled back from Tamarack Center (Roll back, Stay on, Roll back, Restart now, with the password typed into polkit's dialog) | GitHub-hosted runner with KVM | `tests/vm/run-vm-test.sh`, `tests/vm/install-test.sh`, `tests/vm/update-test.sh` |
 | 3b. Live USB | Builds the live ISO from each published image (Titanoboa), boots it in QEMU with UEFI (screenshots of the boot menu, boot screen and desktop), then boots its kernel with a serial console and checks the live system: medium found, live user set up and signed in automatically, Plasma, Welcome, default apps ready without downloading, half the memory as room for changes, Flathub's app list loads; then opens the app store (screenshot) | GitHub-hosted runner with KVM | `tests/vm/live-test.sh` |
 | 3c. Windows readiness check | Edition picks for 20 graphics cards and a full read-only run in Windows PowerShell 5.1 | `windows-latest` runner | `tests/windows/test-check-ready.ps1` |
 | 4. Physical hardware | GPU drivers, real games, Wi-Fi/Bluetooth/audio, sleep, displays, controllers, install/dual-boot | A real PC | [Checklist](#physical-hardware-checklist) |
@@ -52,6 +52,37 @@ real hardware and is done by hand with the checklist below.
 Newest first. "CI" entries link to the workflow run that produced them.
 
 <!-- results:start -->
+
+### 2026-10-31: full run, every edition, every layer (CI [run 41169379037](https://github.com/Brecken321/tamarack-os/actions/runs/41169379037), images 44.20261031)
+
+All 14 jobs passed, with **0 failures** in every check file.
+
+| | Standard | NVIDIA | NVIDIA (older cards) |
+|---|---|---|---|
+| VM test (534 checks, 298 clicking through Tamarack Center) | ✅ 10.6 s to graphical | ✅ 20.0 s | ✅ 15.0 s |
+| Installer ISO, unattended install onto a blank disk, then the same 534 checks | ✅ installed in 8.0 min | ✅ 8.5 min | ✅ 8.7 min |
+| Live USB (10 checks, app store screenshot with Flathub's apps) | ✅ | ✅ | ✅ |
+| Claude Code (2.1.314) installs with its official installer and runs, on the test disk and the installed system | ✅ | ✅ | ✅ |
+| Steam reaches **Sign in to Steam** | ✅ 103 s | ✅ 111 s | ✅ 108 s |
+| Memory in use with Plasma open (6 GB VM; after the tests' downloads on installed systems) | 2.0–2.4 GB | 2.1–2.6 GB | 2.1–2.5 GB |
+
+Update and rollback (standard): 44.20261030 → 44.20261031 in 105 s, restart, all 58 system checks, then Roll back,
+Stay on, Roll back and Restart now in Tamarack Center, which booted the old version: 43 checks, ✅ 0 failures.
+
+The app store screenshots of the freshly installed systems showed "Refreshing": the test closed the store about 17 s
+after opening it, before its first load of Flathub's catalog had finished. The VM test now waits for the store to finish
+loading (a check) before its screenshot.
+
+ISOs from this run (SHA-256):
+
+| File | SHA-256 |
+|---|---|
+| `tamarack-os-20261031-x86_64.iso` | `acd91c0c6ecdb3292ac69c9edf8a3093f0c0a549a8999fd95cef6c477f672b08` |
+| `tamarack-os-nvidia-20261031-x86_64.iso` | `741de83619d6ae71dbeb9f453aa0078146d4ed82211702e90fdf6c115289cafe` |
+| `tamarack-os-nvidia-legacy-20261031-x86_64.iso` | `28e8b47275591b69fef46b550cc237f7eb93589b5e826e1a6897260beff13e32` |
+| `tamarack-os-live-20261031-x86_64.iso` | `f15ad761e0ada9d1f1b64f099114e8e78e17932b77838a326c8bbcb0bc5baea7` |
+| `tamarack-os-nvidia-live-20261031-x86_64.iso` | `e9cb3323a3374c11c08020b84d135462b7c4c63d55b43d66231822cee62059a6` |
+| `tamarack-os-nvidia-legacy-live-20261031-x86_64.iso` | `76d982239776882c310dc5b7f9f4f8893ebdaba8217e6d015070ed50e38bf89b` |
 
 ### 2026-10-30: live USB in VirtualBox on the ASUS laptop; app store fixed in the live session (CI [run 41166974289](https://github.com/Brecken321/tamarack-os/actions/runs/41166974289))
 
