@@ -18,6 +18,9 @@ from typing import Any
 # QEMU "qcode" names for characters we may type (lowercase, digits, a few symbols).
 _CHARS = {c: c for c in "abcdefghijklmnopqrstuvwxyz0123456789"}
 _CHARS.update({" ": "spc", "-": "minus", ".": "dot", "/": "slash", "\n": "ret", "_": "shift-minus"})
+# Enough shell syntax for short commands: $(...), pipes, redirection, &.
+_CHARS.update({"=": "equal", ",": "comma", "|": "shift-backslash", "$": "shift-4", "(": "shift-9",
+               ")": "shift-0", ">": "shift-dot", "&": "shift-7"})  # fmt: skip
 
 
 class Qmp:

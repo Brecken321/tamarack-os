@@ -71,8 +71,15 @@ memory and is gone when you shut down.
 4. When you are done, shut down, remove the stick, and turn Secure Boot back on if you are not installing yet (some
    games' anti-cheat on Windows requires it).
 
-Good to know: apps and games you install in the live session download into memory, so keep to small ones on a PC with
-8 GB of RAM. Updates are off in the live session, and it cannot install Tamarack OS; use the installer for that.
+Good to know:
+- **There is no password in the live session.** If something asks for one (an admin prompt, or the lock screen of an
+  older live USB), leave it empty and press Enter.
+- Everything you download or change in the live session is kept in memory, and about half the memory is available for
+  it. Keep to small apps on a PC with 8 GB of RAM: Steam's first start alone downloads about 500 MB.
+- Updates are off in the live session, and it cannot install Tamarack OS; use the installer for that.
+
+On an installed system you sign in with the password you choose in the installer. The same password answers admin
+prompts (Tamarack Center asks for it before changing system settings).
 
 ## 4. Before you install
 

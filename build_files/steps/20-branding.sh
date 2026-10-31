@@ -136,4 +136,9 @@ if [[ -f "${fastfetch_cfg}" ]]; then
         log "warning: fastfetch config layout changed upstream; terminal logo not rebranded"
 fi
 
+# --- Terminal welcome banner (Universal Blue's user motd) -----------------------
+motd_template=/usr/share/ublue-os/motd/template.md
+require_file "${motd_template}"
+sed -i "s/^# Welcome to Bazzite.*/# Welcome to ${BRAND_NAME}/" "${motd_template}"
+
 log "branded as ${BRAND_NAME} ${version} (${IMAGE_NAME}, upstream ${upstream_name} ${upstream_version})"

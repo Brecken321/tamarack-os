@@ -79,6 +79,29 @@ Options=size=50%%,nr_inodes=1m
 WantedBy=local-fs.target
 EOF
 systemctl enable var-tmp.mount
+# Everything else written in the session (the home folder, Steam's first-run
+# download, the app store's catalog, installed apps) also lands in /run,
+# which systemd sizes at 20% of the memory: a few hundred MB that Steam alone
+# fills, after which the app store shows no apps. Give it half; a tmpfs only
+# uses what is written. The size is logged for the live USB test.
+cat >/etc/systemd/system/live-session-space.service <<'EOF'
+[Unit]
+Description=More room for changes in the live session
+DefaultDependencies=no
+Before=sysinit.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/mount -o remount,size=50%% /run
+ExecStartPost=/usr/bin/df -h /
+
+[Install]
+WantedBy=sysinit.target
+EOF
+systemctl enable live-session-space.service
+# Nobody knows the live user's (empty) password, so the screen never locks.
+kwriteconfig6 --file /etc/xdg/kscreenlockerrc --group Daemon --key Autolock false
+kwriteconfig6 --file /etc/xdg/kscreenlockerrc --group Daemon --key LockOnResume false
 rm -f /etc/localtime
 systemd-firstboot --timezone UTC
 

@@ -72,6 +72,15 @@ common=(-machine "q35,accel=kvm" -cpu max -smp 4 -m 6144 -device virtio-vga -dis
     echo "INFO: live user signed in after $(($(date +%s) - start)) s"
     sleep 60
     shot "03-live-session"
+    # The app store in the live session: Flathub's app list loads (logged to
+    # the journal, which reaches the serial log) and Bazaar shows apps.
+    qmp key ctrl alt t >/dev/null
+    sleep 15
+    qmp type $'logger -t live-check flathub-apps=$(flatpak remote-ls flathub --app | wc -l)\n' >/dev/null
+    sleep 45
+    qmp type $'setsid bazaar >/dev/null 2>&1 &\n' >/dev/null
+    sleep 120
+    shot "04-live-app-store"
     check "live medium found and mounted" grep -q -E 'dmsquash|LiveOS|live-rootfs|rootfs' "${out}/serial.log"
     check "live system set up (livesys)" grep -q -i 'livesys' "${out}/serial.log"
     check "graphical target reached" grep -q -E 'Reached target (graphical.target|Graphical Interface)' "${out}/serial.log"
@@ -80,6 +89,11 @@ common=(-machine "q35,accel=kvm" -cpu max -smp 4 -m 6144 -device virtio-vga -dis
     check "Tamarack OS (os-release)" grep -q -i 'Tamarack OS' "${out}/serial.log"
     check "default apps ready without downloading" grep -q 'flatpak-setup.*done: All default apps are set up' "${out}/serial.log"
     check "Welcome to Tamarack OS opened" grep -q -E 'Started app-io\.github\.brecken321\.tamarack\.Welcome' "${out}/serial.log"
+    # 50% of the VM's 6 GB; systemd's default (20%) leaves too little room.
+    check "half the memory is room for changes in the session" \
+        grep -q -E 'LiveOS_rootfs +(2\.[5-9]|[3-9](\.[0-9])?)G ' "${out}/serial.log"
+    check "Flathub's app list loads in the live session" \
+        grep -q -E 'live-check.*flathub-apps=[0-9]{4,}' "${out}/serial.log"
     echo "INFO: failed units"
     grep -E 'Failed to start|FAILED' "${out}/serial.log" | sed 's/^/    /' | head -n 20 || true
 

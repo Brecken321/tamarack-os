@@ -71,6 +71,7 @@ for wallpaper in $(jq -r '.wallpapers[]' /usr/share/tamarack/brand.json); do
     check "wallpaper ${wallpaper} dark images" test "$(find "${dir}/contents/images_dark" -name '*.jpg' | wc -l)" -ge 5
 done
 check "logo icon (256px)" test -s "/usr/share/icons/hicolor/256x256/apps/${BRAND_LOGO_ICON}.png"
+check "terminal welcome banner names ${BRAND_NAME}" grep -q "^# Welcome to ${BRAND_NAME}\$" /usr/share/ublue-os/motd/template.md
 check "boot splash watermark is a PNG" bash -c 'file -b /usr/share/plymouth/themes/spinner/watermark.png | grep -q PNG'
 check "preset previews rendered" test "$(find /usr/share/tamarack/presets/previews -name '*.png' | wc -l)" -ge 7
 check "Tamarack Center banner artwork rendered" test -s /usr/share/tamarack/art/banner-light.jpg -a -s /usr/share/tamarack/art/banner-dark.jpg
