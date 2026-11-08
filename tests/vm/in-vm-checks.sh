@@ -202,8 +202,8 @@ fi
 
 # The Claude Code menu entry opened a terminal running Claude Code.
 if [[ "${phase}" == "claude_running" ]]; then
-    # By process name: Claude Code keeps other processes from reading its
-    # /proc/PID/exe. The menu entry's own script is "claude-code".
+    # By process name: reading Claude Code's /proc/PID/exe from the SSH
+    # session failed. The menu entry's own script is "claude-code".
     start=$(date +%s)
     until pgrep -u "$(id -u)" -x claude >/dev/null || (($(date +%s) - start > 60)); do sleep 2; done
     check "the Claude Code menu entry runs Claude Code in a terminal window" pgrep -u "$(id -u)" -x claude
