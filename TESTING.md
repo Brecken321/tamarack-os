@@ -53,6 +53,48 @@ Newest first. "CI" entries link to the workflow run that produced them.
 
 <!-- results:start -->
 
+### 2026-11-08: Bazzite moved to Fedora 45; daily failures fixed; full run, every edition, every layer (CI [run 42514030156](https://github.com/Brecken321/tamarack-os/actions/runs/42514030156), images 45.20261108)
+
+From 2026-11-04 the daily "Disk images and VM test" runs failed. Bazzite had moved to Fedora 45 (Plasma 6.8), which
+broke three things, all fixed:
+
+- **Global theme checks failed.** Plasma 6.8's `plasma-apply-lookandfeel` stops when it can't reach the desktop's
+  display; the test applied presets over SSH and guessed the display (`wayland-0` now belongs to the sign-in screen).
+  The test now applies presets through the signed-in user's service manager and reads the display from it. A test
+  problem: Tamarack Center runs inside the desktop, where the display is known, and its clicked-through theme checks
+  passed.
+- **"Update now starts the update service: 1 (the system says 10)".** The count also matched bootc's own
+  "Starting syncfs" lines; it now counts only the update service's starts. A test problem.
+- **Installer ISOs failed to build ("No match for argument: glibc").** Fedora 45 moved its repository files to
+  `/usr/share/dnf5/repos.d`, where the installer ISO builder doesn't look. The image now also has Fedora's repository
+  files in `/etc/yum.repos.d`; two new image checks cover it. A real problem: no installer ISO could be made.
+
+All 13 jobs passed, with **0 failures** in every check file.
+
+| | Standard | NVIDIA | NVIDIA (older cards) |
+|---|---|---|---|
+| VM test (535 checks, including Claude Code and the app store loading Flathub's apps) | ✅ | ✅ | ✅ |
+| Installer ISO, unattended install onto a blank disk, then the same 535 checks | ✅ installed in 8.0 min | ✅ 8.9 min | ✅ 6.4 min |
+| Live USB (10 checks; 2.9 GB of room for changes in the 6 GB VM; Flathub's app list loads) | ✅ | ✅ | ✅ |
+| Claude Code (2.1.319) installs with its official installer and runs | ✅ | ✅ | ✅ |
+| App store loads Flathub's apps after opening | ✅ 15 s | ✅ 15 s | ✅ 20 s |
+| Steam reaches **Sign in to Steam** (test disk / installed system) | ✅ 111 s / 106 s | ✅ 101 s / 122 s | ✅ 113 s / 105 s |
+| Memory in use with Plasma open (6 GB VM; test disk / installed system) | 2.5 / 2.7 GB | 2.6 / 2.4 GB | 2.2 / 2.5 GB |
+
+Update and rollback (standard): 45.20261107 → 45.20261108, restart, all 58 system checks, then rollback in Tamarack
+Center: 43 checks, ✅ 0 failures.
+
+ISOs from this run (SHA-256):
+
+| File | SHA-256 |
+|---|---|
+| `tamarack-os-20261108-x86_64.iso` | `ebd22db25f4b6e9bf750e40259ac97c9a334de52bbe8b367c0f4f69c5c9253fa` |
+| `tamarack-os-nvidia-20261108-x86_64.iso` | `7da755bdb24e36c5bf106a4fdd42c3b17ae6aca2cb2d90518ec592a81f03aeff` |
+| `tamarack-os-nvidia-legacy-20261108-x86_64.iso` | `58ba09a9149b31675877c01746cac188e468ec829d6dbea21dd963d9b7ddd5e4` |
+| `tamarack-os-live-20261108-x86_64.iso` | `e4a5a18af281842bdac9fcec5ec7b98aa999b29d4f9eae735834c017a89a234b` |
+| `tamarack-os-nvidia-live-20261108-x86_64.iso` | `c0ba9eaa67b71905175a2e4a1cb5ba8d6d5c828bca2c3a5baf2b907191061f2f` |
+| `tamarack-os-nvidia-legacy-live-20261108-x86_64.iso` | `675dda0e33f145691839157b061f48c2b86bb38b4dd54f1ad261907eccf0b6da` |
+
 ### 2026-10-31: full run, every edition, every layer (CI [run 41169379037](https://github.com/Brecken321/tamarack-os/actions/runs/41169379037), images 44.20261031)
 
 All 14 jobs passed, with **0 failures** in every check file.
