@@ -55,7 +55,9 @@ session_env() {
     XDG_RUNTIME_DIR="/run/user/$(id -u)"
     export XDG_RUNTIME_DIR
     export DBUS_SESSION_BUS_ADDRESS="unix:path=${XDG_RUNTIME_DIR}/bus"
-    export WAYLAND_DISPLAY=wayland-0
+    # The desktop's display, as the session's service manager has it (since
+    # Plasma 6.8 its Wayland socket is not always wayland-0).
+    eval "$(systemctl --user show-environment | grep -E '^(WAYLAND_DISPLAY|DISPLAY)=' | sed 's/^/export /')"
 }
 # Run a command as a user service of the desktop session: the same context
 # as an app started from the start menu (Tamarack Center's Install button
@@ -287,7 +289,8 @@ setting_state() {
             busctl --json=short get-property net.hadess.PowerProfiles /net/hadess/PowerProfiles \
                 net.hadess.PowerProfiles Profiles | jq -r '[.data[].Profile.data] | join(",")'
             ;;
-        update_runs) journalctl -b -u uupd.service -o cat 2>/dev/null | grep -c '^Starting ' ;;
+        # systemd's own start messages: while updating, bootc logs "Starting syncfs" lines too.
+        update_runs) journalctl -b -u uupd.service -o cat 2>/dev/null | grep -c '^Starting uupd' ;;
         # What the custom look "My Gaming" changes from Gaming ("missing" if there is none).
         custom_look)
             python3 -I -c '

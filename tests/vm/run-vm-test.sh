@@ -101,7 +101,10 @@ sleep 75
 shot "02-desktop-first-login"
 ssh_vm "bash /tmp/in-vm-checks.sh '${password}' session" | tee "${out}/session-checks.txt" || status=1
 
-session_env='export XDG_RUNTIME_DIR=/run/user/$(id -u) DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$(id -u)/bus WAYLAND_DISPLAY=wayland-0 QT_QPA_PLATFORM=wayland'
+# The desktop's display comes from the session's service manager: since Plasma
+# 6.8 the desktop's Wayland socket is not always wayland-0 (the login screen's
+# compositor has that one).
+session_env='export XDG_RUNTIME_DIR=/run/user/$(id -u) DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$(id -u)/bus QT_QPA_PLATFORM=wayland; eval "$(systemctl --user show-environment | grep -E "^(WAYLAND_DISPLAY|DISPLAY)=" | sed "s/^/export /")"'
 # Nobody touches the keyboard while apps download, so turn off the automatic
 # screen lock for this test session (otherwise screenshots show the lock screen).
 ssh_vm "${session_env}; kwriteconfig6 --notify --file kscreenlockerrc --group Daemon --key Autolock false" || true
@@ -122,8 +125,11 @@ sleep 2
 desktop_is() { # PRESET_ID
     ssh_vm "${session_env}; systemd-run --user --quiet --wait --pipe --collect python3 -I /tmp/desktop-state.py $1" | tee -a "${out}/${LOG:-presets.txt}" || status=1
 }
+# Applied as a service of the desktop session, like `ujust` in Konsole: since
+# Plasma 6.8 plasma-apply-lookandfeel aborts without the desktop's display.
 for preset in gaming classic-desktop minimalist productivity high-contrast; do
-    ssh_vm "${session_env}; tamarack preset apply ${preset}" | tee -a "${out}/presets.txt" || status=1
+    ssh_vm "${session_env}; systemd-run --user --quiet --wait --pipe --collect tamarack preset apply ${preset}" |
+        tee -a "${out}/presets.txt" || status=1
     sleep 12
     shot "04-preset-${preset}"
     desktop_is "${preset}"
