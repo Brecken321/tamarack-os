@@ -90,6 +90,7 @@ calls bootc-image-builder directly so test-only configs (throwaway user, kicksta
 | Global themes | `/usr/share/plasma/look-and-feel/io.github.brecken321.tamarack.{light,dark,highcontrast}.desktop` | Plasma-native themes incl. default panel layout and splash |
 | Presets | `/usr/share/tamarack/presets/*.toml` | Desktop setups applied with Plasma scripting + kwriteconfig6 |
 | First-boot apps | `tamarack-flatpak-setup.service` | Installs Firefox and basic viewers once; never reinstalls removed apps |
+| Claude Code | `tamarack-claude-code-install.service` (user, all users) and the **Claude Code** menu entry (`/usr/libexec/tamarack/claude-code`) | Installs Claude Code into the home folder once, at the first sign-in with internet, with Anthropic's installer; the menu entry opens it in Konsole, installing it first if needed |
 | Privacy catalog | `/usr/share/tamarack/privacy/catalog.toml` | What uses the network and why; service explanations |
 | Anti-cheat data | `/usr/share/tamarack/games/awacy-games.json` | AreWeAntiCheatYet snapshot (MIT) with source/commit metadata |
 | ujust recipes | `/usr/share/ublue-os/just/60-custom.just` | `ujust tamarack-*` shortcuts |

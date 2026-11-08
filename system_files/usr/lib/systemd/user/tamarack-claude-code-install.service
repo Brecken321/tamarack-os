@@ -1,0 +1,23 @@
+[Unit]
+Description=Install Claude Code (once, at the first sign-in with internet)
+Documentation=https://github.com/brecken321/tamarack-os/blob/main/docs/PRIVACY.md
+# Installed once; never again after it was removed.
+ConditionPathExists=!%S/tamarack/claude-code-installed
+# Not for the sign-in screen's own account, and not in the live session,
+# where downloads take up memory (its menu entry still installs it).
+ConditionUser=!@system
+ConditionKernelCommandLine=!rd.live.image
+StartLimitIntervalSec=0
+
+[Service]
+# exec, not oneshot, so the session doesn't wait for the download.
+Type=exec
+ExecStart=/usr/libexec/tamarack/claude-code-install
+# Retry until it succeeds (e.g. signed in without internet).
+Restart=on-failure
+RestartSec=10min
+Nice=10
+IOSchedulingClass=idle
+
+[Install]
+WantedBy=default.target

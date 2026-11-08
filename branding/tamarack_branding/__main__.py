@@ -267,8 +267,23 @@ class Generator:
             "OnlyShowIn=KDE;\n"
             "X-KDE-autostart-phase=2\n"
         )
+        # Claude Code installs itself at the first sign-in; this entry opens it
+        # in a terminal, installing it first if it isn't there yet.
+        claude_code = (
+            "[Desktop Entry]\n"
+            "Type=Application\n"
+            "Name=Claude Code\n"
+            "GenericName=AI Coding Assistant\n"
+            "Comment=Anthropic's Claude Code in a terminal window (installs it first if needed)\n"
+            "Exec=/usr/libexec/tamarack/claude-code\n"
+            "Icon=utilities-terminal\n"
+            "Terminal=false\n"
+            "Categories=Development;\n"
+            "Keywords=claude;anthropic;ai;assistant;code;terminal;\n"
+        )
         self.write(f"usr/share/applications/{b.center_app_id}.desktop", center)
         self.write(f"usr/share/applications/{b.reverse_dns}.Welcome.desktop", welcome)
+        self.write(f"usr/share/applications/{b.reverse_dns}.ClaudeCode.desktop", claude_code)
         self.write(f"etc/xdg/autostart/{b.reverse_dns}.Welcome.desktop", autostart)
         # Start menu (Kickoff) favorites for new users, via Fedora's KDE profile.
         favorites = ";".join(

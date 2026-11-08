@@ -77,6 +77,8 @@ Good to know:
 - Everything you download or change in the live session is kept in memory, and about half the memory is available for
   it. Keep to small apps on a PC with 8 GB of RAM: Steam's first start alone downloads about 500 MB.
 - Updates are off in the live session, and it cannot install Tamarack OS; use the installer for that.
+- Claude Code doesn't install itself in the live session (it would take up memory); **Claude Code** in the app menu
+  installs it when you open it.
 
 On an installed system you sign in with the password you choose in the installer. The same password answers admin
 prompts (Tamarack Center asks for it before changing system settings).
@@ -104,7 +106,9 @@ prompts (Tamarack Center asks for it before changing system settings).
 4. Review the summary and start the installation. When it finishes, remove the USB stick and restart.
 
 On first login, **Welcome to Tamarack OS** opens: pick a look, review privacy switches, choose optional apps and set up
-gaming. Default apps (Firefox and basic viewers) install in the background over the next few minutes.
+gaming. Default apps (Firefox and basic viewers) install in the background over the next few minutes, and so does
+Claude Code: open **Claude Code** from the app menu and sign in with your Claude account. (If you pick it before the
+download has finished, or the computer was offline, the window installs it first.)
 
 ## Dual-booting with Windows
 

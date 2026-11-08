@@ -19,6 +19,7 @@ servers, which see your IP address.
 | Time sync | NTP pool servers | Time requests (needed for HTTPS) | On | Not recommended to disable |
 | Firmware updates | fwupd.org (LVFS) | Downloads firmware metadata | When checking | System Settings / `fwupdmgr` |
 | App store | Flathub API | Catalog download; launcher search uses the local catalog | When the store runs | Privacy > store results in search |
+| Claude Code | Anthropic (claude.ai) | Downloaded into your home folder once, at your first sign-in with internet, then updates itself. When you open it and sign in, what you type and the files it reads go to Anthropic to answer | Installed at first sign-in; runs only when you open it | Remove `~/.local/bin/claude` and `~/.local/share/claude`; it is not installed again |
 | Steam | Valve | Only when you use Steam (sign-in, downloads, optional hardware survey that asks first) | Off until you open Steam | Steam settings |
 | Firefox | Mozilla | Safe Browsing, updates of add-ons/certificates. **Sponsored content, telemetry, studies and recommendations are off by default** | See left | Firefox settings |
 

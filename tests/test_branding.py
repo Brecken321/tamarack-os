@@ -133,6 +133,8 @@ def test_desktop_entries(out: Path, brand: Brand) -> None:
     assert f"Name={brand.short_name} Center" in center
     autostart = (out / f"etc/xdg/autostart/{brand.reverse_dns}.Welcome.desktop").read_text(encoding="utf-8")
     assert "--first-run-only" in autostart
+    claude_code = (out / f"usr/share/applications/{brand.reverse_dns}.ClaudeCode.desktop").read_text(encoding="utf-8")
+    assert "Exec=/usr/libexec/tamarack/claude-code\n" in claude_code
 
 
 def test_branding_env_is_shell_safe(out: Path) -> None:

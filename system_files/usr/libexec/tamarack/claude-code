@@ -1,0 +1,29 @@
+#!/usr/bin/bash
+# The Claude Code menu entry: opens Claude Code in a terminal window, and
+# installs it first if it isn't there yet (the computer was offline at
+# sign-in, it was removed, or this is the live session).
+set -uo pipefail
+
+# Started from the menu, without a terminal: open one and run in it.
+if [[ ! -t 0 || ! -t 1 ]]; then
+    exec konsole --separate -e "$0" "$@"
+fi
+
+claude="${HOME}/.local/bin/claude"
+service=tamarack-claude-code-install.service
+if [[ ! -x "${claude}" ]] && systemctl --user is-active --quiet "${service}"; then
+    echo "Claude Code is being installed, one moment..."
+    while systemctl --user is-active --quiet "${service}"; do sleep 2; done
+fi
+if [[ ! -x "${claude}" ]]; then
+    echo "Installing Claude Code from claude.ai..."
+    if ! /usr/libexec/tamarack/claude-code-install; then
+        echo
+        echo "Claude Code could not be installed. Check the internet connection and try again."
+        read -rp "Press Enter to close this window. "
+        exit 1
+    fi
+    echo
+fi
+cd "${HOME}" || exit 1
+exec "${claude}" "$@"

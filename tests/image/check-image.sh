@@ -117,6 +117,11 @@ check "no private signing key shipped" bash -c '! find / -xdev -name cosign.key 
 # --- Services -----------------------------------------------------------------
 check "tamarack-flatpak-setup.service enabled" systemctl is-enabled tamarack-flatpak-setup.service
 check "flatpak base list present" test -s /usr/share/tamarack/flatpaks/base.list
+check "Claude Code installs at every user's first sign-in" \
+    test -L /etc/systemd/user/default.target.wants/tamarack-claude-code-install.service
+check "Claude Code installer and menu entry scripts are executable" \
+    test -x /usr/libexec/tamarack/claude-code-install -a -x /usr/libexec/tamarack/claude-code
+check "terminal for the Claude Code menu entry" command -v konsole
 
 # --- Gaming stack (from Bazzite) ---------------------------------------------
 for cmd in steam gamescope mangohud lutris; do

@@ -69,6 +69,9 @@ dark), not mock-ups.
 - **A clean install.** A browser and a few viewers; everything else is your choice. Search Flathub's
   thousands of apps and games from Tamarack Center, pick from optional bundles (gaming tools, office, creator
   apps, development, backups…) or use the app store. Apps you remove are never reinstalled behind your back.
+- **Claude Code ready to go.** Anthropic's Claude Code installs itself into your home folder the first time you
+  sign in with internet, and **Claude Code** in the app menu opens it (sign in with your Claude account). It
+  updates itself; if you remove it, it stays removed.
 - **Hardware check.** One page shows each device, its driver and what to do if something needs attention.
 
 ## Get it

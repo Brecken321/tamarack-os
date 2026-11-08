@@ -4,6 +4,8 @@
 source "${CTX}/lib.sh"
 
 systemctl enable tamarack-flatpak-setup.service
+# For every user: install Claude Code into the home folder at the first sign-in.
+systemctl --global enable tamarack-claude-code-install.service
 
 # Image signature verification for updates: trust our cosign key for our
 # registry namespace, in addition to Universal Blue's existing entries.

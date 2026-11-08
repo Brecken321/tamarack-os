@@ -68,6 +68,15 @@ optional = true
 control = "Tamarack Center > Privacy (store results in launcher search)"
 
 [[network]]
+id = "claude-code"
+name = "Claude Code"
+who = "Anthropic (claude.ai and its download server)"
+what = "Downloads Claude Code into your home folder once, at your first sign-in with internet; after that Claude Code updates itself. When you open it and sign in, what you type and the files it reads are sent to Anthropic to answer."
+why = "Claude Code, ready to open from the app menu."
+optional = true
+control = "Never installed again after you remove it (~/.local/bin/claude and ~/.local/share/claude)"
+
+[[network]]
 id = "steam"
 name = "Steam"
 who = "Valve"

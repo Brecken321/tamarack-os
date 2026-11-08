@@ -178,14 +178,38 @@ if [[ "${phase}" == "downloads" ]]; then
         check "${app} is installed" flatpak info "${app}"
         check "${app} is in the start menu" test -f "/var/lib/flatpak/exports/share/applications/${app}.desktop"
     done
-    # Claude Code the way its docs install it: into the home folder, which
-    # works with Tamarack's read-only system files.
-    check "Claude Code installs with its official installer" bash -c \
-        'curl -fsSL https://claude.ai/install.sh | bash >/dev/null 2>&1'
+    # Claude Code installs itself at the first sign-in, with its official
+    # installer, into the home folder (the system files are read-only).
+    service=tamarack-claude-code-install.service
+    start=$(date +%s)
+    while [[ "$(systemctl --user show -p ActiveState --value "${service}")" =~ ^(active|activating)$ ]] &&
+        (($(date +%s) - start < 600)); do sleep 5; done
+    check "Claude Code was installed automatically at sign-in" bash -c \
+        "systemctl --user show -p Result --value ${service} | grep -qx success && test -x ~/.local/bin/claude"
     check "Claude Code runs" bash -c '"${HOME}/.local/bin/claude" --version | grep -q "Claude Code"'
+    check "typing claude in a terminal finds it" bash -ic 'command -v claude | grep -qx "${HOME}/.local/bin/claude"'
+    check "the install is remembered, so it never comes back after removal" \
+        test -s "${HOME}/.local/state/tamarack/claude-code-installed"
+    systemctl --user start "${service}"
+    check "the install service skips once Claude Code was installed" bash -c \
+        "systemctl --user show -p ConditionResult --value ${service} | grep -qx no"
     info "Claude Code version" "${HOME}/.local/bin/claude" --version
+    info "Claude Code install log" journalctl --user -b -u "${service}" --no-pager -o short-monotonic
+    info "Claude Code size on disk" du -shL "${HOME}/.local/share/claude"
     info "installed apps" flatpak list --app --columns=application,name,size
     info "disk use" df -h /var
+fi
+
+# The Claude Code menu entry opened a terminal running Claude Code.
+if [[ "${phase}" == "claude_running" ]]; then
+    claude_process() {
+        for pid in $(pgrep -u "$(id -u)"); do readlink "/proc/${pid}/exe"; done 2>/dev/null |
+            grep -q "^${HOME}/.local/share/claude/versions/"
+    }
+    start=$(date +%s)
+    until claude_process || (($(date +%s) - start > 60)); do sleep 2; done
+    check "the Claude Code menu entry runs Claude Code in a terminal window" claude_process
+    sleep 10
 fi
 
 # The app store finished loading Flathub's catalog: Bazaar writes its search

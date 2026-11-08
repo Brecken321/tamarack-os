@@ -1,0 +1,26 @@
+#!/usr/bin/bash
+# Installs Claude Code for the signed-in user with Anthropic's official
+# installer (https://claude.ai/install.sh), once.
+#
+# - It goes into the home folder (~/.local/bin/claude), where Claude Code can
+#   update itself; the system files are read-only.
+# - Run at sign-in by tamarack-claude-code-install.service, and by the Claude
+#   Code menu entry when it isn't installed yet.
+# - A marker file records the install, so the service never reinstalls
+#   Claude Code after it was removed.
+# - Exits non-zero without internet; the service tries again later.
+set -euo pipefail
+
+claude="${HOME}/.local/bin/claude"
+marker="${XDG_STATE_HOME:-${HOME}/.local/state}/tamarack/claude-code-installed"
+
+if [[ ! -x "${claude}" ]]; then
+    installer="$(mktemp)"
+    trap 'rm -f "${installer}"' EXIT
+    curl -fsSL --retry 3 --retry-connrefused -o "${installer}" https://claude.ai/install.sh
+    bash "${installer}"
+fi
+version="$("${claude}" --version)"
+mkdir -p "$(dirname "${marker}")"
+echo "${version}" >"${marker}"
+echo "Claude Code is installed: ${version}"

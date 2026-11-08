@@ -303,6 +303,7 @@ open_app heroic Heroic 300 com.heroicgameslauncher.hgl.desktop
 open_app bazaar Bazaar 240 io.github.kolunmi.Bazaar.desktop store_loaded
 open_app firefox Firefox 120 org.mozilla.firefox.desktop
 open_app center "Tamarack Center" 60 io.github.brecken321.tamarack.Center.desktop
+open_app claude-code Konsole 60 io.github.brecken321.tamarack.ClaudeCode.desktop claude_running
 # Steam: Bazzite's launcher first shows a "Steam is opening for the first
 # time" notice and waits for OK; press Enter like a person would, then let
 # Steam download its client and wait for its window.
