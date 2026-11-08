@@ -202,16 +202,12 @@ fi
 
 # The Claude Code menu entry opened a terminal running Claude Code.
 if [[ "${phase}" == "claude_running" ]]; then
-    # The running program's real path: the home folder is /var/home/NAME
-    # behind the /home symlink.
-    versions="$(realpath "${HOME}/.local/share/claude/versions")"
-    claude_process() {
-        for pid in $(pgrep -u "$(id -u)"); do readlink "/proc/${pid}/exe"; done 2>/dev/null |
-            grep -q "^${versions}/"
-    }
+    # By process name: Claude Code keeps other processes from reading its
+    # /proc/PID/exe. The menu entry's own script is "claude-code".
     start=$(date +%s)
-    until claude_process || (($(date +%s) - start > 60)); do sleep 2; done
-    check "the Claude Code menu entry runs Claude Code in a terminal window" claude_process
+    until pgrep -u "$(id -u)" -x claude >/dev/null || (($(date +%s) - start > 60)); do sleep 2; done
+    check "the Claude Code menu entry runs Claude Code in a terminal window" pgrep -u "$(id -u)" -x claude
+    info "processes in the window" bash -c 'ps -o pid,comm,args --ppid "$(pgrep -u "$(id -u)" -x konsole | tail -n 1)"'
     sleep 10
 fi
 
