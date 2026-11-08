@@ -76,6 +76,9 @@ check "boot splash watermark is a PNG" bash -c 'file -b /usr/share/plymouth/them
 check "preset previews rendered" test "$(find /usr/share/tamarack/presets/previews -name '*.png' | wc -l)" -ge 7
 check "Tamarack Center banner artwork rendered" test -s /usr/share/tamarack/art/banner-light.jpg -a -s /usr/share/tamarack/art/banner-dark.jpg
 check "boot screen is the Tamarack theme" bash -c '[[ "$(plymouth-set-default-theme)" == tamarack ]]'
+# The installer ISO builder reads repositories only from /etc/yum.repos.d.
+check "Fedora's repositories are in /etc/yum.repos.d" test -s /etc/yum.repos.d/fedora.repo -a -s /etc/yum.repos.d/fedora-updates.repo
+check "dnf5 lists the fedora repository once" bash -c '[[ "$(dnf5 repolist --enabled 2>/dev/null | grep -c "^fedora ")" == 1 ]]'
 check "Tamarack boot screen is in the initramfs" \
     bash -c 'lsinitrd /usr/lib/modules/*/initramfs.img | grep -q "plymouth/themes/tamarack/watermark.png"'
 check "SVG sources stripped from image" test ! -d /usr/share/tamarack/art/src
