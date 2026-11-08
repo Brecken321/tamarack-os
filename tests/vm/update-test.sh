@@ -34,10 +34,13 @@ ssh_vm() {
 }
 as_root() { ssh_vm "echo '${password}' | sudo -S -p '' $*"; }
 booted_digest() { as_root bootc status --json | jq -r '.status.booted.image.imageDigest'; }
-wait_ssh() { # LABEL
-    local start
+boot_id() { ssh_vm cat /proc/sys/kernel/random/boot_id 2>/dev/null; }
+wait_ssh() { # LABEL [BOOT_ID of the system that is restarting]
+    # SSH can still answer for a moment while the old system shuts down, so
+    # after a restart wait for a new boot, not just for SSH.
+    local start id
     start=$(date +%s)
-    until ssh_vm true 2>/dev/null; do
+    until id="$(boot_id)" && [[ -n "${id}" && "${id}" != "${2:-}" ]]; do
         if (($(date +%s) - start > 900)); then
             shot "$1-timeout"
             echo "FAIL: no SSH after $1"
@@ -49,10 +52,12 @@ wait_ssh() { # LABEL
     echo "INFO: SSH up $(($(date +%s) - start)) s after $1"
 }
 reboot_vm() { # LABEL
+    local old_boot
+    old_boot="$(boot_id)"
     as_root systemctl reboot || true
     # Wait for the old system to go away before waiting for the new one.
     for _ in $(seq 1 60); do ssh_vm true 2>/dev/null || break; sleep 5; done
-    wait_ssh "$1"
+    wait_ssh "$1" "${old_boot}"
 }
 failures=0
 check() { # DESCRIPTION COMMAND...
@@ -156,6 +161,7 @@ trap 'kill "$(cat "${out}/qemu.pid")" 2>/dev/null || true' EXIT
     updates_page rollback-again "click:Roll back…" "click:OK"
     check "rolled back again" test "$(queued)" = true
     # Restart from the Updates page, as a person would.
+    old_boot="$(boot_id)"
     in_vm drive-start restart updates "$(printf '%q ' 'click:Restart now…' 'click:OK')"
     gone=no
     for _ in $(seq 1 36); do
@@ -164,7 +170,7 @@ trap 'kill "$(cat "${out}/qemu.pid")" 2>/dev/null || true' EXIT
     done
     check "Restart now… restarts the computer" test "${gone}" = yes
     if [[ "${gone}" == yes ]]; then
-        wait_ssh "rollback"
+        wait_ssh "rollback" "${old_boot}"
     else
         shot "restart-not-restarting"
         in_vm drive-finish restart 30

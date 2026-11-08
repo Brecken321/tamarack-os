@@ -202,9 +202,12 @@ fi
 
 # The Claude Code menu entry opened a terminal running Claude Code.
 if [[ "${phase}" == "claude_running" ]]; then
+    # The running program's real path: the home folder is /var/home/NAME
+    # behind the /home symlink.
+    versions="$(realpath "${HOME}/.local/share/claude/versions")"
     claude_process() {
         for pid in $(pgrep -u "$(id -u)"); do readlink "/proc/${pid}/exe"; done 2>/dev/null |
-            grep -q "^${HOME}/.local/share/claude/versions/"
+            grep -q "^${versions}/"
     }
     start=$(date +%s)
     until claude_process || (($(date +%s) - start > 60)); do sleep 2; done
