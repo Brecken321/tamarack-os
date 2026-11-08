@@ -1,6 +1,6 @@
 # Hardware support
 
-Tamarack OS uses Bazzite's kernel, firmware and drivers unchanged, so hardware support matches Bazzite's (Fedora 44 base).
+Tamarack OS uses Bazzite's kernel, firmware and drivers unchanged, so hardware support matches Bazzite's (and follows its Fedora base: Fedora 45 since November 2026).
 Nothing in Tamarack OS promises universal compatibility: devices without Linux drivers, or whose vendors only support
 Windows, will not work.
 
