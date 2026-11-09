@@ -53,6 +53,39 @@ Newest first. "CI" entries link to the workflow run that produced them.
 
 <!-- results:start -->
 
+### 2026-11-09: Claude Code installs itself; full run, every edition, every layer (CI [run 42537193548](https://github.com/Brecken321/tamarack-os/actions/runs/42537193548), images from commit ace7257)
+
+New: Claude Code installs itself at the first sign-in (`tamarack-claude-code-install.service`), and **Claude Code**
+in the app menu opens it in Konsole. All 13 jobs passed, with **0 failures** in every check file (544 checks per
+edition on the test disk and again on the installed system).
+
+| | Standard | NVIDIA | NVIDIA (older cards) |
+|---|---|---|---|
+| Claude Code (2.1.319, 325 MB) installed itself after sign-in | ✅ in 20 s | ✅ 15 s | ✅ 18 s |
+| …is found by typing `claude`, isn't installed again, and its menu entry opens its welcome screen (test disk and installed system) | ✅ | ✅ | ✅ |
+| Installer ISO, unattended install onto a blank disk, then the same 544 checks | ✅ installed in 7.2 min | ✅ 6.4 min | ✅ 6.3 min |
+| Live USB (10 checks) | ✅ | ✅ | ✅ |
+| Steam reaches **Sign in to Steam** (test disk / installed system) | ✅ 112 s / 116 s | ✅ 101 s / 100 s | ✅ 116 s / 102 s |
+
+Update and rollback (standard): 101 checks, ✅ 0 failures.
+
+Two earlier runs of this change ([run 42528902011](https://github.com/Brecken321/tamarack-os/actions/runs/42528902011),
+[run 42533130323](https://github.com/Brecken321/tamarack-os/actions/runs/42533130323)) failed on test problems,
+fixed in the tests: the check that Claude Code was running read `/proc/PID/exe` of a process it could not read from
+the SSH session (the screenshots showed Claude Code open; it now checks the process name), and the rollback checks
+ran while the old system was still shutting down (they now wait for a new boot ID).
+
+ISOs from this run (SHA-256):
+
+| File | SHA-256 |
+|---|---|
+| `tamarack-os-20261109-x86_64.iso` | `b9ad2de1c9e29f65ff0c85e39fbf6923717ac1d22c87518dd844d2fde06f4647` |
+| `tamarack-os-nvidia-20261109-x86_64.iso` | `479dae7453058637d09cd685d247c53c939bdedaf1e285c5c81cda60a9cb079e` |
+| `tamarack-os-nvidia-legacy-20261109-x86_64.iso` | `b2e28537ce2cbc48e68158e763761d0179f45ab5236815c6aae6db6b769028e5` |
+| `tamarack-os-live-20261109-x86_64.iso` | `98fdbb562d00b7b8249bcac610c63427a209d1f734967540f2f11b5187d6f72b` |
+| `tamarack-os-nvidia-live-20261109-x86_64.iso` | `1d1369d6c9fcc07536caa9c879f85b82e90d63a6d9612799dae69fb74cac3cde` |
+| `tamarack-os-nvidia-legacy-live-20261109-x86_64.iso` | `a1e6acf465e2cb70ba7761073c16636cfe3132d5c143824085c081a50290ea04` |
+
 ### 2026-11-08: Bazzite moved to Fedora 45; daily failures fixed; full run, every edition, every layer (CI [run 42514030156](https://github.com/Brecken321/tamarack-os/actions/runs/42514030156), images 45.20261108)
 
 From 2026-11-04 the daily "Disk images and VM test" runs failed. Bazzite had moved to Fedora 45 (Plasma 6.8), which
