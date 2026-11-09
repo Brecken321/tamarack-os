@@ -116,6 +116,11 @@ Dual-boot is possible but **never risk-free**. A mistake in partitioning can des
 
 1. In Windows, open *Disk Management*, right-click the Windows (C:) partition > *Shrink Volume* and free at least 128 GB.
    Leave the space **unallocated**. Do not delete the EFI System Partition or Recovery partitions.
+   Windows often can't shrink far: files it can't move while running (the page file, restore points, the change
+   journal, the file table `$Mft`) may sit near the end of C:. Then let the installer shrink it instead, while Windows
+   is off: in *Installation Destination* choose *Automatic* > *Done* > **Reclaim space**, select the Windows (ntfs)
+   partition > **Shrink** to the new size > **Reclaim space**. Never choose *Delete*. Start the installer with
+   Windows' **Restart** (a full shutdown even with Fast Startup on); Windows checks its disk once on its next start.
 2. In the installer, select the same disk, choose *Custom* (or *Automatic* with "use free space"), and install only into
    the unallocated space. Do **not** reformat the existing EFI partition; Anaconda adds its own boot entry to it.
 3. After installation, the boot menu (GRUB) should list Tamarack OS and Windows Boot Manager. If Windows is missing,

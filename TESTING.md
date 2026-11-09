@@ -53,6 +53,22 @@ Newest first. "CI" entries link to the workflow run that produced them.
 
 <!-- results:start -->
 
+### 2026-11-09: the installer shrinks a Windows partition that Windows can't (CI [run 42561523911](https://github.com/Brecken321/tamarack-os/actions/runs/42561523911), NVIDIA installer ISO 20261109)
+
+On the ASUS laptop, Windows' own shrink of C: stopped at about 12 GB: after the page file, the change journal and a
+restore point were out of the way, part of the file table (`$Mft`) near the end of C: remained, which Windows can't
+move while running. Tested instead with the tools inside the installer ISO (unpacked from `images/install.img`):
+
+- The installer has ntfsprogs (`ntfsresize` 2026.2.25), and Anaconda's storage library (blivet) reports NTFS as
+  resizable, so *Reclaim space* offers **Shrink** for it.
+- A 4 GB NTFS volume was laid out so the file table had grown into its last ~18% (clusters 0xd1504–0xe2850), with
+  200,000 small files and a 300 MB random file. The installer's `ntfsresize` shrank it to 2 GiB, moving the file table
+  down (to 0x569d6–0x62d26); with the partition shrunk to match, `ntfsfix` found it clean (backup boot sector OK) and
+  every file's checksum was unchanged.
+
+Not covered: clicking through the *Reclaim space* dialog itself, and a real Windows starting afterwards (it runs its
+disk check once, as `ntfsresize` schedules).
+
 ### 2026-11-09: Claude Code installs itself; full run, every edition, every layer (CI [run 42537193548](https://github.com/Brecken321/tamarack-os/actions/runs/42537193548), images from commit ace7257)
 
 New: Claude Code installs itself at the first sign-in (`tamarack-claude-code-install.service`), and **Claude Code**
